@@ -8,7 +8,7 @@ public class Unit{
     RobotController rc;
 
     static final Random rng = new Random(6147);
-    
+    static final int goldToLeadConversionRate = 200;
     /** Array containing all the possible movement directions. */
     static final Direction[] directions = {
         Direction.NORTH,
@@ -32,6 +32,15 @@ public class Unit{
     }
 
     //pathfinding strategies
+    /**
+     * move() is the moving function that will actually be used by the bots (made a separate function for 
+     * easy replacement)
+     * 
+     * @param loc is where to go
+     **/
+    public void move(MapLocation loc) throws GameActionException{
+        fuzzyMove(loc); // best pathfinding strat 
+    }
 
     //1. bug pathing
 
@@ -89,6 +98,9 @@ public class Unit{
     }
     public void fuzzyMove(MapLocation dest, double rubbleWeight) throws GameActionException{
         MapLocation myLocation = rc.getLocation();
+        if (myLocation.equals(dest)){
+            return; //you're already there!
+        }
         Direction toDest = myLocation.directionTo(dest);
         Direction[] dirs = {toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(),
             toDest.rotateRight().rotateRight(), toDest.opposite().rotateLeft(), toDest.opposite().rotateRight(), toDest.opposite()};
