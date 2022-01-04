@@ -26,7 +26,7 @@ public class Miner extends Unit {
         }
 
         // move
-        bugMove(new MapLocation(37, 50));
+        fuzzyMove(new MapLocation(37, 50));
         
     }
 

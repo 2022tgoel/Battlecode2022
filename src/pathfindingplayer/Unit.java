@@ -58,16 +58,17 @@ public class Unit{
             else {
                 while (d.rotateRight()!=direct){
                     d = d.rotateRight();
-                    rc.setIndicatorDot(rc.getLocation().add(d), 0, 255, 255);
+                   // assert(!d.equals(direct));
+                   // rc.setIndicatorDot(rc.getLocation().add(d), 0, 255, 255);
                     if (rc.canMove(d) && rc.senseRubble(cur.add(d)) <= rubbleThreshold){
                         rc.move(d);
                     }
 
                 }
                 // you are surrounded by bad squares, just move directly
-                if (rc.canMove(d)){ 
-                    rc.move(d.rotateRight());
-                }
+                //if (rc.canMove(d)){ 
+                //   rc.move(d.rotateRight());
+                //}
 
             }
             //need to navigate around obstacle
@@ -80,10 +81,52 @@ public class Unit{
      * fuzzyMove() is the method that moves to a location using a weight of how within the correct direction you are
      *             how much rubble is in a square (rather that just thresholding rubbles)
      *
-     * @param loc  location you wish to move to
+     * @param dest  location you wish to move to
      *            
      **/
-    public void fuzzyMove(MapLocation loc){
+    public void fuzzyMove(MapLocation dest) throws GameActionException{
+        fuzzyMove(dest, 2); //will not go to squares with more that 20 rubble
+    }
+    public void fuzzyMove(MapLocation dest, double rubbleWeight) throws GameActionException{
+        MapLocation myLocation = rc.getLocation();
+        Direction toDest = myLocation.directionTo(dest);
+        Direction[] dirs = {toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(),
+            toDest.rotateRight().rotateRight(), toDest.opposite().rotateLeft(), toDest.opposite().rotateRight(), toDest.opposite()};
+        double[] costs = new double[8];
+        // Ignore repel factor in beginning and when close to target
+        for (int i = 0; i < dirs.length; i++) {
+            MapLocation newLocation = myLocation.add(dirs[i]);
+            // Movement invalid, set higher cost than starting value
+            if (!rc.onTheMap(newLocation)) {
+                costs[i] = 999999;
+                continue;
+            }
+            double cost = rc.senseRubble(newLocation)* rubbleWeight;
+            // Preference tier for moving towards target
+            if (i >= 3) {
+                cost += 50;
+            }
+            costs[i] = cost;
+        }
+        double cost = 99999;
+        Direction optimalDir = null;
+        for (int i = 0; i < dirs.length; i++) {
+            Direction dir = dirs[i];
+            if (rc.canMove(dir)) {
+                double newCost = costs[i];
+                // add epsilon boost to forward direction
+                if (dir == toDest) {
+                    newCost -= 0.001;
+                }
+                if (newCost < cost) {
+                    cost = newCost;
+                    optimalDir = dir;
+                }
+            }
+        }
+        if (optimalDir != null) {
+            rc.move(optimalDir);
+        }
 
     }
     //3. bfs/dijkstra of visible locations
