@@ -18,8 +18,9 @@ public class Archon extends Unit {
             rc.setIndicatorString("Trying to build a miner");
             if (!builtMiner && rc.canBuildRobot(RobotType.MINER, dir)) {
                 rc.buildRobot(RobotType.MINER, dir);
-                builtMiner =true;
+                builtMiner = true;
             }
+            rc.setIndicatorString("builtMiner = " + builtMiner);
         }
     }
 }

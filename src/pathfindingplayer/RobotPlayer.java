@@ -34,6 +34,25 @@ public strictfp class RobotPlayer {
         // You can also use indicators to save debug notes in replays.
         rc.setIndicatorString("Hello world!");
 
+        Unit robot;
+
+        switch (rc.getType()) {
+            case ARCHON:     
+                robot = new Archon(rc);  
+                break;
+            case MINER:      
+                robot = new Miner(rc);  
+                break;
+            case SOLDIER: //   runSoldier(rc); break;
+            case LABORATORY: // Examplefuncsplayer doesn't use any of these robot types below.
+            case WATCHTOWER: // You might want to give them a try!
+            case BUILDER:
+            case SAGE:   
+            default:   
+                robot = new Unit(rc);
+                break;
+        }
+
         while (true) {
             // This code runs during the entire lifespan of the robot, which is why it is in an infinite
             // loop. If we ever leave this loop and return from run(), the robot dies! At the end of the
@@ -41,23 +60,13 @@ public strictfp class RobotPlayer {
 
             turnCount += 1;  // We have now been alive for one more turn!
             System.out.println("Age: " + turnCount + "; Location: " + rc.getLocation());
-
-            Unit robot;
             // Try/catch blocks stop unhandled exceptions, which cause your robot to explode.
             try {
                 // The same run() function is called for every robot on your team, even if they are
                 // different types. Here, we separate the control depending on the RobotType, so we can
                 // use different strategies on different robots. If you wish, you are free to rewrite
                 // this into a different control structure!
-                switch (rc.getType()) {
-                    case ARCHON:     robot = new Archon(rc);  robot.run(); break;
-                    case MINER:      robot = new Miner(rc);  robot.run(); break;
-                    case SOLDIER: //   runSoldier(rc); break;
-                    case LABORATORY: // Examplefuncsplayer doesn't use any of these robot types below.
-                    case WATCHTOWER: // You might want to give them a try!
-                    case BUILDER:
-                    case SAGE:       break;
-                }
+                robot.run();
             } catch (GameActionException e) {
                 // Oh no! It looks like we did something illegal in the Battlecode world. You should
                 // handle GameActionExceptions judiciously, in case unexpected events occur in the game
