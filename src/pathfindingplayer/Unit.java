@@ -6,7 +6,8 @@ import java.util.*;
 public class Unit{
 
     RobotController rc;
-
+    boolean archon_found = false;
+    int archon_index = -1;
     final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
     /** Array containing all the possible movement directions. */
@@ -29,6 +30,46 @@ public class Unit{
      * run() is a placeholder implemented in the specific files
      **/
     public void run() throws GameActionException{
+    }
+
+    public void senseArchon() throws GameActionException {
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        // if there are any nearby enemy robots, attack the one with the least health
+        if (nearbyBots.length > 0) {
+            for (RobotInfo bot : nearbyBots) {
+                if (bot.type == RobotType.ARCHON) {
+                    archon_found = true;
+                    broadcastArchon(bot.location);
+                }
+            }
+        }
+        // rc.setIndicatorString("finished sensing archon");
+    }
+
+    public void broadcastArchon(MapLocation loc) throws GameActionException{
+        int data = 0;
+        int available_index = 0;
+        int x;
+        int y;
+        for (int i = 4; i >= 0; i--) {
+            data = rc.readSharedArray(i);
+            if (data == 0) {
+                available_index = i;
+            }
+            else {
+                x = data / 1000;
+                y = data % 1000;
+                if (loc.x == x && loc.y == y) {
+                    return;
+                }
+            }
+        }
+
+        // rc.setIndicatorString("broadcasting archon");
+        int loc_int = loc.x * 1000 + loc.y;
+        rc.writeSharedArray(available_index, loc_int);
+        // rc.setIndicatorString("broadcasting succesful, archon_index " + available_index);
+        archon_index = available_index;
     }
 
 

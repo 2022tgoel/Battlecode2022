@@ -22,6 +22,10 @@ public class Soldier extends Unit {
         else if (archon_found) {
             huntArchon();
         }
+        else {
+            senseArchon();
+        }
+        
         attemptAttack();
         detectArchon();
         counter += 1;
@@ -38,10 +42,11 @@ public class Soldier extends Unit {
 
     public void detectArchon() throws GameActionException {
         // if archon still alive, don't do anything
-        rc.setIndicatorString("detecting");
         int data = 0;
         if (archon_found) {
+            rc.setIndicatorString("archon already found");
             data = rc.readSharedArray(archon_index);
+            rc.setIndicatorString("archon read: " + data);
             if (data != 0) {
                 return;
             }
@@ -49,7 +54,8 @@ public class Soldier extends Unit {
                 archon_found = false;
             }
         }
-        rc.setIndicatorString("old archon not found");
+
+        rc.setIndicatorString("finding new archon");
         // if archon dead, find new archon
         for (int i = 0; i < 4; i++) {
             data = rc.readSharedArray(i);
@@ -58,7 +64,7 @@ public class Soldier extends Unit {
                 break;
             }
         }
-        rc.setIndicatorString("new archon potentially found");
+        data = rc.readSharedArray(archon_index);
         if (data != 0) {
             rc.setIndicatorString("new archon found");
             archon_found = true;
@@ -72,15 +78,19 @@ public class Soldier extends Unit {
     }
 
     public void huntArchon() throws GameActionException {
-        if (rc.canSenseRobotAtLocation(target))
-            fuzzyMove(target);
-        else {
-            int data = rc.readSharedArray(archon_index);
-            if (data != 0) {
-                rc.writeSharedArray(archon_index, 0);
+        // if robot should be able to see archon but can't, inform everyone that archon is dead
+        if (rc.canSenseLocation(target)) {
+            if (!rc.canSenseRobotAtLocation(target)){
+                int data = rc.readSharedArray(archon_index);
+                if (data != 0) {
+                    rc.writeSharedArray(archon_index, 0);
+                }
+                archon_found = false;
+                return;
             }
-            archon_found = false;
         }
+        // if robot can't see archon, or sees archon, move towards it
+        fuzzyMove(target);
     }
 
     public void attemptAttack() throws GameActionException {
