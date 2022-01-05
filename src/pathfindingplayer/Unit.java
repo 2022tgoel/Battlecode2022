@@ -113,12 +113,16 @@ public class Unit{
         }
         Direction toDest = myLocation.directionTo(dest);
         if (myLocation.add(toDest).equals(dest)){
-            rc.move(toDest);
+            if (rc.canMove(toDest)){
+                rc.move(toDest);
+            }
         }
         else{
             Direction optimalDir = getBestDirectionFuzzy(toDest, rubbleWeight);
             if (optimalDir != null) {
-                rc.move(optimalDir);
+                if (rc.canMove(optimalDir)){
+                    rc.move(optimalDir);
+                }
             }
         }
 
