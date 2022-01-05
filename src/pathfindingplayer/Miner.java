@@ -5,7 +5,9 @@ import java.util.*;
 
 public class Miner extends Unit {
     int travel_counter = 0;
+    boolean archon_found = false;
     MapLocation target;
+
     Direction exploratoryDir = getExploratoryDir();
 	public Miner(RobotController rc) throws GameActionException {
         super(rc);
@@ -17,27 +19,45 @@ public class Miner extends Unit {
             moveInDirection(exploratoryDir);
         }
         else {
-            MapLocation cur = rc.getLocation();
-            if (cur.equals(target)){
-                int amountMined = mine();
-                if (amountMined < 3){
-                    //sense if there is a lucrative nearby area and move there instead
-                    MapLocation newLocation = findMiningArea();
-                    if (newLocation==null) {
-                        target = null;
-                    }
-                    else {
-                        target = newLocation;
-                    }
+            mining_detour();
+        }
+
+        if (!archon_found && travel_counter % 2 == 0) {
+            detectArchon();
+        }
+    }
+
+    public void detectArchon() throws GameActionException {
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        // if there are any nearby enemy robots, attack the one with the least health
+        if (nearbyBots.length > 0) {
+            for (RobotInfo bot : nearbyBots) {
+                if (bot.type == RobotType.ARCHON) {
+                    archon_found = true;
+                    broadcastArchon(bot.location);
+                    // writeSharedArray(int index, int value)
                 }
-            }
-            else {
-                moveToLocation(target);
             }
         }
     }
 
+    public void broadcastArchon(MapLocation loc) throws GameActionException{
+        // convert two ints to one int
+        int x = loc.x;
+        int y = loc.y;
+        int loc_int = x * 1000 + y;
+        if (rc.readSharedArray(0) == 0) {
+            rc.writeSharedArray(0, loc_int);
+        }
+        else {
+            rc.writeSharedArray(1, loc_int);
+        }
+    }
+
     public boolean isExploring() throws GameActionException {
+        if (archon_found) {
+            return false;
+        }
         if (travel_counter % 4 != 0) {
             return true;
         }
@@ -50,6 +70,27 @@ public class Miner extends Unit {
             else {
                 return true;
             }
+        }
+    }
+
+    //
+    public void mining_detour() throws GameActionException {
+        MapLocation cur = rc.getLocation();
+        if (cur.equals(target)){
+            int amountMined = mine();
+            if (amountMined < 3){
+                //sense if there is a lucrative nearby area and move there instead
+                MapLocation newLocation = findMiningArea();
+                if (newLocation==null) {
+                    target = null;
+                }
+                else {
+                    target = newLocation;
+                }
+            }
+        }
+        else {
+            moveToLocation(target);
         }
     }
 

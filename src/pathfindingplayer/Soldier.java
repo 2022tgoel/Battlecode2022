@@ -26,7 +26,7 @@ public class Soldier extends Unit {
     }
 
     public void attemptAttack() throws GameActionException {
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(rc.getLocation(), RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
             RobotInfo weakestBot = nearbyBots[0];
