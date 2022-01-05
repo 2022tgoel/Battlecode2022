@@ -90,6 +90,14 @@ public class Unit{
     public void moveToLocation(MapLocation loc) throws GameActionException{
         fuzzyMove(loc); // best pathfinding strat 
     }
+
+    public void moveInDirection(int[] toDest) throws GameActionException{
+        MapLocation loc = rc.getLocation();
+        MapLocation dest = new MapLocation(loc.x + toDest[0], loc.y + toDest[1]);
+        fuzzyMove(dest);
+        // rc.setIndicatorString("I JUST MOVED TO " + toDest[0] + " " + toDest[1]);
+    }
+
     /**
      * moveInDirection() moves in a direction while avoiding rubble in that direction
      **/
@@ -306,7 +314,7 @@ public class Unit{
                         closestDist = loc.distanceSquaredTo(target);
                         closest = grid[rad1d+dx][rad1d+dy];
                     }
-                    rc.setIndicatorString(grid[rad1d+dx][rad1d+dy].toString());
+                    // rc.setIndicatorString(grid[rad1d+dx][rad1d+dy].toString());
                 }
             }
         }
@@ -343,4 +351,54 @@ public class Unit{
         //go to next.loc
         goToAdjacentLocation(next.loc);
     }
+
+    public int[] getExploratoryDir() {
+        int[] dir;
+        MapLocation cur = rc.getLocation();
+        MapLocation center = new MapLocation(rc.getMapHeight()/2, rc.getMapWidth()/2);
+        if (center.x - cur.x > 0) {
+            if (center.y - cur.y > 0) {
+                dir = new int[]{8,8};
+            } else {
+                dir = new int[]{8,-8};
+            }
+        } else {
+            if (center.y - cur.y > 0) {
+                dir = new int[]{-8,8};
+            } else {
+                dir = new int[]{-8,-8};
+            }
+        }
+        int[][] dirs = new int[5][2];
+        int counter = 0;
+
+        int increment;
+        if (dir[0] < 0) {
+            increment = -4;
+        } else {
+            increment = 4;
+        }
+
+        for (int i = 0; i != dir[0]; i+= increment) {
+            dirs[counter] = new int[]{i, dir[1]};
+            counter += 1;
+        }
+
+        if (dir[1] < 0) {
+            increment = -4;
+        } else {
+            increment = 4;
+        }
+
+
+        for (int i = 0; i != dir[1]; i+= increment) {
+            dirs[counter] = new int[]{dir[0], i};
+            counter += 1;
+        }
+
+        dirs[4] = dir;
+
+        return dirs[rng.nextInt(dirs.length)];
+    }
+
 }

@@ -9,7 +9,7 @@ public class Soldier extends Unit {
     boolean archon_found = false;
 
     MapLocation target;
-    Direction exploratoryDir = getExploratoryDir();
+    int[] exploratoryDir = getExploratoryDir();
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
     }
@@ -25,7 +25,7 @@ public class Soldier extends Unit {
         else {
             senseArchon();
         }
-        
+
         attemptAttack();
         detectArchon();
         counter += 1;
@@ -105,25 +105,5 @@ public class Soldier extends Unit {
             }
             rc.attack(weakestBot.location);
         }
-    }
-
-    public Direction getExploratoryDir() {
-        MapLocation cur = rc.getLocation();
-        MapLocation center = new MapLocation(rc.getMapHeight()/2, rc.getMapWidth()/2);
-        if (center.x - cur.x > 0) {
-            if (center.y - cur.y > 0) {
-                exploratoryDir = Direction.NORTHEAST;
-            } else {
-                exploratoryDir = Direction.SOUTHEAST;
-            }
-        } else {
-            if (center.y - cur.y > 0) {
-                exploratoryDir = Direction.NORTHWEST;
-            } else {
-                exploratoryDir = Direction.SOUTHWEST;
-            }
-        }
-        Direction[] dirs = {exploratoryDir, exploratoryDir.rotateLeft(), exploratoryDir.rotateRight()};
-        return dirs[rng.nextInt(dirs.length)];
     }
 }

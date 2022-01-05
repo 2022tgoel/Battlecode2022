@@ -8,39 +8,32 @@ public class Miner extends Unit {
     int archon_index = -1;
     MapLocation target;
 
-    Direction exploratoryDir = getExploratoryDir();
+    int[] exploratoryDir = getExploratoryDir();
 	public Miner(RobotController rc) throws GameActionException {
         super(rc);
     }
 
     @Override
     public void run() throws GameActionException {
+        rc.setIndicatorString("exploratoryDir: " + exploratoryDir[0] + " " + exploratoryDir[1]);
         if (isExploring()){
-            rc.setIndicatorString("Exploring");
             moveInDirection(exploratoryDir);
         }
         else if (!archon_found) {
-            rc.setIndicatorString("Mining");
             mining_detour();
         }
         else {
-            rc.setIndicatorString("Hunting");
             huntArchon();
         }
 
         if (!archon_found) {
             senseArchon();
         }
-        // rc.setIndicatorString("archon_found: " + archon_found);
     }
 
     public void huntArchon() throws GameActionException {
-        rc.setIndicatorString("HUNTING TIME");
         int data = rc.readSharedArray(archon_index);
-        rc.setIndicatorString("recieving data...");
-        rc.setIndicatorString("data recieved: " + data + " " + archon_index);
         if (data != 0) {
-            rc.setIndicatorString("getting a move on!");
             int x = data / 1000;
             int y = data % 1000;
             target = new MapLocation(x, y);
@@ -154,25 +147,5 @@ public class Miner extends Unit {
             }
         }
         return amountMined;
-    }
-
-    public Direction getExploratoryDir() {
-        MapLocation cur = rc.getLocation();
-        MapLocation center = new MapLocation(rc.getMapHeight()/2, rc.getMapWidth()/2);
-        if (center.x - cur.x > 0) {
-            if (center.y - cur.y > 0) {
-                exploratoryDir = Direction.NORTHEAST;
-            } else {
-                exploratoryDir = Direction.SOUTHEAST;
-            }
-        } else {
-            if (center.y - cur.y > 0) {
-                exploratoryDir = Direction.NORTHWEST;
-            } else {
-                exploratoryDir = Direction.SOUTHWEST;
-            }
-        }
-        Direction[] dirs = {exploratoryDir, exploratoryDir.rotateLeft(), exploratoryDir.rotateRight()};
-        return dirs[rng.nextInt(dirs.length)];
     }
 }
