@@ -14,7 +14,9 @@ public class Soldier extends Unit {
     @Override
     public void run() throws GameActionException {
         if (isExploring()){
-            rc.move(exploratoryDir);
+            if (rc.canMove(exploratoryDir)) {
+                moveInDirection(exploratoryDir);
+            }
             attemptAttack();
         }
     }
