@@ -33,7 +33,6 @@ public class Unit{
     }
 
     public void senseArchon() throws GameActionException {
-        rc.setIndicatorString("start sensing archon");
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
@@ -44,7 +43,6 @@ public class Unit{
                 }
             }
         }
-        rc.setIndicatorString("finished sensing archon");
     }
 
     public void broadcastArchon(MapLocation loc) throws GameActionException{
@@ -356,7 +354,7 @@ public class Unit{
     public int[] getExploratoryDir() {
         int[] dir;
         MapLocation cur = rc.getLocation();
-        MapLocation center = new MapLocation(rc.getMapHeight()/2, rc.getMapWidth()/2);
+        MapLocation center = new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2);
         if (center.x - cur.x > 0) {
             if (center.y - cur.y > 0) {
                 dir = new int[]{8,8};
@@ -398,6 +396,8 @@ public class Unit{
         }
 
         dirs[4] = dir;
+        // print directions
+        rc.setIndicatorString("dirs: " + dirs[0][0] + " " + dirs[0][1] + " " + dirs[1][0] + " " + dirs[1][1] + " " + dirs[2][0] + " " + dirs[2][1] + " " + dirs[3][0] + " " + dirs[3][1] + " " + dirs[4][0] + " " + dirs[4][1] + " | " + (center.x - cur.x) + " " + (center.y - cur.y) + " | " + center.x + " " + center.y + " | " + cur.x + " " + cur.y);
 
         return dirs[rng.nextInt(dirs.length)];
     }
