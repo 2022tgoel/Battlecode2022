@@ -6,7 +6,6 @@ import java.util.*;
 public class Soldier extends Unit {
     int counter = 0;
     int archon_index = -1;
-    boolean archon_found = false;
 
     MapLocation target;
     int[] exploratoryDir = getExploratoryDir();
@@ -18,12 +17,14 @@ public class Soldier extends Unit {
     public void run() throws GameActionException {
         if (isExploring()){
             moveInDirection(exploratoryDir);
+            if (counter % 2 == 0) {
+                senseArchon();
+            }
         }
         else if (archon_found) {
             huntArchon();
         }
         else {
-            senseArchon();
         }
 
         attemptAttack();
@@ -44,9 +45,9 @@ public class Soldier extends Unit {
         // if archon still alive, don't do anything
         int data = 0;
         if (archon_found) {
-            rc.setIndicatorString("archon already found");
+            // rc.setIndicatorString("archon already found");
             data = rc.readSharedArray(archon_index);
-            rc.setIndicatorString("archon read: " + data);
+            // rc.setIndicatorString("archon read: " + data);
             if (data != 0) {
                 return;
             }
@@ -55,18 +56,19 @@ public class Soldier extends Unit {
             }
         }
 
-        rc.setIndicatorString("finding new archon");
+        // rc.setIndicatorString("finding new archon");
         // if archon dead, find new archon
         for (int i = 0; i < 4; i++) {
             data = rc.readSharedArray(i);
             if (data != 0) {
+                // rc.setIndicatorString("archon found UWU");
                 archon_index = i;
                 break;
             }
         }
         data = rc.readSharedArray(archon_index);
         if (data != 0) {
-            rc.setIndicatorString("new archon found");
+            // rc.setIndicatorString("new archon found");
             archon_found = true;
             int x = data / 1000;
             int y = data % 1000;

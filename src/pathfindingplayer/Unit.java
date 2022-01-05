@@ -33,6 +33,7 @@ public class Unit{
     }
 
     public void senseArchon() throws GameActionException {
+        rc.setIndicatorString("start sensing archon");
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
@@ -43,7 +44,7 @@ public class Unit{
                 }
             }
         }
-        // rc.setIndicatorString("finished sensing archon");
+        rc.setIndicatorString("finished sensing archon");
     }
 
     public void broadcastArchon(MapLocation loc) throws GameActionException{
