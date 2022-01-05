@@ -43,10 +43,14 @@ public strictfp class RobotPlayer {
             case MINER:      
                 robot = new Miner(rc);  
                 break;
-            case SOLDIER: //   runSoldier(rc); break;
+            case SOLDIER:   
+                robot = new Soldier(rc);  
+                break;
             case LABORATORY: // Examplefuncsplayer doesn't use any of these robot types below.
             case WATCHTOWER: // You might want to give them a try!
-            case BUILDER:
+            case BUILDER: 
+                robot = new Builder(rc);
+                break;
             case SAGE:   
             default:   
                 robot = new Unit(rc);
