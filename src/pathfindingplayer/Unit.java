@@ -112,9 +112,14 @@ public class Unit{
             return; //you're already there!
         }
         Direction toDest = myLocation.directionTo(dest);
-        Direction optimalDir = getBestDirectionFuzzy(toDest, rubbleWeight);
-        if (optimalDir != null) {
-            rc.move(optimalDir);
+        if (myLocation.add(toDest).equals(dest)){
+            rc.move(toDest);
+        }
+        else{
+            Direction optimalDir = getBestDirectionFuzzy(toDest, rubbleWeight);
+            if (optimalDir != null) {
+                rc.move(optimalDir);
+            }
         }
 
     }
