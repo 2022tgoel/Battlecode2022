@@ -5,6 +5,7 @@ import java.util.*;
 
 public class Miner extends Unit {
     boolean archon_found = false;
+    int archon_index = -1;
     MapLocation target;
 
     Direction exploratoryDir = getExploratoryDir();
@@ -15,61 +16,79 @@ public class Miner extends Unit {
     @Override
     public void run() throws GameActionException {
         if (isExploring()){
+            rc.setIndicatorString("Exploring");
             moveInDirection(exploratoryDir);
         }
         else if (!archon_found) {
+            rc.setIndicatorString("Mining");
             mining_detour();
         }
         else {
+            rc.setIndicatorString("Hunting");
             huntArchon();
         }
 
         if (!archon_found) {
-            rc.setIndicatorString("before detect");
-            detectArchon();
+            senseArchon();
         }
+        // rc.setIndicatorString("archon_found: " + archon_found);
     }
 
     public void huntArchon() throws GameActionException {
-        rc.setIndicatorString("right before read");
-        int data = rc.readSharedArray(0);
+        rc.setIndicatorString("HUNTING TIME");
+        int data = rc.readSharedArray(archon_index);
+        rc.setIndicatorString("recieving data...");
+        rc.setIndicatorString("data recieved: " + data + " " + archon_index);
         if (data != 0) {
-            rc.setIndicatorString("succesful read");
+            rc.setIndicatorString("getting a move on!");
             int x = data / 1000;
             int y = data % 1000;
             target = new MapLocation(x, y);
             fuzzyMove(target);
         }
+        else {
+            archon_found = false;
+        }
     }
 
-    public void detectArchon() throws GameActionException {
-        rc.setIndicatorString("before sense");
+    public void senseArchon() throws GameActionException {
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
             for (RobotInfo bot : nearbyBots) {
                 if (bot.type == RobotType.ARCHON) {
                     archon_found = true;
-                    rc.setIndicatorString("before broadcast");
                     broadcastArchon(bot.location);
-                    // writeSharedArray(int index, int value)
                 }
             }
         }
+        // rc.setIndicatorString("finished sensing archon");
     }
 
     public void broadcastArchon(MapLocation loc) throws GameActionException{
-        // convert two ints to one int
-        int x = loc.x;
-        int y = loc.y;
-        int loc_int = x * 1000 + y;
-        rc.setIndicatorString("right before broadcast");
-        if (rc.readSharedArray(0) == 0) {
-            rc.writeSharedArray(0, loc_int);
+        int data = 0;
+        int available_index = 0;
+        int x;
+        int y;
+        for (int i = 4; i >= 0; i--) {
+            data = rc.readSharedArray(i);
+            if (data == 0) {
+                available_index = i;
+            }
+            else {
+                x = data / 1000;
+                y = data % 1000;
+                if (loc.x == x && loc.y == y) {
+                    return;
+                }
+            }
         }
-        else {
-            rc.writeSharedArray(1, loc_int);
-        }
+
+        // rc.setIndicatorString("broadcasting archon");
+        int loc_int = loc.x * 1000 + loc.y;
+        rc.writeSharedArray(available_index, loc_int);
+        // rc.setIndicatorString("broadcasting succesful, archon_index " + available_index);
+        archon_index = available_index;
     }
 
     public boolean isExploring() throws GameActionException {
@@ -88,7 +107,6 @@ public class Miner extends Unit {
         }
     }
 
-    //
     public void mining_detour() throws GameActionException {
         MapLocation cur = rc.getLocation();
         if (cur.equals(target)){
@@ -108,11 +126,6 @@ public class Miner extends Unit {
             moveToLocation(target);
         }
     }
-
-    /**
-     * runMiningMission()
-     * 
-     **/
 
     /**
      * findMiningArea()
@@ -202,6 +215,4 @@ public class Miner extends Unit {
         Direction[] dirs = {exploratoryDir, exploratoryDir.rotateLeft(), exploratoryDir.rotateRight()};
         return dirs[rng.nextInt(dirs.length)];
     }
-
-
 }

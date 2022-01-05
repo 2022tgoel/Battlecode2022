@@ -5,8 +5,9 @@ import java.util.*;
 
 public class Soldier extends Unit {
     int counter = 0;
+    int archon_index = -1;
     boolean archon_found = false;
-    int archon_id = -1;
+
     MapLocation target;
     Direction exploratoryDir = getExploratoryDir();
 	public Soldier(RobotController rc) throws GameActionException {
@@ -16,14 +17,10 @@ public class Soldier extends Unit {
     @Override
     public void run() throws GameActionException {
         if (isExploring()){
-            rc.setIndicatorString("exploring");
             moveInDirection(exploratoryDir);
         }
         else if (archon_found) {
             huntArchon();
-            if (counter % 3 == 0) {
-
-            }
         }
         attemptAttack();
         detectArchon();
@@ -40,8 +37,30 @@ public class Soldier extends Unit {
     }
 
     public void detectArchon() throws GameActionException {
-        int data = rc.readSharedArray(0);
+        // if archon still alive, don't do anything
+        rc.setIndicatorString("detecting");
+        int data = 0;
+        if (archon_found) {
+            data = rc.readSharedArray(archon_index);
+            if (data != 0) {
+                return;
+            }
+            else {
+                archon_found = false;
+            }
+        }
+        rc.setIndicatorString("old archon not found");
+        // if archon dead, find new archon
+        for (int i = 0; i < 4; i++) {
+            data = rc.readSharedArray(i);
+            if (data != 0) {
+                archon_index = i;
+                break;
+            }
+        }
+        rc.setIndicatorString("new archon potentially found");
         if (data != 0) {
+            rc.setIndicatorString("new archon found");
             archon_found = true;
             int x = data / 1000;
             int y = data % 1000;
@@ -56,8 +75,11 @@ public class Soldier extends Unit {
         if (rc.canSenseRobotAtLocation(target))
             fuzzyMove(target);
         else {
+            int data = rc.readSharedArray(archon_index);
+            if (data != 0) {
+                rc.writeSharedArray(archon_index, 0);
+            }
             archon_found = false;
-            rc.writeSharedArray(0, 0);
         }
     }
 
@@ -91,7 +113,6 @@ public class Soldier extends Unit {
                 exploratoryDir = Direction.SOUTHWEST;
             }
         }
-        rc.setIndicatorString(exploratoryDir.dx + " " + exploratoryDir.dy);
         Direction[] dirs = {exploratoryDir, exploratoryDir.rotateLeft(), exploratoryDir.rotateRight()};
         return dirs[rng.nextInt(dirs.length)];
     }
