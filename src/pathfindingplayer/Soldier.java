@@ -5,6 +5,7 @@ import java.util.*;
 
 public class Soldier extends Unit {
     int travel_counter = 0;
+    boolean archon_found = false;
     MapLocation target;
     Direction exploratoryDir = getExploratoryDir();
 	public Soldier(RobotController rc) throws GameActionException {
@@ -14,28 +15,45 @@ public class Soldier extends Unit {
     @Override
     public void run() throws GameActionException {
         if (isExploring()){
+            rc.setIndicatorString("exploring");
             if (rc.canMove(exploratoryDir)) {
                 moveInDirection(exploratoryDir);
             }
-            attemptAttack();
+        }
+        else if (archon_found) {
+            huntArchon();
+        }
+        attemptAttack();
+        detectArchon();
+    }
+
+    public boolean isExploring() throws GameActionException{
+        if (archon_found) {
+            return false;
         }
         else {
-            huntArchon();
+            return true;
         }
     }
 
-    public boolean isExploring() throws GameActionException {
-        return true;
+    public void detectArchon() throws GameActionException {
+        int data = rc.readSharedArray(0);
+        if (data != 0) {
+            archon_found = true;
+        }
+        else {
+            archon_found = false;
+        }
     }
 
     public void huntArchon() throws GameActionException {
+        rc.setIndicatorString("right before read");
         int data = rc.readSharedArray(0);
-        if (data != 0) {
-            int x = data / 1000;
-            int y = data % 1000;
-            target = new MapLocation(x, y);
-            fuzzyMove(target);
-        }
+        int x = data / 1000;
+        int y = data % 1000;
+        target = new MapLocation(x, y);
+        fuzzyMove(target);
+        rc.setIndicatorString("after fuzzy move");
     }
 
     public void attemptAttack() throws GameActionException {

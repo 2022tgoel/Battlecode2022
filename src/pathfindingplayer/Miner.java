@@ -26,13 +26,16 @@ public class Miner extends Unit {
         }
 
         if (!archon_found && travel_counter % 2 == 0) {
+            rc.setIndicatorString("before detect");
             detectArchon();
         }
     }
 
     public void huntArchon() throws GameActionException {
+        rc.setIndicatorString("right before read");
         int data = rc.readSharedArray(0);
         if (data != 0) {
+            rc.setIndicatorString("succesful read");
             int x = data / 1000;
             int y = data % 1000;
             target = new MapLocation(x, y);
@@ -41,12 +44,14 @@ public class Miner extends Unit {
     }
 
     public void detectArchon() throws GameActionException {
+        rc.setIndicatorString("before sense");
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
             for (RobotInfo bot : nearbyBots) {
                 if (bot.type == RobotType.ARCHON) {
                     archon_found = true;
+                    rc.setIndicatorString("before broadcast");
                     broadcastArchon(bot.location);
                     // writeSharedArray(int index, int value)
                 }
@@ -59,6 +64,7 @@ public class Miner extends Unit {
         int x = loc.x;
         int y = loc.y;
         int loc_int = x * 1000 + y;
+        rc.setIndicatorString("right before broadcast");
         if (rc.readSharedArray(0) == 0) {
             rc.writeSharedArray(0, loc_int);
         }
@@ -197,7 +203,6 @@ public class Miner extends Unit {
                 exploratoryDir = Direction.SOUTHWEST;
             }
         }
-        rc.setIndicatorString(exploratoryDir.dx + " " + exploratoryDir.dy);
         Direction[] dirs = {exploratoryDir, exploratoryDir.rotateLeft(), exploratoryDir.rotateRight()};
         return dirs[rng.nextInt(dirs.length)];
     }
