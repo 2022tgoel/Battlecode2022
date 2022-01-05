@@ -4,32 +4,24 @@ import battlecode.common.*;
 import java.util.*;
 
 public class Miner extends Unit {
-
-    public boolean onMiningMission = false;
-    public MapLocation mineLocation = null;
-
+    Direction exploratoryDir;
 	public Miner(RobotController rc) throws GameActionException {
         super(rc);
     }
 
     @Override
     public void run() throws GameActionException {
-        if (onMiningMission){
+        if (OnMiningMission()){
             runMiningMission();
         }
-        // can include separate tracks here
-        
     }
 
-    /**
-     * sendOnMiningMission() sets the minet on a mutlimove course to reach a location which contains resources
-     * and mine the resources from that place
-     * 
-     * @param loc place which contains lead (rough measure of the region to mine)
-     **/
-    public void sendOnMiningMission(MapLocation loc) throws GameActionException{
-        onMiningMission = true;
-        mineLocation = loc;
+    public boolean OnMiningMission() throws GameActionException{
+        if (rc.getRoundNum() < 100){
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -38,24 +30,43 @@ public class Miner extends Unit {
      **/
     public void runMiningMission() throws GameActionException{
         MapLocation cur = rc.getLocation();
-        if (!cur.equals(mineLocation)){ //this is too strict, placeholder for now
-            move(mineLocation);
-        }
-        else{
-            int amountMined = mine();  
-            if (amountMined < 3){
-                //sense if there is a lucrative nearby area and move there instead
-                MapLocation newLocation = findMiningArea();
-                if (newLocation==null){
-                    //abort
-                    onMiningMission = false;
-                    mineLocation = null;
+        MapLocation center = new MapLocation(rc.getMapHeight()/2, rc.getMapWidth()/2);
+        if (center.x - cur.x > 0) {
+            if (center.y - cur.y > 0) {
+                if (rc.canMove(Direction.NORTHEAST)) {
+                    exploratoryDir = Direction.NORTHEAST;
                 }
-                else{
-                    mineLocation = newLocation;
+            } else {
+                if (rc.canMove(Direction.SOUTHEAST)) {
+                    exploratoryDir = Direction.SOUTHEAST;
                 }
             }
-       }
+        } else {
+            if (center.y - cur.y > 0) {
+                if (rc.canMove(Direction.NORTHWEST)) {
+                    exploratoryDir = Direction.NORTHWEST;
+                }
+            } else {
+                if (rc.canMove(Direction.SOUTHWEST)) {
+                    exploratoryDir = Direction.SOUTHWEST;
+                }
+            }
+        }
+        Direction[] dirs = {exploratoryDir, exploratoryDir.rotateLeft(), exploratoryDir.rotateRight()};
+        rc.move(dirs[rng.nextInt(dirs.length)]);
+
+/*         int amountMined = mine();  
+        if (amountMined < 3){
+            //sense if there is a lucrative nearby area and move there instead
+            MapLocation newLocation = findMiningArea();
+            if (newLocation==null){
+                //abort
+                mineLocation = null;
+            }
+            else{
+                mineLocation = newLocation;
+            }
+        } */
         
     } 
 
