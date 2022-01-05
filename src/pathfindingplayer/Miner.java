@@ -4,7 +4,6 @@ import battlecode.common.*;
 import java.util.*;
 
 public class Miner extends Unit {
-    int travel_counter = 0;
     boolean archon_found = false;
     MapLocation target;
 
@@ -25,7 +24,7 @@ public class Miner extends Unit {
             huntArchon();
         }
 
-        if (!archon_found && travel_counter % 2 == 0) {
+        if (!archon_found) {
             rc.setIndicatorString("before detect");
             detectArchon();
         }
@@ -76,9 +75,6 @@ public class Miner extends Unit {
     public boolean isExploring() throws GameActionException {
         if (archon_found) {
             return false;
-        }
-        if (travel_counter % 4 != 0) {
-            return true;
         }
         else {
             MapLocation newLocation = findMiningArea();
