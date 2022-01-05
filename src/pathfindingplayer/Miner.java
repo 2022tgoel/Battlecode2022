@@ -42,7 +42,6 @@ public class Miner extends Unit {
             return true;
         }
         else {
-            rc.setIndicatorString("OOGA BOOGA");
             MapLocation newLocation = findMiningArea();
             if (newLocation != null) {
                 target = newLocation;
