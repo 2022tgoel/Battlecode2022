@@ -14,7 +14,6 @@ public class Miner extends Unit {
     @Override
     public void run() throws GameActionException {
         if (isExploring()){
-            rc.setIndicatorString(exploratoryDir.toString());
             rc.move(exploratoryDir);
         }
         else {
@@ -43,6 +42,7 @@ public class Miner extends Unit {
             return true;
         }
         else {
+            rc.setIndicatorString("OOGA BOOGA");
             MapLocation newLocation = findMiningArea();
             if (newLocation != null) {
                 target = newLocation;
@@ -66,10 +66,20 @@ public class Miner extends Unit {
     public MapLocation findMiningArea() throws GameActionException{
         MapLocation cur = rc.getLocation();
         int maxRes = 0;
+        rc.setIndicatorString("BOOGA BOOGA");
         MapLocation bestLocation = null;
         for (int dx = -4; dx <= 4; dx++) {
             for (int dy = -4; dy <= 4; dy++) {
-                MapLocation loc = new MapLocation(cur.x + dx, cur.y + dy);
+                int x_coord = cur.x + dx;
+                int y_coord = cur.y + dy;
+                rc.setIndicatorString("BOOGA WOOGA");
+                MapLocation loc;
+                if (x_coord >= 0 && x_coord < rc.getMapWidth() && y_coord >= 0 && y_coord < rc.getMapHeight()) {
+                    loc = new MapLocation(x_coord, y_coord);
+                }
+                else {
+                    continue;
+                }
                 if (cur.isWithinDistanceSquared(loc, 20)){
                     int res = rc.senseGold(loc) * goldToLeadConversionRate + rc.senseLead(loc);
                     if (res > maxRes) {
@@ -79,8 +89,9 @@ public class Miner extends Unit {
                 }
             }
         }
+
         // if our best location is outside of the mining range, return it
-        if (maxRes > 1){
+        if (maxRes > 1 && bestLocation != null) {
             return bestLocation;
         }
         else return null;
@@ -124,25 +135,18 @@ public class Miner extends Unit {
         MapLocation center = new MapLocation(rc.getMapHeight()/2, rc.getMapWidth()/2);
         if (center.x - cur.x > 0) {
             if (center.y - cur.y > 0) {
-                if (rc.canMove(Direction.NORTHEAST)) {
-                    exploratoryDir = Direction.NORTHEAST;
-                }
+                exploratoryDir = Direction.NORTHEAST;
             } else {
-                if (rc.canMove(Direction.SOUTHEAST)) {
-                    exploratoryDir = Direction.SOUTHEAST;
-                }
+                exploratoryDir = Direction.SOUTHEAST;
             }
         } else {
             if (center.y - cur.y > 0) {
-                if (rc.canMove(Direction.NORTHWEST)) {
-                    exploratoryDir = Direction.NORTHWEST;
-                }
+                exploratoryDir = Direction.NORTHWEST;
             } else {
-                if (rc.canMove(Direction.SOUTHWEST)) {
-                    exploratoryDir = Direction.SOUTHWEST;
-                }
+                exploratoryDir = Direction.SOUTHWEST;
             }
         }
+        rc.setIndicatorString(exploratoryDir.dx + " " + exploratoryDir.dy);
         Direction[] dirs = {exploratoryDir, exploratoryDir.rotateLeft(), exploratoryDir.rotateRight()};
         return dirs[rng.nextInt(dirs.length)];
     }
