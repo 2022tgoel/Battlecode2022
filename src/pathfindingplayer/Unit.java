@@ -47,7 +47,7 @@ public class Unit{
      * @param loc is where to go
      **/
     public void moveToLocation(MapLocation loc) throws GameActionException{
-        dijkstraMove(loc); // best pathfinding strat 
+        fuzzyMove(loc); // best pathfinding strat 
     }
     /**
      * moveInDirection() moves in a direction while avoiding rubble in that direction
@@ -217,6 +217,10 @@ public class Unit{
         public boolean sameAs(MapTerrain mt){
             return loc.equals(mt);
         }
+
+        public String toString(){
+            return "X: " + loc.x + " Y: " + loc.y + " Dist: " + dist;
+        }
     }
 
     static int INF = 10000000;
@@ -239,6 +243,7 @@ public class Unit{
         int closestDist = INF;
         MapTerrain closest = null; //closes to target
         MapTerrain home = null;
+        System.out.println("here");
         for (int dx = -1*rad1d; dx <= rad1d; dx++) {
             for (int dy = -1*rad1d; dy <= rad1d; dy++) {
                 int x_coord = my.x + dx;
@@ -260,12 +265,14 @@ public class Unit{
                         closestDist = loc.distanceSquaredTo(target);
                         closest = grid[rad1d+dx][rad1d+dy];
                     }
+                    System.out.println(grid[rad1d+dx][rad1d+dy]);
                 }
             }
         }
         //get correct dists
         while (!(queue.size()==0)){
             MapTerrain cur = queue.poll();
+            System.out.println("Visiting: " + cur.toString());
             cur.visited = true;
             //visit neigbhors
             for (int dx = -1; dx <= 1; dx++) {
@@ -290,6 +297,7 @@ public class Unit{
         while (!(next.prev).sameAs(home)){
             next = next.prev;
         }
+        System.out.println("The chosen spot is: " + next.toString());
         //go to next.loc
         goToAdjacentLocation(next.loc);
     }
