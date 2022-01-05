@@ -33,14 +33,24 @@ public class Unit{
 
     //pathfinding strategies
     /**
-     * move() is the moving function that will actually be used by the bots (made a separate function for 
+     * moveToLocation() is the moving function that will actually be used by the bots (made a separate function for 
      * easy replacement)
      * 
      * @param loc is where to go
      **/
-    public void move(MapLocation loc) throws GameActionException{
+    public void moveToLocation(MapLocation loc) throws GameActionException{
         fuzzyMove(loc); // best pathfinding strat 
     }
+    /**
+     * moveInDirection() moves in a direction while avoiding rubble in that direction
+     **/
+    public void moveInDirection(Direction toDest) throws GameActionException{
+        Direction optimalDir = getBestDirectionFuzzy(toDest, 2);
+        if (optimalDir != null) {
+            rc.move(optimalDir);
+        }
+    }
+
 
     //1. bug pathing
 
@@ -102,6 +112,15 @@ public class Unit{
             return; //you're already there!
         }
         Direction toDest = myLocation.directionTo(dest);
+        Direction optimalDir = getBestDirectionFuzzy(toDest, rubbleWeight);
+        if (optimalDir != null) {
+            rc.move(optimalDir);
+        }
+
+    }
+
+    public Direction getBestDirectionFuzzy(Direction toDest, double rubbleWeight) throws GameActionException{
+        MapLocation myLocation = rc.getLocation();
         Direction[] dirs = {toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(),
             toDest.rotateRight().rotateRight(), toDest.opposite().rotateLeft(), toDest.opposite().rotateRight(), toDest.opposite()};
         double[] costs = new double[8];
@@ -126,7 +145,7 @@ public class Unit{
             Direction dir = dirs[i];
             if (rc.canMove(dir)) {
                 double newCost = costs[i];
-                // add epsilon boost to forward direction
+                // add epsilon to forward direction
                 if (dir == toDest) {
                     newCost -= 0.001;
                 }
@@ -136,10 +155,7 @@ public class Unit{
                 }
             }
         }
-        if (optimalDir != null) {
-            rc.move(optimalDir);
-        }
-
+        return optimalDir;
     }
     //3. bfs/dijkstra of visible locations
 }
