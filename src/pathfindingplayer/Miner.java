@@ -127,13 +127,13 @@ public class Miner extends Unit {
                 int x_coord = cur.x + dx;
                 int y_coord = cur.y + dy;
                 MapLocation loc;
-                if (x_coord >= 0 && x_coord < rc.getMapWidth() && y_coord >= 0 && y_coord < rc.getMapHeight()) {
+                if (validCoords(x_coord, y_coord)) {
                     loc = new MapLocation(x_coord, y_coord);
                 }
                 else {
                     continue;
                 }
-                if (cur.isWithinDistanceSquared(loc, 20)){
+                if (rc.canSenseLocation(loc)){
                     int res = rc.senseGold(loc) * goldToLeadConversionRate + rc.senseLead(loc);
                     if (res > maxRes) {
                         maxRes = res;
@@ -202,6 +202,5 @@ public class Miner extends Unit {
         Direction[] dirs = {exploratoryDir, exploratoryDir.rotateLeft(), exploratoryDir.rotateRight()};
         return dirs[rng.nextInt(dirs.length)];
     }
-
 
 }
