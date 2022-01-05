@@ -19,10 +19,23 @@ public class Soldier extends Unit {
             }
             attemptAttack();
         }
+        else {
+            huntArchon();
+        }
     }
 
     public boolean isExploring() throws GameActionException {
         return true;
+    }
+
+    public void huntArchon() throws GameActionException {
+        int data = rc.readSharedArray(0);
+        if (data != 0) {
+            int x = data / 1000;
+            int y = data % 1000;
+            target = new MapLocation(x, y);
+            fuzzyMove(target);
+        }
     }
 
     public void attemptAttack() throws GameActionException {

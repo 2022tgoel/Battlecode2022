@@ -18,12 +18,25 @@ public class Miner extends Unit {
         if (isExploring()){
             moveInDirection(exploratoryDir);
         }
-        else {
+        else if (!archon_found) {
             mining_detour();
+        }
+        else {
+            huntArchon();
         }
 
         if (!archon_found && travel_counter % 2 == 0) {
             detectArchon();
+        }
+    }
+
+    public void huntArchon() throws GameActionException {
+        int data = rc.readSharedArray(0);
+        if (data != 0) {
+            int x = data / 1000;
+            int y = data % 1000;
+            target = new MapLocation(x, y);
+            fuzzyMove(target);
         }
     }
 
