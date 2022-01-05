@@ -4,8 +4,9 @@ import battlecode.common.*;
 import java.util.*;
 
 public class Soldier extends Unit {
-    int travel_counter = 0;
+    int counter = 0;
     boolean archon_found = false;
+    int archon_id = -1;
     MapLocation target;
     Direction exploratoryDir = getExploratoryDir();
 	public Soldier(RobotController rc) throws GameActionException {
@@ -16,15 +17,17 @@ public class Soldier extends Unit {
     public void run() throws GameActionException {
         if (isExploring()){
             rc.setIndicatorString("exploring");
-            if (rc.canMove(exploratoryDir)) {
-                moveInDirection(exploratoryDir);
-            }
+            moveInDirection(exploratoryDir);
         }
         else if (archon_found) {
             huntArchon();
+            if (counter % 3 == 0) {
+
+            }
         }
         attemptAttack();
         detectArchon();
+        counter += 1;
     }
 
     public boolean isExploring() throws GameActionException{
@@ -40,6 +43,9 @@ public class Soldier extends Unit {
         int data = rc.readSharedArray(0);
         if (data != 0) {
             archon_found = true;
+            int x = data / 1000;
+            int y = data % 1000;
+            target = new MapLocation(x, y);
         }
         else {
             archon_found = false;
@@ -47,13 +53,12 @@ public class Soldier extends Unit {
     }
 
     public void huntArchon() throws GameActionException {
-        rc.setIndicatorString("right before read");
-        int data = rc.readSharedArray(0);
-        int x = data / 1000;
-        int y = data % 1000;
-        target = new MapLocation(x, y);
-        fuzzyMove(target);
-        rc.setIndicatorString("after fuzzy move");
+        if (rc.canSenseRobotAtLocation(target))
+            fuzzyMove(target);
+        else {
+            archon_found = false;
+            rc.writeSharedArray(0, 0);
+        }
     }
 
     public void attemptAttack() throws GameActionException {

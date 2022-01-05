@@ -14,9 +14,7 @@ public class Builder extends Unit {
     @Override
     public void run() throws GameActionException {
         if (isExploring()){
-            if (rc.canMove(exploratoryDir)) {
-                moveInDirection(exploratoryDir);
-            }
+            moveInDirection(exploratoryDir);
         }
     }
 

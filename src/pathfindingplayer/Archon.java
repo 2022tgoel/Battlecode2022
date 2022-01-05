@@ -15,11 +15,10 @@ public class Archon extends Unit {
     public void run() throws GameActionException {
         // Pick a direction to build in.
         Direction dir = directions[rng.nextInt(directions.length)];
-        rc.setIndicatorString("Trying to build a miner");
-        if (built_units < build_order[counter]) {
-            switch (counter) {
+        if (built_units < build_order[counter % 3]) {
+            switch (counter % 3) {
                 case 0:
-                    rc.setIndicatorString("Trying to build a miner");
+                    rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + counter);
                     if (rc.canBuildRobot(RobotType.MINER, dir)) {
                         rc.buildRobot(RobotType.MINER, dir);
                         built_units++;
