@@ -66,13 +66,11 @@ public class Miner extends Unit {
     public MapLocation findMiningArea() throws GameActionException{
         MapLocation cur = rc.getLocation();
         int maxRes = 0;
-        rc.setIndicatorString("BOOGA BOOGA");
         MapLocation bestLocation = null;
         for (int dx = -4; dx <= 4; dx++) {
             for (int dy = -4; dy <= 4; dy++) {
                 int x_coord = cur.x + dx;
                 int y_coord = cur.y + dy;
-                rc.setIndicatorString("BOOGA WOOGA");
                 MapLocation loc;
                 if (x_coord >= 0 && x_coord < rc.getMapWidth() && y_coord >= 0 && y_coord < rc.getMapHeight()) {
                     loc = new MapLocation(x_coord, y_coord);
