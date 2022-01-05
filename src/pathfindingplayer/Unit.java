@@ -31,6 +31,14 @@ public class Unit{
     public void run() throws GameActionException{
     }
 
+
+    /**
+     * validCoords() check if the x and y are on the map
+     * @return bool, true if on the map
+     **/
+    public boolean validCoords(int x_coord, int y_coord){
+        return x_coord >= 0 && x_coord < rc.getMapWidth() && y_coord >= 0 && y_coord < rc.getMapHeight();
+    }
     //pathfinding strategies
     /**
      * moveToLocation() is the moving function that will actually be used by the bots (made a separate function for 
@@ -51,11 +59,28 @@ public class Unit{
         }
     }
 
+    /**
+     * goToAdjacentLocation() moves the robot to the passed location (which must be adjacent)
+     **/
+    public void goToAdjacentLocation(MapLocation loc) throws GameActionException{
+        MapLocation my = rc.getLocation();
+        for (Direction d : directions){
+            MapLocation adj = my.add(d);
+            if (adj.equals(loc)){
+                if (rc.canMove(d)){
+                    rc.move(d);  
+                }  
+                break;
+            }
+        }
+        //should not reach here, if it does the location you were passing is not adjacent!
+    }
 
     //1. bug pathing
 
     /**
-     * bugMove() is the method that moves to a location using the bug pathing algorithm
+     * bugMove() is the method that moves to a location using the bug pathing algorithm 
+     * https://www.cs.cmu.edu/~motionplanning/lecture/Chap2-Bug-Alg_howie.pdf (bug 0)
      *
      * @param loc  location you wish to move to
      *            
@@ -63,35 +88,32 @@ public class Unit{
     public void bugMove(MapLocation loc) throws GameActionException{
         bugMove(loc, 20); //will not go to squares with more that 20 rubble
     }
+    static Direction bugDirection = null;
     public void bugMove(MapLocation loc, int rubbleThreshold) throws GameActionException{
         MapLocation cur = rc.getLocation();
         if (cur.equals(loc)){
+            bugDirection = null;
             return; //you're already there!
         }
         else {
-            Direction direct = cur.directionTo(loc); // direction you would move if taking the direct path
-            Direction d = cur.directionTo(loc); // direction you move in
+            Direction d = cur.directionTo(loc); // direction you would move if taking the direct path
             if (rc.canMove(d) && rc.senseRubble(cur.add(d)) <= rubbleThreshold){
                 rc.move(d);
+                bugDirection = null;
             }
             else {
-                while (d.rotateRight()!=direct){
-                    d = d.rotateRight();
-                   // assert(!d.equals(direct));
-                   // rc.setIndicatorDot(rc.getLocation().add(d), 0, 255, 255);
-                    if (rc.canMove(d) && rc.senseRubble(cur.add(d)) <= rubbleThreshold){
-                        rc.move(d);
-                    }
-
+                if (bugDirection == null) {
+                    bugDirection = d;
                 }
-                // you are surrounded by bad squares, just move directly
-                //if (rc.canMove(d)){ 
-                //   rc.move(d.rotateRight());
-                //}
-
+                for (int i = 0; i < 8; ++i) {
+                    if (rc.canMove(bugDirection) && rc.senseRubble(cur.add(bugDirection)) <= rubbleThreshold){
+                        rc.move(bugDirection);
+                        bugDirection = bugDirection.rotateLeft();
+                    }
+                    bugDirection = bugDirection.rotateRight();
+                }
+                
             }
-            //need to navigate around obstacle
-            
         }
     }
 
@@ -166,5 +188,117 @@ public class Unit{
         }
         return optimalDir;
     }
-    //3. bfs/dijkstra of visible locations
+    
+    //3. bfs/dijkstra of visible locations (this is probably a lot of bytecode)
+    public int cooldown(MapLocation loc) throws GameActionException{
+        //returns cooldown of movement
+        return (int) Math.floor((1+rc.senseRubble(loc)/10.0)*rc.getType().movementCooldown);
+    }
+    public static class MapTerrain implements Comparable<MapTerrain>{
+
+        public MapLocation loc;
+        public int x;
+        public int y;
+        public int dist;
+        public MapTerrain prev = null;
+        public boolean visited = false;
+       
+        public MapTerrain(MapLocation location, int dist, int x, int y) {
+            this.loc = location;
+            this.dist = dist;
+            this.x = x;
+            this.y =y;
+        }
+
+        public int compareTo(MapTerrain mt){
+            return this.dist - mt.dist;
+        }
+
+        public boolean sameAs(MapTerrain mt){
+            return loc.equals(mt);
+        }
+
+        public String toString(){
+            return "X: " + loc.x + " Y: " + loc.y + " Dist: " + dist;
+        }
+    }
+
+    static int INF = 10000000;
+    /**
+     * dijkstraMove() applies dijkstra to find the best movement towards loc
+     * this might be bytecode intensive
+     * 
+     * @param target where you want to go
+     **/
+    public void dijkstraMove(MapLocation target) throws GameActionException{ 
+        // initialization
+        MapLocation my = rc.getLocation();
+        if (my.equals(target)){
+            return; 
+        }
+        PriorityQueue<MapTerrain> queue = new PriorityQueue<MapTerrain>();
+        int rad1d = (int) Math.ceil(Math.sqrt(rc.getType().visionRadiusSquared));
+        MapTerrain[][] grid = new MapTerrain[rad1d*2+1][rad1d*2+1];
+        //populate grid
+        int closestDist = INF;
+        MapTerrain closest = null; //closes to target
+        MapTerrain home = null;
+        System.out.println("here");
+        for (int dx = -1*rad1d; dx <= rad1d; dx++) {
+            for (int dy = -1*rad1d; dy <= rad1d; dy++) {
+                int x_coord = my.x + dx;
+                int y_coord = my.y + dy;
+                MapLocation loc;
+                if (validCoords(x_coord, y_coord)) {
+                    loc = new MapLocation(x_coord, y_coord);
+                }
+                else {
+                    continue;
+                }
+                if (rc.canSenseLocation(loc)){
+                    int cost = INF;
+                    if (dx==0 && dy==0) cost =0;
+                    grid[rad1d+dx][rad1d+dy] = new MapTerrain(loc, cost, rad1d+dx, rad1d+dy);
+                    if (dx==0 && dy==0) home = grid[rad1d+dx][rad1d+dy];
+                    queue.add(grid[rad1d+dx][rad1d+dy]);
+                    if (loc.distanceSquaredTo(target) < closestDist){
+                        closestDist = loc.distanceSquaredTo(target);
+                        closest = grid[rad1d+dx][rad1d+dy];
+                    }
+                    System.out.println(grid[rad1d+dx][rad1d+dy]);
+                }
+            }
+        }
+        //get correct dists
+        while (!(queue.size()==0)){
+            MapTerrain cur = queue.poll();
+            System.out.println("Visiting: " + cur.toString());
+            cur.visited = true;
+            //visit neigbhors
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    MapTerrain next = grid[cur.x+dx][cur.y+dy];
+                    if (next!=null){
+                        if (!next.visited){
+                            int d = cur.dist + cooldown(next.loc);
+                            if (d < next.dist){
+                                queue.remove(next);
+                                next.dist = d;
+                                next.prev = cur;
+                                queue.add(next);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // now reconstruct path
+        MapTerrain next = closest;
+        while (!(next.prev).sameAs(home)){
+            next = next.prev;
+        }
+        System.out.println("The chosen spot is: " + next.toString());
+        //go to next.loc
+        goToAdjacentLocation(next.loc);
+    }
 }
