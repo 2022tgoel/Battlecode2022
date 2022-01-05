@@ -402,4 +402,14 @@ public class Unit{
         return dirs[rng.nextInt(dirs.length)];
     }
 
+    public boolean adjacentToEdge() throws GameActionException {
+        MapLocation cur = rc.getLocation();
+        int mapheight = rc.getMapHeight();
+        int mapwidth = rc.getMapWidth();
+        if (mapheight - cur.y < 3 || cur.y < 3 || cur.x < 3 || mapwidth - cur.x < 3) {
+            return true;
+        }
+        return false;
+    }
+
 }

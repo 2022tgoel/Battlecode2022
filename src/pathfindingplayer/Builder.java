@@ -16,6 +16,9 @@ public class Builder extends Unit {
         if (isExploring()){
             moveInDirection(exploratoryDir);
         }
+        if (adjacentToEdge()) {
+            exploratoryDir = getExploratoryDir();
+        }
         attemptAttack();
     }
 

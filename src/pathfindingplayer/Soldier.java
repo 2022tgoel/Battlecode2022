@@ -20,6 +20,9 @@ public class Soldier extends Unit {
             if (counter % 2 == 0) {
                 senseArchon();
             }
+            if (adjacentToEdge()) {
+                exploratoryDir = getExploratoryDir();
+            }
         }
         else if (archon_found) {
             huntArchon();

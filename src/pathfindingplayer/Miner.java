@@ -18,6 +18,9 @@ public class Miner extends Unit {
         rc.setIndicatorString("exploratoryDir: " + exploratoryDir[0] + " " + exploratoryDir[1]);
         if (isExploring()){
             moveInDirection(exploratoryDir);
+            if (adjacentToEdge()) {
+                exploratoryDir = getExploratoryDir();
+            }
         }
         else if (!archon_found) {
             mining_detour();
