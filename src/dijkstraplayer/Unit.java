@@ -1,4 +1,4 @@
-package pathfindingplayer;
+package dijkstraplayer;
 
 import battlecode.common.*;
 import java.util.*;
@@ -47,7 +47,7 @@ public class Unit{
      * @param loc is where to go
      **/
     public void moveToLocation(MapLocation loc) throws GameActionException{
-        fuzzyMove(loc); // best pathfinding strat 
+        dialMove(loc); // best pathfinding strat 
     }
     /**
      * moveInDirection() moves in a direction while avoiding rubble in that direction
@@ -233,6 +233,7 @@ public class Unit{
     public void dijkstraMove(MapLocation target) throws GameActionException{ 
         // initialization
         MapLocation my = rc.getLocation();
+
         if (my.equals(target)){
             return; 
         }
@@ -240,10 +241,11 @@ public class Unit{
         int rad1d = (int) Math.ceil(Math.sqrt(rc.getType().visionRadiusSquared));
         MapTerrain[][] grid = new MapTerrain[rad1d*2+1][rad1d*2+1];
         //populate grid
-
+        
         int closestDist = INF;
         MapTerrain closest = null; //closes to target
         MapTerrain home = null;
+
         for (int dx = -1*rad1d; dx <= rad1d; dx++) {
             for (int dy = -1*rad1d; dy <= rad1d; dy++) {
                 int x_coord = my.x + dx;
@@ -301,5 +303,68 @@ public class Unit{
         //System.out.println("The chosen spot is: " + next.toString());
         //go to next.loc
         goToAdjacentLocation(next.loc);
+    }
+
+    //dial's algorithm
+    public static class DialItem {
+
+        public MapLocation loc;
+        public MapLocation prev;
+       
+        public DialItem(MapLocation loc, MapLocation prev) {
+            this.loc = loc;
+            this.prev = prev;
+        }
+
+        public String toString(){
+            return "X: " + loc.x + "Y: " + loc.y;
+        }
+    }
+    public void dialMove(MapLocation target) throws GameActionException{
+        MapLocation my = rc.getLocation();
+
+        if (my.equals(target)){
+            return; 
+        }
+
+        int closestDist = INF;
+        MapLocation closest = null; //closes to target
+        HashSet<MapLocation> visited = new HashSet<MapLocation> ();
+        HashMap<MapLocation, MapLocation> prev = new HashMap<MapLocation, MapLocation>();
+        for (MapLocation loc : rc.getAllLocationsWithinRadiusSquared(my, rc.getType().visionRadiusSquared)){
+            if (loc.distanceSquaredTo(target) < closestDist){
+                closestDist = loc.distanceSquaredTo(target);
+                closest = loc;
+            }
+        }
+        
+        ArrayList<DialItem>[] buckets = new ArrayList[80]; //cannot take this many moves
+        buckets[0].add(new DialItem(my, null));
+        for (int i = 0; i < 80; i++){
+            for (DialItem item : buckets[i]){
+                if (item.loc.equals(target)){
+                    break;
+                }
+                visited.add(item.loc);
+                prev.put(item.loc, item.prev);
+                for (Direction d : directions){
+                    MapLocation next = item.loc.add(d);
+                    if (rc.canSenseLocation(next) && !visited.contains(next)){
+                        int moves = i + cooldown(next)/10;
+                        buckets[moves].add(new DialItem(next, item.loc));
+                    }
+                }
+            }
+        }
+        // now reconstruct path
+        MapLocation next = closest;
+        while (!prev.get(next).equals(my)){
+            next = prev.get(next);
+        }
+        rc.setIndicatorString(next.toString());
+        //System.out.println("The chosen spot is: " + next.toString());
+        //go to next.loc
+        goToAdjacentLocation(next);
+
     }
 }

@@ -1,4 +1,5 @@
-package pathfindingplayer;
+package dijkstraplayer;
+
 
 import battlecode.common.*;
 import java.util.Random;
