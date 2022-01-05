@@ -4,23 +4,53 @@ import battlecode.common.*;
 import java.util.*;
 
 public class Miner extends Unit {
-    Direction exploratoryDir;
+    int travel_counter = 0;
+    MapLocation target;
+    Direction exploratoryDir = getExploratoryDir();
 	public Miner(RobotController rc) throws GameActionException {
         super(rc);
     }
 
     @Override
     public void run() throws GameActionException {
-        if (OnMiningMission()){
-            runMiningMission();
+        if (isExploring()){
+            rc.setIndicatorString(exploratoryDir.toString());
+            rc.move(exploratoryDir);
+        }
+        else {
+            MapLocation cur = rc.getLocation();
+            if (cur.equals(target)){
+                int amountMined = mine();
+                if (amountMined < 3){
+                    //sense if there is a lucrative nearby area and move there instead
+                    MapLocation newLocation = findMiningArea();
+                    if (newLocation==null) {
+                        target = null;
+                    }
+                    else {
+                        target = newLocation;
+                    }
+                }
+            }
+            else {
+                rc.move(cur.directionTo(target));
+            }
         }
     }
 
-    public boolean OnMiningMission() throws GameActionException{
-        if (rc.getRoundNum() < 100){
+    public boolean isExploring() throws GameActionException {
+        if (travel_counter % 4 != 0) {
             return true;
-        } else {
-            return false;
+        }
+        else {
+            MapLocation newLocation = findMiningArea();
+            if (newLocation != null) {
+                target = newLocation;
+                return false;
+            }
+            else {
+                return true;
+            }
         }
     }
 
@@ -28,48 +58,11 @@ public class Miner extends Unit {
      * runMiningMission()
      * 
      **/
-    public void runMiningMission() throws GameActionException{
-        MapLocation cur = rc.getLocation();
-        MapLocation center = new MapLocation(rc.getMapHeight()/2, rc.getMapWidth()/2);
-        if (center.x - cur.x > 0) {
-            if (center.y - cur.y > 0) {
-                if (rc.canMove(Direction.NORTHEAST)) {
-                    exploratoryDir = Direction.NORTHEAST;
-                }
-            } else {
-                if (rc.canMove(Direction.SOUTHEAST)) {
-                    exploratoryDir = Direction.SOUTHEAST;
-                }
-            }
-        } else {
-            if (center.y - cur.y > 0) {
-                if (rc.canMove(Direction.NORTHWEST)) {
-                    exploratoryDir = Direction.NORTHWEST;
-                }
-            } else {
-                if (rc.canMove(Direction.SOUTHWEST)) {
-                    exploratoryDir = Direction.SOUTHWEST;
-                }
-            }
-        }
-        Direction[] dirs = {exploratoryDir, exploratoryDir.rotateLeft(), exploratoryDir.rotateRight()};
-        rc.move(dirs[rng.nextInt(dirs.length)]);
 
-/*         int amountMined = mine();  
-        if (amountMined < 3){
-            //sense if there is a lucrative nearby area and move there instead
-            MapLocation newLocation = findMiningArea();
-            if (newLocation==null){
-                //abort
-                mineLocation = null;
-            }
-            else{
-                mineLocation = newLocation;
-            }
-        } */
-        
-    } 
-
+    /**
+     * findMiningArea()
+     * Returns the location of the most lucrative mining area outside of mining radius
+     **/
     public MapLocation findMiningArea() throws GameActionException{
         MapLocation cur = rc.getLocation();
         int maxRes = 0;
@@ -78,14 +71,15 @@ public class Miner extends Unit {
             for (int dy = -4; dy <= 4; dy++) {
                 MapLocation loc = new MapLocation(cur.x + dx, cur.y + dy);
                 if (cur.isWithinDistanceSquared(loc, 20)){
-                    int res = rc.senseGold(loc)*goldToLeadConversionRate + rc.senseLead(loc);
-                    if (res >  maxRes){
+                    int res = rc.senseGold(loc) * goldToLeadConversionRate + rc.senseLead(loc);
+                    if (res > maxRes) {
                         maxRes = res;
                         bestLocation = loc;
                     }
                 }
             }
         }
+        // if our best location is outside of the mining range, return it
         if (maxRes > 1){
             return bestLocation;
         }
@@ -123,6 +117,34 @@ public class Miner extends Unit {
             }
         }
         return amountMined;
+    }
+
+    public Direction getExploratoryDir() {
+        MapLocation cur = rc.getLocation();
+        MapLocation center = new MapLocation(rc.getMapHeight()/2, rc.getMapWidth()/2);
+        if (center.x - cur.x > 0) {
+            if (center.y - cur.y > 0) {
+                if (rc.canMove(Direction.NORTHEAST)) {
+                    exploratoryDir = Direction.NORTHEAST;
+                }
+            } else {
+                if (rc.canMove(Direction.SOUTHEAST)) {
+                    exploratoryDir = Direction.SOUTHEAST;
+                }
+            }
+        } else {
+            if (center.y - cur.y > 0) {
+                if (rc.canMove(Direction.NORTHWEST)) {
+                    exploratoryDir = Direction.NORTHWEST;
+                }
+            } else {
+                if (rc.canMove(Direction.SOUTHWEST)) {
+                    exploratoryDir = Direction.SOUTHWEST;
+                }
+            }
+        }
+        Direction[] dirs = {exploratoryDir, exploratoryDir.rotateLeft(), exploratoryDir.rotateRight()};
+        return dirs[rng.nextInt(dirs.length)];
     }
 
 

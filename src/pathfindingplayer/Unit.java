@@ -7,7 +7,7 @@ public class Unit{
 
     RobotController rc;
 
-    static final Random rng = new Random(6147);
+    final Random rng = new Random(rc.getID());
     static final int goldToLeadConversionRate = 200;
     /** Array containing all the possible movement directions. */
     static final Direction[] directions = {
