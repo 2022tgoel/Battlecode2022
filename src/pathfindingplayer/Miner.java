@@ -14,7 +14,7 @@ public class Miner extends Unit {
     @Override
     public void run() throws GameActionException {
         if (isExploring()){
-            rc.move(exploratoryDir);
+            moveInDirection(exploratoryDir);
         }
         else {
             MapLocation cur = rc.getLocation();
@@ -32,7 +32,7 @@ public class Miner extends Unit {
                 }
             }
             else {
-                rc.move(cur.directionTo(target));
+                moveToLocation(target);
             }
         }
     }
