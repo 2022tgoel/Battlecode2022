@@ -15,6 +15,7 @@ public class Soldier extends Unit {
 
     @Override
     public void run() throws GameActionException {
+        rc.setIndicatorString("archon_found: " + archon_found);
         if (isExploring()){
             moveInDirection(exploratoryDir);
             if (counter % 2 == 0) {

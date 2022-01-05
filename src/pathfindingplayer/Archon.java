@@ -5,7 +5,7 @@ import java.util.*;
 
 public class Archon extends Unit {
     int counter = 0;
-    int[] build_order = {2, 2, 1}; // miners, soldiers, builders
+    int[] build_order = chooseBuildOrder();
     int built_units = 0;
 	public Archon(RobotController rc) throws GameActionException {
         super(rc);
@@ -43,6 +43,19 @@ public class Archon extends Unit {
         else {
             counter++;
             built_units = 0;
+        }
+    }
+
+    public int[] chooseBuildOrder() {
+        int mapArea = rc.getMapHeight() * rc.getMapHeight();
+        if (mapArea < 1400) {
+            return new int[]{2, 3, 0}; // miners, soldiers, builders
+        }
+        else if (mapArea < 2200) {
+            return new int[]{2, 2, 0}; // miners, soldiers, builders
+        }
+        else {
+            return new int[]{3, 2, 0}; // miners, soldiers, builders
         }
     }
 }

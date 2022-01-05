@@ -24,6 +24,7 @@ public class Unit{
 
 	public Unit(RobotController robotController) throws GameActionException {
         rc = robotController;
+        rng.setSeed((long) rc.getID());
     }
 
     /**
