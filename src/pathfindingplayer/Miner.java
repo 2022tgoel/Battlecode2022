@@ -6,7 +6,7 @@ import java.util.*;
 public class Miner extends Unit {
     boolean archon_found = false;
     int archon_index = -1;
-    MapLocation target;
+    double m_repulsion = 1/10;
 
     int[] exploratoryDir = getExploratoryDir();
 	public Miner(RobotController rc) throws GameActionException {
@@ -19,71 +19,30 @@ public class Miner extends Unit {
        // rc.setIndicatorString(d.toString());
         
         rc.setIndicatorString("exploratoryDir: " + exploratoryDir[0] + " " + exploratoryDir[1]);
-        if (isExploring()){
+        if (!mining_detour()) {
             moveInDirection(exploratoryDir);
-            if (adjacentToEdge()) {
-                exploratoryDir = getExploratoryDir();
-            }
         }
-        else if (!archon_found) {
-            mining_detour();
+        if (adjacentToEdge()) {
+            exploratoryDir = getExploratoryDir();
         }
-        else {
-            huntArchon();
-        }
-
-        if (!archon_found) {
-            senseArchon();
-        }
+        senseArchon();
     }
 
-    public void huntArchon() throws GameActionException {
-        int data = rc.readSharedArray(archon_index);
-        if (data != 0) {
-            int x = data / 1000;
-            int y = data % 1000;
-            target = new MapLocation(x, y);
-            fuzzyMove(target);
-        }
-        else {
-            archon_found = false;
-        }
-    }
-
-    public boolean isExploring() throws GameActionException {
-        if (archon_found) {
-            return false;
-        }
-        else {
-            MapLocation newLocation = findMiningArea();
-            if (newLocation != null) {
-                target = newLocation;
-                return false;
-            }
-            else {
-                return true;
-            }
-        }
-    }
-
-    public void mining_detour() throws GameActionException {
+    public boolean mining_detour() throws GameActionException {
         MapLocation cur = rc.getLocation();
-        if (cur.equals(target)){
-            int amountMined = mine();
-            if (amountMined < 3){
-                //sense if there is a lucrative nearby area and move there instead
-                MapLocation newLocation = findMiningArea();
-                if (newLocation==null) {
-                    target = null;
-                }
-                else {
-                    target = newLocation;
+        int amountMined = mine();
+        if (amountMined < 3){
+            MapLocation target = findMiningArea();
+            if (target != null) {
+                if (!cur.equals(target)){
+                    //sense if there is a lucrative nearby area and move there instead
+                    moveToLocation(target);
+                    return true;
                 }
             }
         }
-        else {
-            moveToLocation(target);
-        }
+        
+        return false;
     }
 
     /**
@@ -106,7 +65,7 @@ public class Miner extends Unit {
                 else {
                     continue;
                 }
-                if (rc.canSenseLocation(loc)){
+                if (rc.canSenseLocation(loc) && rc.senseRobotAtLocation(loc) == null && !robotsAdjacentToLocation(loc)) {
                     int res = rc.senseGold(loc) * goldToLeadConversionRate + rc.senseLead(loc);
                     if (res > maxRes) {
                         maxRes = res;
@@ -121,6 +80,16 @@ public class Miner extends Unit {
             return bestLocation;
         }
         else return null;
+    }
+
+    public boolean robotsAdjacentToLocation(MapLocation loc) throws GameActionException {
+        RobotInfo[] robots = rc.senseNearbyRobots(loc, 1, rc.getTeam());
+        for (RobotInfo robot : robots) {
+            if (robot.type == RobotType.MINER) {
+                return true;
+            }
+        }
+        return false;
     }
     /**
      * mine() mines the surrounding area

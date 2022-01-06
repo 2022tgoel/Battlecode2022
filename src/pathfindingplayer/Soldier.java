@@ -6,13 +6,13 @@ import java.util.*;
 public class Soldier extends Unit {
     int counter = 0;
     int archon_index = -1;
-    double s_attraction = 0.5;
+    double s_attraction = 0.0;
     double m_attraction = 10.0;
     double s_repulsion = 1;
     double m_repulsion = 1/10;
 
     MapLocation target;
-    int[] exploratoryDir = getExploratoryDir();
+    Direction exploratoryDir = usefulDir();
 
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
@@ -35,6 +35,9 @@ public class Soldier extends Unit {
         }
         else if (archon_found) {
             huntArchon();
+        }
+        if (adjacentToEdge()) {
+            exploratoryDir = usefulDir();
         }
         senseArchon();
         attemptAttack();
@@ -116,7 +119,7 @@ public class Soldier extends Unit {
 
     public Direction friendlyDir() throws GameActionException {
 
-        Direction d = usefulDir(); // placeholder
+        Direction d = exploratoryDir;
         RobotInfo[] friendlyRobos = rc.senseNearbyRobots(-1, rc.getTeam());
         MapLocation loc = rc.getLocation();
 
@@ -134,7 +137,6 @@ public class Soldier extends Unit {
         double incrementy = 0;
 
         int num_miners = 0;
-        int far_miners = 0;
         int num_soldiers = 0;
 
         for (RobotInfo robot: friendlyRobos) {
@@ -152,9 +154,6 @@ public class Soldier extends Unit {
                 num_soldiers += 1;
             }
             else if (robot.type == RobotType.MINER) {
-                if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) > 3) {
-                    far_miners += 1;
-                }
                 incrementx = robot.location.x;
                 incrementy = robot.location.y;
                 // increment repulsion

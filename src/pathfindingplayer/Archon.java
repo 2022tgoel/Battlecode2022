@@ -109,7 +109,7 @@ public class Archon extends Unit {
             return new int[]{2, 2, 0}; // miners, soldiers, builders
         }
         else {
-            return new int[]{3, 2, 0}; // miners, soldiers, builders
+            return new int[]{3, 4, 0}; // miners, soldiers, builders
         }
     }
 
