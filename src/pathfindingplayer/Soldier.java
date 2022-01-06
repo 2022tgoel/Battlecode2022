@@ -30,10 +30,7 @@ public class Soldier extends Unit {
         else if (archon_found) {
             huntArchon();
         }
-        else {
-            senseArchon();
-        }
-
+        senseArchon();
         attemptAttack();
         detectArchon();
         counter += 1;
