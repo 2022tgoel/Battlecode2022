@@ -15,46 +15,43 @@ public class Archon extends Unit {
 
  	@Override
     public void run() throws GameActionException {
-        if (turn > 200 && !fortified) {
-            fortify();
-            if (num_builders >= 4) {
-                fortified = true;
+        // Pick a direction to build in.
+        Direction[] dirs = sortedDirections();
+        for (Direction dir: dirs) {
+            if (rc.getTeamGoldAmount(rc.getTeam()) >= 50) {
+                if (rc.canBuildRobot(RobotType.SAGE, dir)) {
+                    rc.buildRobot(RobotType.SAGE, dir);
+                    break;
+                }
             }
-        }
-        else {
-            // Pick a direction to build in.
-            Direction[] dirs = sortedDirections();
-            for (Direction dir: dirs) {
-                if (built_units < build_order[counter % 3]) {
-                    switch (counter % 3) {
-                        case 0:
-                            rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + counter);
-                            if (rc.canBuildRobot(RobotType.MINER, dir)) {
-                                rc.buildRobot(RobotType.MINER, dir);
-                                built_units++;
-                            }
-                            break;
-                        case 1:
-                            rc.setIndicatorString("Trying to build a soldier");
-                            if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
-                                rc.buildRobot(RobotType.SOLDIER, dir);
-                                built_units++;
-                            }
-                            break;
-                        case 2:
-                            rc.setIndicatorString("Trying to build a builder");
-                            if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
-                                rc.buildRobot(RobotType.BUILDER, dir);
-                                built_units++;
-                            }
-                            break;
-                    }
+            else if (built_units < build_order[counter % 3]) {
+                switch (counter % 3) {
+                    case 0:
+                        rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + counter);
+                        if (rc.canBuildRobot(RobotType.MINER, dir)) {
+                            rc.buildRobot(RobotType.MINER, dir);
+                            built_units++;
+                        }
+                        break;
+                    case 1:
+                        rc.setIndicatorString("Trying to build a soldier");
+                        if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
+                            rc.buildRobot(RobotType.SOLDIER, dir);
+                            built_units++;
+                        }
+                        break;
+                    case 2:
+                        rc.setIndicatorString("Trying to build a builder");
+                        if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
+                            rc.buildRobot(RobotType.BUILDER, dir);
+                            built_units++;
+                        }
+                        break;
                 }
-                else {
-                    counter++;
-                    built_units = 0;
-                }
-
+            }
+            else {
+                counter++;
+                built_units = 0;
             }
         }
         attemptHeal();
