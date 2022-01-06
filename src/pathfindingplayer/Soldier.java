@@ -21,14 +21,17 @@ public class Soldier extends Unit {
     @Override
     public void run() throws GameActionException {
         rc.setIndicatorString("archon_found: " + archon_found);
-        if (isExploring()){
-            Direction dir = friendlyDir();
+        if (isLowHealth()) {
+            fuzzyMove(homeArchon);
+        }
+        else if (isExploring()){
             moveInDirection(friendlyDir());
         }
         else if (archon_found) {
             huntArchon();
         }
         else {
+            senseArchon();
         }
 
         attemptAttack();
@@ -80,6 +83,15 @@ public class Soldier extends Unit {
         }
         else {
             archon_found = false;
+        }
+    }
+
+    public boolean isLowHealth() throws GameActionException {
+        if (rc.getHealth() < 20) {
+            return true;
+        }
+        else {
+            return false;
         }
     }
 
