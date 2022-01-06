@@ -8,8 +8,9 @@ public class Soldier extends Unit {
     int archon_index = -1;
     double s_attraction = 0.0;
     double m_attraction = 10.0;
-    double s_repulsion = 1;
+    double s_repulsion = 10;
     double m_repulsion = 1/10;
+    double a_repulsion = 100;
 
     MapLocation target;
     Direction exploratoryDir = usefulDir();
@@ -146,8 +147,8 @@ public class Soldier extends Unit {
 
                 // increment repulsion
                 if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) <= 4) {
-                    dx2 -= (loc.x - robot.location.x) * s_repulsion;
-                    dy2 -= (loc.y - robot.location.y) * s_repulsion;
+                    dx2 += (loc.x - robot.location.x) * s_repulsion;
+                    dy2 += (loc.y - robot.location.y) * s_repulsion;
                 }
                 cxs += incrementx;
                 cys += incrementy;
@@ -158,12 +159,19 @@ public class Soldier extends Unit {
                 incrementy = robot.location.y;
                 // increment repulsion
                 if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) <= 2) {
-                    dx2 -= (loc.x - robot.location.x) * m_repulsion;
-                    dy2 -= (loc.y - robot.location.y) * m_repulsion;
+                    dx2 += (loc.x - robot.location.x) * m_repulsion;
+                    dy2 += (loc.y - robot.location.y) * m_repulsion;
                 }
                 cxm += incrementx;
                 cym += incrementy;
                 num_miners += 1;
+            }
+            else if (robot.type == RobotType.ARCHON) {
+                // increment repulsion
+                if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) <= 13) {
+                    dx2 += (loc.x - robot.location.x) * a_repulsion;
+                    dy2 += (loc.y - robot.location.y) * a_repulsion;
+                }
             }
         }
         // if there are no miners, explore.
@@ -215,7 +223,7 @@ public class Soldier extends Unit {
             }
         }
         rc.setIndicatorString("dir: " + d + "| attraction: " + Math.round(dx1) + ", " + Math.round(dy1) + " | repulsion: " + Math.round(dx2) + ", " + Math.round(dy2));
-        // rc.setIndicatorString("vs: " + Math.round(cxs) + ", " + Math.round(cys) + " | vm: " + Math.round(cxm) + ", " + Math.round(cym));
+        // rc.setIndicatorString("vs: " + Math.round(cxs / num_soldiers) + ", " + Math.round(cys / num_soldiers) + " | vm: " + Math.round(cxm / num_miners) + ", " + Math.round(cym / num_miners));
         return d;
     }
 
