@@ -6,8 +6,8 @@ import java.util.*;
 public class Soldier extends Unit {
     int counter = 0;
     int archon_index = -1;
-    double s_attraction = 1.0;
-    double m_attraction = 1.3;
+    double s_attraction = 0.5;
+    double m_attraction = 10.0;
     double s_repulsion = 1;
     double m_repulsion = 1/10;
 
@@ -101,7 +101,7 @@ public class Soldier extends Unit {
 
     public Direction friendlyDir() throws GameActionException {
 
-        Direction d = rc.getLocation().directionTo(homeArchon); // placeholder
+        Direction d = usefulDir(); // placeholder
         RobotInfo[] friendlyRobos = rc.senseNearbyRobots(-1, rc.getTeam());
         MapLocation loc = rc.getLocation();
 
@@ -124,37 +124,42 @@ public class Soldier extends Unit {
 
         for (RobotInfo robot: friendlyRobos) {
             if (robot.type == RobotType.SOLDIER) {
-                cxs += incrementx;
-                cys += incrementy;
+                incrementx = robot.location.x;
+                incrementy = robot.location.y;
+
                 // increment repulsion
                 if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) <= 4) {
                     dx2 -= (loc.x - robot.location.x) * s_repulsion;
                     dy2 -= (loc.y - robot.location.y) * s_repulsion;
                 }
+                cxs += incrementx;
+                cys += incrementy;
                 num_soldiers += 1;
             }
             else if (robot.type == RobotType.MINER) {
                 if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) > 3) {
                     far_miners += 1;
                 }
-                cxm += incrementx;
-                cym += incrementy;
+                incrementx = robot.location.x;
+                incrementy = robot.location.y;
                 // increment repulsion
                 if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) <= 2) {
                     dx2 -= (loc.x - robot.location.x) * m_repulsion;
                     dy2 -= (loc.y - robot.location.y) * m_repulsion;
                 }
+                cxm += incrementx;
+                cym += incrementy;
                 num_miners += 1;
             }
         }
-        // if there are no friendly robots, move towards home.
-        if (friendlyRobos.length == 0) {
+        // if there are no miners, explore.
+        if (num_miners == 0) {
             return d;
         }
 
-        double dx1 = ((cxm / num_miners) - (double) loc.x) * m_attraction * (1 + far_miners / 5);
+        double dx1 = ((cxm / num_miners) - (double) loc.x) * m_attraction;
         dx1 += ((cxs / num_soldiers) - (double) loc.x) * s_attraction;
-        double dy1 = ((cym / num_miners) - (double) loc.y) * m_attraction * (1 + far_miners / 5);
+        double dy1 = ((cym / num_miners) - (double) loc.y) * m_attraction;
         dy1 += ((cys / num_soldiers) - (double) loc.y) * s_attraction;
 
         double dx = dx1 + dx2;
@@ -198,6 +203,28 @@ public class Soldier extends Unit {
         rc.setIndicatorString("dir: " + d + "| attraction: " + Math.round(dx1) + ", " + Math.round(dy1) + " | repulsion: " + Math.round(dx2) + ", " + Math.round(dy2));
         // rc.setIndicatorString("vs: " + Math.round(cxs) + ", " + Math.round(cys) + " | vm: " + Math.round(cxm) + ", " + Math.round(cym));
         return d;
+    }
+
+    public Direction usefulDir() throws GameActionException {
+        MapLocation cur = rc.getLocation();
+        Direction d = rc.getLocation().directionTo(homeArchon); // placeholder
+        MapLocation center = new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2);
+        if (center.x - cur.x > 0) {
+            if (center.y - cur.y > 0) {
+                d = Direction.NORTHEAST;
+            } else {
+                d = Direction.SOUTHEAST;
+            }
+        } else {
+            if (center.y - cur.y > 0) {
+                d = Direction.NORTHWEST;
+            } else {
+                d = Direction.SOUTHWEST;
+            }
+        }
+        rc.setIndicatorString(d.dx + " " + d.dy);
+        Direction[] dirs = {d, d.rotateLeft(), d.rotateRight()};
+        return dirs[rng.nextInt(dirs.length)];
     }
 
     public void attemptAttack() throws GameActionException {
