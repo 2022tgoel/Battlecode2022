@@ -15,7 +15,7 @@ public class Miner extends Unit {
 
     @Override
     public void run() throws GameActionException {
-        //Direction d = fuzzyMove(new MapLocation(27, 1));
+        //Direction d = fuzzyMove(new MapLocation(27, 15));
        // rc.setIndicatorString(d.toString());
         
         rc.setIndicatorString("exploratoryDir: " + exploratoryDir[0] + " " + exploratoryDir[1]);
