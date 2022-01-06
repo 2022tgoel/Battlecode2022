@@ -6,13 +6,14 @@ import java.util.*;
 public class Soldier extends Unit {
     int counter = 0;
     int archon_index = -1;
-    double s_attraction = 1/2;
-    double m_attraction = 10;
-    double s_repulsion = 2;
+    double s_attraction = 1.0;
+    double m_attraction = 1.3;
+    double s_repulsion = 1;
     double m_repulsion = 1/10;
 
     MapLocation target;
     int[] exploratoryDir = getExploratoryDir();
+
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
     }
@@ -22,7 +23,6 @@ public class Soldier extends Unit {
         rc.setIndicatorString("archon_found: " + archon_found);
         if (isExploring()){
             Direction dir = friendlyDir();
-            rc.setIndicatorString("dir: " + dir);
             moveInDirection(friendlyDir());
         }
         else if (archon_found) {
@@ -100,39 +100,63 @@ public class Soldier extends Unit {
     }
 
     public Direction friendlyDir() throws GameActionException {
-        Direction d = Direction.CENTER; // placeholder
-        RobotInfo[] friendlyRobos = rc.senseNearbyRobots(9, rc.getTeam());
+
+        Direction d = rc.getLocation().directionTo(homeArchon); // placeholder
+        RobotInfo[] friendlyRobos = rc.senseNearbyRobots(-1, rc.getTeam());
         MapLocation loc = rc.getLocation();
-        int num = friendlyRobos.length;
-        double cx = 0;
-        double cy = 0;
+
+        // average position of soldiers and miners
+        double cxs = 0;
+        double cys = 0;
+        double cxm = 0;
+        double cym = 0;
+
+        // repulsion from friendly robots
         double dx2 = 0;
         double dy2 = 0;
 
+        double incrementx = 0;
+        double incrementy = 0;
+
+        int num_miners = 0;
+        int far_miners = 0;
+        int num_soldiers = 0;
+
         for (RobotInfo robot: friendlyRobos) {
             if (robot.type == RobotType.SOLDIER) {
-                cx += robot.location.x * s_attraction;
-                cy += robot.location.y * s_attraction;
-                // absolute value
-                if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) < 2) {
-                    dx2 -= Math.abs(robot.location.x - loc.x) * s_repulsion;
-                    dy2 -= Math.abs(robot.location.y - loc.y) * s_repulsion;
+                cxs += incrementx;
+                cys += incrementy;
+                // increment repulsion
+                if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) <= 4) {
+                    dx2 -= (loc.x - robot.location.x) * s_repulsion;
+                    dy2 -= (loc.y - robot.location.y) * s_repulsion;
                 }
+                num_soldiers += 1;
             }
             else if (robot.type == RobotType.MINER) {
-                cx += robot.location.x * m_attraction;
-                cy += robot.location.y * m_attraction;
-                // absolute value
-                if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) < 2) {
-                    dx2 -= Math.abs(robot.location.x - loc.x) * m_repulsion;
-                    dy2 -= Math.abs(robot.location.y - loc.y) * m_repulsion;
+                if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) > 3) {
+                    far_miners += 1;
                 }
+                cxm += incrementx;
+                cym += incrementy;
+                // increment repulsion
+                if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) <= 2) {
+                    dx2 -= (loc.x - robot.location.x) * m_repulsion;
+                    dy2 -= (loc.y - robot.location.y) * m_repulsion;
+                }
+                num_miners += 1;
             }
         }
-        cx /= num;
-        cy /= num;
-        double dx1 = (cx - (double) loc.x);
-        double dy1 = cy - (double) loc.y;
+        // if there are no friendly robots, move towards home.
+        if (friendlyRobos.length == 0) {
+            return d;
+        }
+
+        double dx1 = ((cxm / num_miners) - (double) loc.x) * m_attraction * (1 + far_miners / 5);
+        dx1 += ((cxs / num_soldiers) - (double) loc.x) * s_attraction;
+        double dy1 = ((cym / num_miners) - (double) loc.y) * m_attraction * (1 + far_miners / 5);
+        dy1 += ((cys / num_soldiers) - (double) loc.y) * s_attraction;
+
         double dx = dx1 + dx2;
         double dy = dy1 + dy2;
         // convert dx and dy to direction
@@ -171,6 +195,8 @@ public class Soldier extends Unit {
                 }
             }
         }
+        rc.setIndicatorString("dir: " + d + "| attraction: " + Math.round(dx1) + ", " + Math.round(dy1) + " | repulsion: " + Math.round(dx2) + ", " + Math.round(dy2));
+        // rc.setIndicatorString("vs: " + Math.round(cxs) + ", " + Math.round(cys) + " | vm: " + Math.round(cxm) + ", " + Math.round(cym));
         return d;
     }
 

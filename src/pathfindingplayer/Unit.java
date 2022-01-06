@@ -10,6 +10,7 @@ public class Unit{
     int archon_index = -1;
     final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
+    MapLocation homeArchon;
     /** Array containing all the possible movement directions. */
     static final Direction[] directions = {
         Direction.NORTH,
@@ -25,6 +26,7 @@ public class Unit{
 	public Unit(RobotController robotController) throws GameActionException {
         rc = robotController;
         rng.setSeed((long) rc.getID());
+        homeArchon = findHomeArchon();
     }
 
     /**
@@ -413,4 +415,19 @@ public class Unit{
         return false;
     }
 
+    public MapLocation findHomeArchon() throws GameActionException {
+        if (rc.getType() != RobotType.ARCHON) {
+            return rc.getLocation();
+        }
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam());
+        // if there are any nearby enemy robots, attack the one with the least health
+        if (nearbyBots.length > 0) {
+            for (RobotInfo bot : nearbyBots) {
+                if (bot.type == RobotType.ARCHON) {
+                    return bot.location;
+                }
+            }
+        }
+        return rc.getLocation();
+    }
 }
