@@ -20,12 +20,18 @@ public class Soldier extends Unit {
 
     @Override
     public void run() throws GameActionException {
-        rc.setIndicatorString("archon_found: " + archon_found);
         if (isLowHealth()) {
             fuzzyMove(homeArchon);
         }
         else if (isExploring()){
             moveInDirection(friendlyDir());
+            /* if (rc.getLocation().isAdjacentTo(homeArchon)) {
+                // rc.setIndicatorString("moving away");
+                moveInDirection(rc.getLocation().directionTo(homeArchon).opposite());
+            }
+            else {
+                moveInDirection(friendlyDir());
+            } */
         }
         else if (archon_found) {
             huntArchon();

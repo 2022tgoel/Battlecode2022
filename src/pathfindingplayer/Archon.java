@@ -8,7 +8,7 @@ public class Archon extends Unit {
     int[] build_order = chooseBuildOrder();
     int built_units = 0;
     int num_builders = 0;
-    boolean fortified = false;
+    boolean fortified = true;
 	public Archon(RobotController rc) throws GameActionException {
         super(rc);
     }
@@ -57,6 +57,7 @@ public class Archon extends Unit {
 
             }
         }
+        attemptHeal();
         turn_update();
     }
     /**
@@ -112,6 +113,39 @@ public class Archon extends Unit {
         }
         else {
             return new int[]{3, 2, 0}; // miners, soldiers, builders
+        }
+    }
+
+    public void attemptHeal() throws GameActionException {
+        boolean soldiers_home = false;
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.ARCHON.actionRadiusSquared, rc.getTeam());
+        // if there are any nearby enemy robots, attack the one with the least health
+        if (nearbyBots.length > 0) {
+            RobotInfo weakestBot = nearbyBots[0];
+            for (RobotInfo bot : nearbyBots) {
+                if (bot.type == RobotType.SOLDIER)
+                    if (bot.health < weakestBot.health) {
+                        weakestBot = bot;
+                    }
+                    soldiers_home = true;
+            }
+            if (soldiers_home) {
+                if (rc.canRepair(weakestBot.location)) {
+                    rc.setIndicatorString("Succesful Heal!");
+                    rc.repair(weakestBot.location);
+                }
+            }
+            else {
+                for (RobotInfo bot : nearbyBots) {
+                    if (bot.type == RobotType.MINER)
+                        if (bot.health < weakestBot.health) {
+                            weakestBot = bot;
+                        }
+                }
+                if (rc.canRepair(weakestBot.location)) {
+                    rc.repair(weakestBot.location);
+                }
+            }
         }
     }
 }
