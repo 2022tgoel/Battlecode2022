@@ -6,6 +6,7 @@ import java.util.*;
 public class Soldier extends Unit {
     int counter = 0;
     int archon_index = -1;
+    float attraction = 1 / 100;
 
     MapLocation target;
     int[] exploratoryDir = getExploratoryDir();
@@ -101,13 +102,26 @@ public class Soldier extends Unit {
 
     public void stayNearFriendly() {
         RobotInfo[] friendlyRobos = rc.senseNearbyRobots(9, rc.getTeam());
+        MapLocation loc = rc.getLocation();
         int num = friendlyRobos.length;
         float cx = 0;
         float cy = 0;
+        float dx2 = 0;
+        float dy2 = 0;
+
         for (RobotInfo robot: friendlyRobos) {
             cx += robot.location.x;
             cy += robot.location.y;
+            // absolute value
+            if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) < 2) {
+                dx2 += robot.location.x;
+                dy2 += robot.location.y;
+            }
         }
+        cx /= num;
+        cy /= num;
+        float dx1 = (cx - (float) loc.x) * attraction;
+        float dy1 = cy - (float) loc.y * attraction;
     }
 
     public void attemptAttack() throws GameActionException {
