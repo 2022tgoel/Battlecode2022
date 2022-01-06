@@ -11,18 +11,18 @@ public class Archon extends Unit {
     boolean fortified = false;
     //convoy mode
     static boolean buildingConvoyMode = true;
-    RobotType[] bots = {RobotType.MINER, RobotType.SOILDIER, RobotType.BUILDER};
+    RobotType[] bots = {RobotType.MINER, RobotType.SOLDIER, RobotType.BUILDER};
     int[] convoyComposition = {1, 6, 0}; //miners, soldiers, builders
     int[] currenConvoy = {0, 0, 0}; //miners, soldiers, builders built for current operation
 	
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
     }
-
+    Direction[] sortedDirs = null; 
  	@Override
     public void run() throws GameActionException {
         // Pick a direction to build in.
-        Direction[] dirs = sortedDirections();
+        sortedDirs = sortedDirections();
         if (buildingConvoyMode){
             boolean complete = buildConvoy();
             if (complete){
@@ -36,7 +36,7 @@ public class Archon extends Unit {
             //just inserting the old code for when you are not in convoyMode, should replace with other modes
             // (e.g. the defense mode)
 
-            for (Direction dir: dirs) {
+            for (Direction dir: sortedDirs) {
                 
                 if (built_units < build_order[counter % 3]) {
                     switch (counter % 3) {
@@ -76,7 +76,7 @@ public class Archon extends Unit {
 
     public boolean buildConvoy() throws GameActionException{
         boolean complete = true;
-        for (Direction dir: dirs) {
+        for (Direction dir: sortedDirs) {
             for (int i= 0; i < 3; i++){
                 if (currenConvoy[i] < convoyComposition[i]){
                     complete = false; //there is still stuff remaining

@@ -38,23 +38,14 @@ public class Soldier extends Unit {
             case 2:
                 fuzzyMove(homeArchon);
             case 3:
-                boolean b = approachArchon();
+                b = approachArchon();
                 if (!b) mode =1; // switch to exploration again
         }
         if (archon_index==-1){ //if you are not in hunting mode
-            boolean b= detectArchon(); 
+            b= detectArchon(); 
             if (b) mode = 3;
         }
         counter+=1;
-    }
-
-    public boolean isExploring() throws GameActionException{
-        if (archon_found) {
-            return false;
-        }
-        else {
-            return true;
-        }
     }
 
     public boolean isLowHealth() throws GameActionException {

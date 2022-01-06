@@ -25,50 +25,60 @@ public class Miner extends Unit {
     public void run() throws GameActionException {
         //Direction d = fuzzyMove(new MapLocation(27, 15));
        // rc.setIndicatorString(d.toString());
+        boolean b;
         switch (mode){
             case 0:
-                wait();
+                rc.setIndicatorString("mode 0");
                 if (surroundedBySoldiers()){
                     mode = 1;
                 }
+                else waitATurn();
             case 1:
                 moveInDirection(exploratoryDir);
                 if (adjacentToEdge()) {
                     exploratoryDir = getExploratoryDir();
                 }
-                boolean b = senseArchon();
+                b = senseArchon();
                 if (b) mode = 3; // switch to hunting mode
             case 2:
                 mining_detour();
             case 3:
-                boolean b = approachArchon();
+                b = approachArchon();
                 if (!b) mode =1; // switch to exploration again
         }
         if (archon_index==-1){ //if you are not in hunting mode
-            boolean b= detectArchon(); 
+            b= detectArchon(); 
             if (b) mode = 3;
         }
     }
-
-    public void wait() throws GameActionException{
+    /**
+     * waitATurn() stays near the home archon
+     **/
+    public void waitATurn() throws GameActionException{
         //stays at around an ideal dist
-        MapLocation my = rc.getLocation();
+        MapLocation myLocation = rc.getLocation(); 
+        int idealDistSquared = 1;
+        int buffer = 10;
+        rc.setIndicatorString(homeArchon.x + " " + homeArchon.y);
+        if (Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared) < buffer){
+            //rc.setIndicatorString("here");
+            return; //you're already in range
+        }
         int[] costs = new int[8];
-        int idealDistSquared = 10;
-        for (Direction d : directions){
-            MapLocation newLocation = myLocation.add(dirs[i]);
+        for (int i = 0; i < 8; i++){
+            MapLocation newLocation = myLocation.add(directions[i]);
             if (!rc.onTheMap(newLocation)) {
                 costs[i] = 999999;
             }
             else {
-                costs[i] = 100*Math.abs(newLocation.distanceSquaredTo(homeArchon)-idealDistSquared)
-                costs[i] += rc.senseRubble(newLocation)
+                costs[i] = 100*Math.abs(newLocation.distanceSquaredTo(homeArchon)-idealDistSquared);
+                costs[i] += rc.senseRubble(newLocation);
             }
         }
         int cost = 99999;
         Direction optimalDir = null;
-        for (int i = 0; i < dirs.length; i++) {
-            Direction dir = dirs[i];
+        for (int i = 0; i < directions.length; i++) {
+            Direction dir = directions[i];
             if (rc.canMove(dir)) {
                 if (costs[i] < cost) {
                     cost = costs[i];
