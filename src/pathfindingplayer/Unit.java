@@ -177,7 +177,8 @@ public class Unit{
      **/
     //keep updating this so that you can see stagnation
     static int calls = 0; //# of fuzzy move calls
-    static MapLocation pos = null;
+    static MapLocation last = null;
+    static MapLocation cur =null;
     public Direction fuzzyMove(MapLocation dest) throws GameActionException{
         return fuzzyMove(dest, 2); //will not go to squares with more that 20 rubble
     }
@@ -197,10 +198,11 @@ public class Unit{
             if (optimalDir != null) {
                 if (rc.canMove(optimalDir)){ //if you can move in the optimalDir, then you can move toDest - toDest is into a wall
                     rc.move(optimalDir);
-                    if (((calls>>3)& 1) > 0) { //every 8 turns,you update your location
-                        pos = myLocation;
-                    }
                     calls++; //only considered a call if you actually move
+                    if (((calls>>3)& 1) > 0) { //just completed your 8th, 16th, etc, call
+                        last = cur;
+                        cur = myLocation;
+                    }
                 }
             }
             return optimalDir;
@@ -213,8 +215,8 @@ public class Unit{
         Direction[] dirs = {toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(),
                 toDest.rotateRight().rotateRight(), toDest.opposite().rotateLeft(), toDest.opposite().rotateRight(), toDest.opposite()};
         int[] costs = new int[8];
-        if (false) {
-        //if ((((calls>>3)&1) > 0) && myLocation.distanceSquaredTo(pos) <=4) {
+       // if (false) {
+        if (last!= null && (((calls>>3)&1) > 0) && (myLocation.distanceSquaredTo(last) <=4)) { //just completed your 8th, 16th, etc, call last turn
             //you're stagnating
             for (int i = 0; i < dirs.length; i++) {
                 int cost = 0;
@@ -231,13 +233,6 @@ public class Unit{
                 costs[i] = cost;
                 
             }
-            String s = "";
-            for (int i= 0; i < dirs.length;i++){
-                s+=String.valueOf(costs[i])+ " ";
-            }
-            s+=String.valueOf(rc.canMove(toDest));
-            rc.setIndicatorString("here");
-           // rc.setIndicatorString(s);
             int cost = 99999;
             Direction optimalDir = null;
             for (int i = 0; i < dirs.length; i++) {
@@ -249,7 +244,6 @@ public class Unit{
                     }
                 }
             }
-           // calls++; // guaranteed not stuck here
             return optimalDir;
         }
         else {
@@ -267,7 +261,7 @@ public class Unit{
                         cost+=5;
                     }
                     if (i >= 3) {
-                        cost += 50;
+                        cost += 30;
                     }
                     if (i >=5 ){
                         cost+=30;
@@ -276,12 +270,13 @@ public class Unit{
                 }
                 
             }
+            /*
             String s = "";
             for (int i= 0; i < dirs.length;i++){
                 s+=String.valueOf(costs[i])+ " ";
             }
             s+=String.valueOf(rc.canMove(toDest));
-            rc.setIndicatorString(s);
+            rc.setIndicatorString(s);*/
             int cost = 99999;
             Direction optimalDir = null;
             for (int i = 0; i < dirs.length; i++) {
