@@ -228,16 +228,30 @@ public class Soldier extends Unit {
     }
 
     public void attemptAttack() throws GameActionException {
+        boolean enemy_soldiers = false;
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
             RobotInfo weakestBot = nearbyBots[0];
             for (RobotInfo bot : nearbyBots) {
-                if (bot.health < weakestBot.health) {
-                    weakestBot = bot;
-                }
+                if (bot.type == RobotType.SOLDIER)
+                    if (bot.health < weakestBot.health) {
+                        weakestBot = bot;
+                    }
+                    enemy_soldiers = true;
             }
-            rc.attack(weakestBot.location);
+            if (enemy_soldiers) {
+                rc.attack(weakestBot.location);
+            }
+            else {
+                for (RobotInfo bot : nearbyBots) {
+                    if (bot.type == RobotType.MINER)
+                        if (bot.health < weakestBot.health) {
+                            weakestBot = bot;
+                        }
+                }
+                rc.attack(weakestBot.location);
+            }
         }
     }
 }

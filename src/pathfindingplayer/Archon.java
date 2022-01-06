@@ -7,14 +7,19 @@ public class Archon extends Unit {
     int counter = 0;
     int[] build_order = chooseBuildOrder();
     int built_units = 0;
+    int num_builders = 0;
+    boolean fortified = false;
 	public Archon(RobotController rc) throws GameActionException {
         super(rc);
     }
 
  	@Override
     public void run() throws GameActionException {
-        if (turn > 200){
+        if (turn > 200 && !fortified) {
             fortify();
+            if (num_builders >= 4) {
+                fortified = true;
+            }
         }
         else {
             // Pick a direction to build in.
@@ -75,6 +80,7 @@ public class Archon extends Unit {
             MapLocation builderLocation  = my.add(dirs[i]);
             if (rc.canBuildRobot(RobotType.BUILDER, dirs[i])){
                 rc.buildRobot(RobotType.BUILDER, dirs[i]);
+                num_builders++;
             }
         }
     }
