@@ -89,7 +89,8 @@ public class Miner extends Unit {
      **/
     public MapLocation findMiningArea() throws GameActionException{
         MapLocation cur = rc.getLocation();
-        int maxRes = 0;
+        // if square only has 1 lead don't go for it.
+        int maxRes = 1;
         MapLocation bestLocation = null;
         for (int dx = -4; dx <= 4; dx++) {
             for (int dy = -4; dy <= 4; dy++) {
@@ -143,7 +144,7 @@ public class Miner extends Unit {
                 MapLocation loc = new MapLocation(me.x + dx, me.y + dy);
                 // Notice that the Miner's action cooldown is very low.
                 // You can mine multiple times per turn!
-                while (rc.canMineLead(loc)) {
+                while (rc.canMineLead(loc) && rc.senseLead(loc) > 1) {
                     rc.mineLead(loc);
                     amountMined+=1;
                 }

@@ -99,6 +99,17 @@ public class Soldier extends Unit {
         fuzzyMove(target);
     }
 
+    public void stayNearFriendly() {
+        RobotInfo[] friendlyRobos = rc.senseNearbyRobots(9, rc.getTeam());
+        int num = friendlyRobos.length;
+        float cx = 0;
+        float cy = 0;
+        for (RobotInfo robot: friendlyRobos) {
+            cx += robot.location.x;
+            cy += robot.location.y;
+        }
+    }
+
     public void attemptAttack() throws GameActionException {
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
         // if there are any nearby enemy robots, attack the one with the least health
