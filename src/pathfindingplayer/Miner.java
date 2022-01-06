@@ -31,7 +31,10 @@ public class Miner extends Unit {
     public boolean mining_detour() throws GameActionException {
         MapLocation cur = rc.getLocation();
         int amountMined = mine();
-        if (amountMined < 3){
+        if (minersAdjacentToLocation(cur)) {
+            return false;
+        }
+        if (amountMined < 4){
             MapLocation target = findMiningArea();
             if (target != null) {
                 if (!cur.equals(target)){
@@ -40,9 +43,9 @@ public class Miner extends Unit {
                     return true;
                 }
             }
+            return false;
         }
-        
-        return false;
+        return true;
     }
 
     /**
@@ -65,7 +68,7 @@ public class Miner extends Unit {
                 else {
                     continue;
                 }
-                if (rc.canSenseLocation(loc) && rc.senseRobotAtLocation(loc) == null && !robotsAdjacentToLocation(loc)) {
+                if (rc.canSenseLocation(loc)) {
                     int res = rc.senseGold(loc) * goldToLeadConversionRate + rc.senseLead(loc);
                     if (res > maxRes) {
                         maxRes = res;
@@ -82,8 +85,8 @@ public class Miner extends Unit {
         else return null;
     }
 
-    public boolean robotsAdjacentToLocation(MapLocation loc) throws GameActionException {
-        RobotInfo[] robots = rc.senseNearbyRobots(loc, 1, rc.getTeam());
+    public boolean minersAdjacentToLocation(MapLocation loc) throws GameActionException {
+        RobotInfo[] robots = rc.senseNearbyRobots(loc, 2, rc.getTeam());
         for (RobotInfo robot : robots) {
             if (robot.type == RobotType.MINER) {
                 return true;
