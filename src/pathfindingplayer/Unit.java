@@ -217,23 +217,18 @@ public class Unit{
         //if ((((calls>>3)&1) > 0) && myLocation.distanceSquaredTo(pos) <=4) {
             //you're stagnating
             for (int i = 0; i < dirs.length; i++) {
-                MapLocation newLocation = myLocation.add(dirs[i]);
-                // Movement invalid, set higher cost than starting value
-                if (!rc.onTheMap(newLocation)) {
-                    costs[i] = 999999;
+                int cost = 0;
+                // Preference tier for moving towards target
+                if (i >=1){
+                    cost+=5;
                 }
-                else {
-                     // no rubble weighting here
-                    int cost = 0;
-                    // Preference tier for moving towards target
-                    if (i >= 3) {
-                        cost += 50;
-                    }
-                    if (i >=5 ){
-                        cost+=30;
-                    }
-                    costs[i] = cost;
+                if (i >= 3) {
+                    cost += 50;
                 }
+                if (i >=5 ){
+                    cost+=30;
+                }
+                costs[i] = cost;
                 
             }
             String s = "";
@@ -243,23 +238,18 @@ public class Unit{
             s+=String.valueOf(rc.canMove(toDest));
             rc.setIndicatorString("here");
            // rc.setIndicatorString(s);
-            double cost = 99999;
+            int cost = 99999;
             Direction optimalDir = null;
             for (int i = 0; i < dirs.length; i++) {
                 Direction dir = dirs[i];
                 if (rc.canMove(dir)) {
-                    double newCost = costs[i];
-                    // add epsilon to forward direction
-                    if (dir == toDest) {
-                        newCost -= 0.001;
-                    }
-                    if (newCost < cost) {
-                        cost = newCost;
+                    if (costs[i] < cost) {
+                        cost = costs[i];
                         optimalDir = dir;
                     }
                 }
             }
-            calls++; // guaranteed not stuck here
+           // calls++; // guaranteed not stuck here
             return optimalDir;
         }
         else {
@@ -273,6 +263,9 @@ public class Unit{
                 else {
                     int cost = rc.senseRubble(newLocation)* rubbleWeight;
                     // Preference tier for moving towards target
+                    if (i >=1){
+                        cost+=5;
+                    }
                     if (i >= 3) {
                         cost += 50;
                     }
@@ -289,18 +282,13 @@ public class Unit{
             }
             s+=String.valueOf(rc.canMove(toDest));
             rc.setIndicatorString(s);
-            double cost = 99999;
+            int cost = 99999;
             Direction optimalDir = null;
             for (int i = 0; i < dirs.length; i++) {
                 Direction dir = dirs[i];
                 if (rc.canMove(dir)) {
-                    double newCost = costs[i];
-                    // add epsilon to forward direction
-                    if (dir == toDest) {
-                        newCost -= 0.001;
-                    }
-                    if (newCost < cost) {
-                        cost = newCost;
+                    if (costs[i] < cost) {
+                        cost = costs[i];
                         optimalDir = dir;
                     }
                 }
