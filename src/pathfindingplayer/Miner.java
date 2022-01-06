@@ -15,6 +15,9 @@ public class Miner extends Unit {
 
     @Override
     public void run() throws GameActionException {
+        Direction d = fuzzyMove(new MapLocation(27, 1));
+       // rc.setIndicatorString(d.toString());
+        /*
         rc.setIndicatorString("exploratoryDir: " + exploratoryDir[0] + " " + exploratoryDir[1]);
         if (isExploring()){
             moveInDirection(exploratoryDir);
@@ -31,7 +34,8 @@ public class Miner extends Unit {
 
         if (!archon_found) {
             senseArchon();
-        }
+        }*/
+       // rc.setIndicatorString(last.toString() + cur.toString());
     }
 
     public void huntArchon() throws GameActionException {
