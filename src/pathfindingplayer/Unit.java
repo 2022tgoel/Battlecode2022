@@ -33,6 +33,12 @@ public class Unit{
      * run() is a placeholder implemented in the specific files
      **/
     public void run() throws GameActionException{
+        
+    }
+
+    static int turn = 0;
+    public void turn_update(){
+        turn++;
     }
 
     public void senseArchon() throws GameActionException {
@@ -176,13 +182,17 @@ public class Unit{
      * @param dest  location you wish to move to
      *            
      **/
-    public void fuzzyMove(MapLocation dest) throws GameActionException{
-        fuzzyMove(dest, 2); //will not go to squares with more that 20 rubble
+    //keep updating this so that you can see stagnation
+    static int calls = 0; //# of fuzzy move calls
+    static MapLocation last = null;
+    static MapLocation cur =null;
+    public Direction fuzzyMove(MapLocation dest) throws GameActionException{
+        return fuzzyMove(dest, 2); //will not go to squares with more that 20 rubble
     }
-    public void fuzzyMove(MapLocation dest, double rubbleWeight) throws GameActionException{
+    public Direction fuzzyMove(MapLocation dest, int rubbleWeight) throws GameActionException{
         MapLocation myLocation = rc.getLocation();
         if (myLocation.equals(dest)){
-            return; //you're already there!
+            return null; //you're already there!
         }
         Direction toDest = myLocation.directionTo(dest);
         if (myLocation.add(toDest).equals(dest)){
@@ -193,165 +203,105 @@ public class Unit{
         else{
             Direction optimalDir = getBestDirectionFuzzy(toDest, rubbleWeight);
             if (optimalDir != null) {
-                if (rc.canMove(optimalDir)){
+                if (rc.canMove(optimalDir)){ //if you can move in the optimalDir, then you can move toDest - toDest is into a wall
                     rc.move(optimalDir);
+                    calls++; //only considered a call if you actually move
+                    if (((calls>>4)& 1) > 0) { //just completed your 8th, 16th, etc, call
+                        last = cur;
+                        cur = myLocation;
+                    }
                 }
             }
+            return optimalDir;
         }
+        return null;
 
     }
-
-    public Direction getBestDirectionFuzzy(Direction toDest, double rubbleWeight) throws GameActionException{
+    public Direction getBestDirectionFuzzy(Direction toDest, int rubbleWeight) throws GameActionException{
         MapLocation myLocation = rc.getLocation();
         Direction[] dirs = {toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(),
-            toDest.rotateRight().rotateRight(), toDest.opposite().rotateLeft(), toDest.opposite().rotateRight(), toDest.opposite()};
-        double[] costs = new double[8];
-        // Ignore repel factor in beginning and when close to target
-        for (int i = 0; i < dirs.length; i++) {
-            MapLocation newLocation = myLocation.add(dirs[i]);
-            // Movement invalid, set higher cost than starting value
-            if (!rc.onTheMap(newLocation)) {
-                costs[i] = 999999;
-                continue;
-            }
-            double cost = rc.senseRubble(newLocation)* rubbleWeight;
-            // Preference tier for moving towards target
-            if (i >= 3) {
-                cost += 50;
-            }
-            costs[i] = cost;
-        }
-        double cost = 99999;
-        Direction optimalDir = null;
-        for (int i = 0; i < dirs.length; i++) {
-            Direction dir = dirs[i];
-            if (rc.canMove(dir)) {
-                double newCost = costs[i];
-                // add epsilon to forward direction
-                if (dir == toDest) {
-                    newCost -= 0.001;
+                toDest.rotateRight().rotateRight(), toDest.opposite().rotateLeft(), toDest.opposite().rotateRight(), toDest.opposite()};
+        int[] costs = new int[8];
+       // if (false) {
+        if (last!= null && (((calls>>4)&1) > 0) && (myLocation.distanceSquaredTo(last) <=4)) { //just completed your 8th, 16th, etc, call last turn
+            //you're stagnating
+            for (int i = 0; i < dirs.length; i++) {
+                int cost = 0;
+                // Preference tier for moving towards target
+                if (i >=1){
+                    cost+=5;
                 }
-                if (newCost < cost) {
-                    cost = newCost;
-                    optimalDir = dir;
+                if (i >= 3) {
+                    cost += 50;
+                }
+                if (i >=5 ){
+                    cost+=30;
+                }
+                costs[i] = cost;
+                
+            }
+            int cost = 99999;
+            Direction optimalDir = null;
+            for (int i = 0; i < dirs.length; i++) {
+                Direction dir = dirs[i];
+                if (rc.canMove(dir)) {
+                    if (costs[i] < cost) {
+                        cost = costs[i];
+                        optimalDir = dir;
+                    }
                 }
             }
+            return optimalDir;
         }
-        return optimalDir;
+        else {
+            // Ignore repel factor in beginning and when close to target
+            for (int i = 0; i < dirs.length; i++) {
+                MapLocation newLocation = myLocation.add(dirs[i]);
+                // Movement invalid, set higher cost than starting value
+                if (!rc.onTheMap(newLocation)) {
+                    costs[i] = 999999;
+                }
+                else {
+                    int cost = rc.senseRubble(newLocation)* rubbleWeight;
+                    // Preference tier for moving towards target
+                    if (i >=1){
+                        cost+=5;
+                    }
+                    if (i >= 3) {
+                        cost += 30;
+                    }
+                    if (i >=5 ){
+                        cost+=30;
+                    }
+                    costs[i] = cost+ rng.nextInt(10); //some randomness
+                }
+                
+            }
+            /*
+            String s = "";
+            for (int i= 0; i < dirs.length;i++){
+                s+=String.valueOf(costs[i])+ " ";
+            }
+            s+=String.valueOf(rc.canMove(toDest));
+            rc.setIndicatorString(s);*/
+            int cost = 99999;
+            Direction optimalDir = null;
+            for (int i = 0; i < dirs.length; i++) {
+                Direction dir = dirs[i];
+                if (rc.canMove(dir)) {
+                    if (costs[i] < cost) {
+                        cost = costs[i];
+                        optimalDir = dir;
+                    }
+                }
+            }
+            return optimalDir;
+        }
     }
     
-    //3. bfs/dijkstra of visible locations (this is probably a lot of bytecode)
     public int cooldown(MapLocation loc) throws GameActionException{
         //returns cooldown of movement
         return (int) Math.floor((1+rc.senseRubble(loc)/10.0)*rc.getType().movementCooldown);
-    }
-    public static class MapTerrain implements Comparable<MapTerrain>{
-
-        public MapLocation loc;
-        public int x;
-        public int y;
-        public int dist;
-        public MapTerrain prev = null;
-        public boolean visited = false;
-       
-        public MapTerrain(MapLocation location, int dist, int x, int y) {
-            this.loc = location;
-            this.dist = dist;
-            this.x = x;
-            this.y =y;
-        }
-
-        public int compareTo(MapTerrain mt){
-            return this.dist - mt.dist;
-        }
-
-        public boolean sameAs(MapTerrain mt){
-            return loc.equals(mt);
-        }
-
-        public String toString(){
-            return "X: " + loc.x + " Y: " + loc.y + " Dist: " + dist;
-        }
-    }
-
-    static int INF = 10000000;
-    /**
-     * dijkstraMove() applies dijkstra to find the best movement towards loc
-     * this might be bytecode intensive
-     * 
-     * @param target where you want to go
-     **/
-    public void dijkstraMove(MapLocation target) throws GameActionException{ 
-        // initialization
-        MapLocation my = rc.getLocation();
-        if (my.equals(target)){
-            return; 
-        }
-        PriorityQueue<MapTerrain> queue = new PriorityQueue<MapTerrain>();
-        int rad1d = (int) Math.ceil(Math.sqrt(rc.getType().visionRadiusSquared));
-        MapTerrain[][] grid = new MapTerrain[rad1d*2+1][rad1d*2+1];
-        //populate grid
-
-        int closestDist = INF;
-        MapTerrain closest = null; //closes to target
-        MapTerrain home = null;
-        for (int dx = -1*rad1d; dx <= rad1d; dx++) {
-            for (int dy = -1*rad1d; dy <= rad1d; dy++) {
-                int x_coord = my.x + dx;
-                int y_coord = my.y + dy;
-                MapLocation loc;
-                if (validCoords(x_coord, y_coord)) {
-                    loc = new MapLocation(x_coord, y_coord);
-                }
-                else {
-                    continue;
-                }
-                if (rc.canSenseLocation(loc)){
-                    int cost = INF;
-                    if (dx==0 && dy==0) cost =0;
-                    grid[rad1d+dx][rad1d+dy] = new MapTerrain(loc, cost, rad1d+dx, rad1d+dy);
-                    if (dx==0 && dy==0) home = grid[rad1d+dx][rad1d+dy];
-                    queue.add(grid[rad1d+dx][rad1d+dy]);
-                    if (loc.distanceSquaredTo(target) < closestDist){
-                        closestDist = loc.distanceSquaredTo(target);
-                        closest = grid[rad1d+dx][rad1d+dy];
-                    }
-                    // rc.setIndicatorString(grid[rad1d+dx][rad1d+dy].toString());
-                }
-            }
-        }
-        
-        //get correct dists
-        while (!(queue.size()==0)){
-            MapTerrain cur = queue.poll();
-            //System.out.println("Visiting: " + cur.toString());
-            cur.visited = true;
-            //visit neigbhors
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dy = -1; dy <= 1; dy++) {
-                    MapTerrain next = grid[cur.x+dx][cur.y+dy];
-                    if (next!=null){
-                        if (!next.visited){
-                            int d = cur.dist + cooldown(next.loc);
-                            if (d < next.dist){
-                                queue.remove(next);
-                                next.dist = d;
-                                next.prev = cur;
-                                queue.add(next);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        // now reconstruct path
-        MapTerrain next = closest;
-        while (!(next.prev).sameAs(home)){
-            next = next.prev;
-        }
-        //System.out.println("The chosen spot is: " + next.toString());
-        //go to next.loc
-        goToAdjacentLocation(next.loc);
     }
 
     public int[] getExploratoryDir() {

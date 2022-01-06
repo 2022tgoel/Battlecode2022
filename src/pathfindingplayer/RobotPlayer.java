@@ -48,6 +48,8 @@ public strictfp class RobotPlayer {
                 break;
             case LABORATORY: // Examplefuncsplayer doesn't use any of these robot types below.
             case WATCHTOWER: // You might want to give them a try!
+                robot = new Watchtower(rc);
+                break;
             case BUILDER: 
                 robot = new Builder(rc);
                 break;
