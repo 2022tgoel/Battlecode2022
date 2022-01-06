@@ -20,18 +20,19 @@ public class Sage extends Unit {
 
     @Override
     public void run() throws GameActionException {
+        /*
         if (isLowHealth()) {
             fuzzyMove(homeArchon);
         }
         else if (isExploring()){
             moveInDirection(friendlyDir());
-            /* if (rc.getLocation().isAdjacentTo(homeArchon)) {
+            if (rc.getLocation().isAdjacentTo(homeArchon)) {
                 // rc.setIndicatorString("moving away");
                 moveInDirection(rc.getLocation().directionTo(homeArchon).opposite());
             }
             else {
                 moveInDirection(friendlyDir());
-            } */
+            } 
         }
         else if (archon_found) {
             huntArchon();
@@ -39,9 +40,9 @@ public class Sage extends Unit {
         senseArchon();
         attemptAttack();
         detectArchon();
-        counter += 1;
+        counter += 1;*/
     }
-
+/*
     public boolean isExploring() throws GameActionException{
         if (archon_found) {
             return false;
@@ -268,5 +269,5 @@ public class Sage extends Unit {
                 rc.attack(weakestBot.location);
             }
         }
-    }
+    }*/
 }

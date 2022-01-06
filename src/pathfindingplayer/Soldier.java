@@ -18,79 +18,36 @@ public class Soldier extends Unit {
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
     }
-
+    int mode = 0;
+    /*
+    0 - exploring 
+    1 - going to archon
+    */
     @Override
     public void run() throws GameActionException {
+        boolean b;
+
         if (isLowHealth()) {
             fuzzyMove(homeArchon);
         }
-        else if (isExploring()){
-            moveInDirection(friendlyDir());
-            /* if (rc.getLocation().isAdjacentTo(homeArchon)) {
-                // rc.setIndicatorString("moving away");
-                moveInDirection(rc.getLocation().directionTo(homeArchon).opposite());
-            }
+        else if (mode == 0){
+            moveInDirection(friendlyDir()); 
+        }
+        else if (mode == 1){
+            b = approachArchon();
+            if (!b) mode = 0;
+        }
+
+        if (archon_index==-1){ 
+            b = senseArchon();
+            if (b) mode = 1;
             else {
-                moveInDirection(friendlyDir());
-            } */
+                b= detectArchon(); 
+                if (b) mode = 1; //switch to hunting
+            }
         }
-        else if (archon_found) {
-            huntArchon();
-        }
-        if (adjacentToEdge()) {
-            exploratoryDir = usefulDir();
-        }
-        senseArchon();
         attemptAttack();
-        detectArchon();
         counter += 1;
-    }
-
-    public boolean isExploring() throws GameActionException{
-        if (archon_found) {
-            return false;
-        }
-        else {
-            return true;
-        }
-    }
-
-    public void detectArchon() throws GameActionException {
-        // if archon still alive, don't do anything
-        int data = 0;
-        if (archon_found) {
-            // rc.setIndicatorString("archon already found");
-            data = rc.readSharedArray(archon_index);
-            // rc.setIndicatorString("archon read: " + data);
-            if (data != 0) {
-                return;
-            }
-            else {
-                archon_found = false;
-            }
-        }
-
-        // rc.setIndicatorString("finding new archon");
-        // if archon dead, find new archon
-        for (int i = 0; i < 4; i++) {
-            data = rc.readSharedArray(i);
-            if (data != 0) {
-                // rc.setIndicatorString("archon found UWU");
-                archon_index = i;
-                break;
-            }
-        }
-        data = rc.readSharedArray(archon_index);
-        if (data != 0) {
-            // rc.setIndicatorString("new archon found");
-            archon_found = true;
-            int x = data / 1000;
-            int y = data % 1000;
-            target = new MapLocation(x, y);
-        }
-        else {
-            archon_found = false;
-        }
     }
 
     public boolean isLowHealth() throws GameActionException {
@@ -101,23 +58,6 @@ public class Soldier extends Unit {
             return false;
         }
     }
-
-    public void huntArchon() throws GameActionException {
-        // if robot should be able to see archon but can't, inform everyone that archon is dead
-        if (rc.canSenseLocation(target)) {
-            if (!rc.canSenseRobotAtLocation(target)){
-                int data = rc.readSharedArray(archon_index);
-                if (data != 0) {
-                    rc.writeSharedArray(archon_index, 0);
-                }
-                archon_found = false;
-                return;
-            }
-        }
-        // if robot can't see archon, or sees archon, move towards it
-        fuzzyMove(target);
-    }
-
     public Direction friendlyDir() throws GameActionException {
 
         Direction d = exploratoryDir;

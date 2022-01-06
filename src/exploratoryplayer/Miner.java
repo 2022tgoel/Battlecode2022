@@ -25,6 +25,8 @@ public class Miner extends Unit {
     public void run() throws GameActionException {
         //Direction d = fuzzyMove(new MapLocation(27, 15));
        // rc.setIndicatorString(d.toString());
+        waitATurn();
+        /*
         boolean b;
         switch (mode){
             case 0:
@@ -49,48 +51,9 @@ public class Miner extends Unit {
         if (archon_index==-1){ //if you are not in hunting mode
             b= detectArchon(); 
             if (b) mode = 3;
-        }
+        }*/
     }
-    /**
-     * waitATurn() stays near the home archon
-     **/
-    public void waitATurn() throws GameActionException{
-        //stays at around an ideal dist
-        MapLocation myLocation = rc.getLocation(); 
-        int idealDistSquared = 1;
-        int buffer = 10;
-        rc.setIndicatorString(homeArchon.x + " " + homeArchon.y);
-        if (Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared) < buffer){
-            //rc.setIndicatorString("here");
-            return; //you're already in range
-        }
-        int[] costs = new int[8];
-        for (int i = 0; i < 8; i++){
-            MapLocation newLocation = myLocation.add(directions[i]);
-            if (!rc.onTheMap(newLocation)) {
-                costs[i] = 999999;
-            }
-            else {
-                costs[i] = 100*Math.abs(newLocation.distanceSquaredTo(homeArchon)-idealDistSquared);
-                costs[i] += rc.senseRubble(newLocation);
-            }
-        }
-        int cost = 99999;
-        Direction optimalDir = null;
-        for (int i = 0; i < directions.length; i++) {
-            Direction dir = directions[i];
-            if (rc.canMove(dir)) {
-                if (costs[i] < cost) {
-                    cost = costs[i];
-                    optimalDir = dir;
-                }
-            }
-        }
-        if (optimalDir != null) {
-            if (rc.canMove(optimalDir)) rc.move(optimalDir);
-        }
-
-    }
+    
 
     public boolean surroundedBySoldiers(){
         int s = 0;

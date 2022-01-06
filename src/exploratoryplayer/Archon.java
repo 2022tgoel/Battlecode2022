@@ -8,88 +8,54 @@ public class Archon extends Unit {
     int[] build_order = chooseBuildOrder();
     int built_units = 0;
     int num_builders = 0;
-    boolean fortified = false;
-    //convoy mode
-    static boolean buildingConvoyMode = true;
-    RobotType[] bots = {RobotType.MINER, RobotType.SOLDIER, RobotType.BUILDER};
-    int[] convoyComposition = {1, 6, 0}; //miners, soldiers, builders
-    int[] currenConvoy = {0, 0, 0}; //miners, soldiers, builders built for current operation
-	
+    boolean fortified = true;
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
     }
-    Direction[] sortedDirs = null; 
- 	@Override
+
+    @Override
     public void run() throws GameActionException {
         // Pick a direction to build in.
-        sortedDirs = sortedDirections();
-        if (buildingConvoyMode){
-            boolean complete = buildConvoy();
-            if (complete){
-                //reset for the next convoy
-                for (int i= 0; i<3; i++){
-                    currenConvoy[i] = 0;
+        Direction[] dirs = sortedDirections();
+        for (Direction dir: dirs) {
+            if (rc.getTeamGoldAmount(rc.getTeam()) >= 50) {
+                if (rc.canBuildRobot(RobotType.SAGE, dir)) {
+                    rc.buildRobot(RobotType.SAGE, dir);
+                    break;
                 }
             }
-        }
-        else {
-            //just inserting the old code for when you are not in convoyMode, should replace with other modes
-            // (e.g. the defense mode)
-
-            for (Direction dir: sortedDirs) {
-                
-                if (built_units < build_order[counter % 3]) {
-                    switch (counter % 3) {
-                        case 0:
-                            rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + counter);
-                            if (rc.canBuildRobot(RobotType.MINER, dir)) {
-                                rc.buildRobot(RobotType.MINER, dir);
-                                built_units++;
-                            }
-                            break;
-                        case 1:
-                            rc.setIndicatorString("Trying to build a soldier");
-                            if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
-                                rc.buildRobot(RobotType.SOLDIER, dir);
-                                built_units++;
-                            }
-                            break;
-                        case 2:
-                            rc.setIndicatorString("Trying to build a builder");
-                            if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
-                                rc.buildRobot(RobotType.BUILDER, dir);
-                                built_units++;
-                            }
-                            break;
-                    }
-                }
-                else {
-                    counter++;
-                    built_units = 0;
-                }
-
-            }
-
-        }
-        turn_update();
-    }
-
-    public boolean buildConvoy() throws GameActionException{
-        boolean complete = true;
-        for (Direction dir: sortedDirs) {
-            for (int i= 0; i < 3; i++){
-                if (currenConvoy[i] < convoyComposition[i]){
-                    complete = false; //there is still stuff remaining
-                    //build what's remaining
-                    if (rc.canBuildRobot(bots[i], dir)) {
-                        rc.buildRobot(bots[i], dir);
-                        currenConvoy[i] ++;
+            else if (built_units < build_order[counter % 3]) {
+                switch (counter % 3) {
+                    case 0:
+                        rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + counter);
+                        if (rc.canBuildRobot(RobotType.MINER, dir)) {
+                            rc.buildRobot(RobotType.MINER, dir);
+                            built_units++;
+                        }
                         break;
-                    }
+                    case 1:
+                        rc.setIndicatorString("Trying to build a soldier");
+                        if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
+                            rc.buildRobot(RobotType.SOLDIER, dir);
+                            built_units++;
+                        }
+                        break;
+                    case 2:
+                        rc.setIndicatorString("Trying to build a builder");
+                        if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
+                            rc.buildRobot(RobotType.BUILDER, dir);
+                            built_units++;
+                        }
+                        break;
                 }
             }
+            else {
+                counter++;
+                built_units = 0;
+            }
         }
-        return complete;
+        attemptHeal();
+        turn_update();
     }
     /**
      * enemySoldiersInRange() checks if a soldier that might want to attack in nearby
@@ -143,7 +109,40 @@ public class Archon extends Unit {
             return new int[]{2, 2, 0}; // miners, soldiers, builders
         }
         else {
-            return new int[]{3, 2, 0}; // miners, soldiers, builders
+            return new int[]{3, 4, 0}; // miners, soldiers, builders
+        }
+    }
+
+    public void attemptHeal() throws GameActionException {
+        boolean soldiers_home = false;
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.ARCHON.actionRadiusSquared, rc.getTeam());
+        // if there are any nearby enemy robots, attack the one with the least health
+        if (nearbyBots.length > 0) {
+            RobotInfo weakestBot = nearbyBots[0];
+            for (RobotInfo bot : nearbyBots) {
+                if (bot.type == RobotType.SOLDIER)
+                    if (bot.health < weakestBot.health) {
+                        weakestBot = bot;
+                    }
+                    soldiers_home = true;
+            }
+            if (soldiers_home) {
+                if (rc.canRepair(weakestBot.location)) {
+                    rc.setIndicatorString("Succesful Heal!");
+                    rc.repair(weakestBot.location);
+                }
+            }
+            else {
+                for (RobotInfo bot : nearbyBots) {
+                    if (bot.type == RobotType.MINER)
+                        if (bot.health < weakestBot.health) {
+                            weakestBot = bot;
+                        }
+                }
+                if (rc.canRepair(weakestBot.location)) {
+                    rc.repair(weakestBot.location);
+                }
+            }
         }
     }
 }

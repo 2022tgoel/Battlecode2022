@@ -6,7 +6,6 @@ import java.util.*;
 public class Unit{
 
     RobotController rc;
-    boolean archon_found = false;
     int archon_index = -1;
     final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
@@ -23,7 +22,7 @@ public class Unit{
         Direction.NORTHWEST,
     };
 
-	public Unit(RobotController robotController) throws GameActionException {
+    public Unit(RobotController robotController) throws GameActionException {
         rc = robotController;
         rng.setSeed((long) rc.getID());
         homeArchon = findHomeArchon();
@@ -40,47 +39,90 @@ public class Unit{
     public void turn_update(){
         turn++;
     }
-
-    public void senseArchon() throws GameActionException {
+    //when you sense or detect, you get an archon_index
+    /**
+     * detectArchon() looks through the archon positions for a new one, then stores it in archon_index
+     * @return true if it found an archon
+     **/
+    public boolean detectArchon() throws GameActionException {
+        for (int i = 0; i < 4; i++) {
+            int data = rc.readSharedArray(i);
+            if (data != 0) {
+                // rc.setIndicatorString("archon found UWU");
+                archon_index = i;
+                return true;
+            }
+        }
+        return false;
+    }
+    /**
+     * checks if any of the nearby robots are enemy archons, if so broadcasts it
+     * @return true if archon was found, false otherwise
+     **/
+    public boolean senseArchon() throws GameActionException {
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         // if there are any nearby enemy robots, attack the one with the least health
+        boolean found = false;
         if (nearbyBots.length > 0) {
             for (RobotInfo bot : nearbyBots) {
                 if (bot.type == RobotType.ARCHON) {
-                    archon_found = true;
-                    broadcastArchon(bot.location);
-                }
+                    int ind = broadcastArchon(bot.location);
+                    //store index of last archon sensed 
+                    archon_index = ind;
+                    found = true;
+                }  
             }
         }
+        return found;
     }
 
-    public void broadcastArchon(MapLocation loc) throws GameActionException{
-        int data = 0;
-        int available_index = 0;
-        int x;
-        int y;
-        for (int i = 4; i >= 0; i--) {
-            data = rc.readSharedArray(i);
-            if (data == 0) {
-                available_index = i;
+    public int broadcastArchon(MapLocation loc) throws GameActionException{
+        //check that the loc is not already broadcasted
+        int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
+        for (int i= 0; i < 4; i++){
+            int data = rc.readSharedArray(i);
+            int x = data / 1000;
+            int y = data % 1000;
+            if (loc.x == x && loc.y == y) {
+                return i; //already broadcasted, return index where it is stored
+            }
+            if (data == 0){
+                indToPut = i;
+            }
+        }
+        int loc_int = loc.x * 1000 + loc.y;
+        rc.writeSharedArray(indToPut, loc_int);
+        // rc.setIndicatorString("broadcasting succesful, archon_index " + available_index);
+        return indToPut;
+    }
+
+    /**
+     * approachArchon() moves towards the archon specified by archon_index
+     * @return false is the archon is not longer there, true otherwise
+     **/
+    public boolean approachArchon() throws GameActionException{
+        int data = rc.readSharedArray(archon_index);
+        if (data != 0) {
+            int x = data / 1000;
+            int y = data % 1000;
+            MapLocation target = new MapLocation(x, y);
+            if (rc.canSenseLocation(target) && !rc.canSenseRobotAtLocation(target)){
+                rc.writeSharedArray(archon_index, 0);
+                archon_index = -1;
+                return false;
             }
             else {
-                x = data / 1000;
-                y = data % 1000;
-                if (loc.x == x && loc.y == y) {
-                    return;
-                }
+                fuzzyMove(target);
+                return true;
             }
         }
-
-        // rc.setIndicatorString("broadcasting archon");
-        int loc_int = loc.x * 1000 + loc.y;
-        rc.writeSharedArray(available_index, loc_int);
-        // rc.setIndicatorString("broadcasting succesful, archon_index " + available_index);
-        archon_index = available_index;
+        else {
+            archon_index = -1; 
+            return false; //no longer there
+        }
     }
 
-
+    
     /**
      * validCoords() check if the x and y are on the map
      * @return bool, true if on the map
@@ -131,6 +173,49 @@ public class Unit{
             }
         }
         //should not reach here, if it does the location you were passing is not adjacent!
+    }
+    /**
+     * waitATurn() stays near the home archon
+     **/
+    public void waitATurn() throws GameActionException{
+        //stays at around an ideal dist
+        MapLocation myLocation = rc.getLocation(); 
+        int idealDistSquared = 10;
+        int buffer = 5;
+        rc.setIndicatorString("" + Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared));
+        if (Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared) < buffer){
+            rc.setIndicatorString("here");
+            return; //you're already in range
+        }
+        int[] costs = new int[8];
+        for (int i = 0; i < 8; i++){
+            MapLocation newLocation = myLocation.add(directions[i]);
+            if (!rc.onTheMap(newLocation)) {
+                costs[i] = 999999;
+            }
+            else {
+                costs[i] = 100*Math.abs(newLocation.distanceSquaredTo(homeArchon)-idealDistSquared);
+                costs[i] += rc.senseRubble(newLocation);
+            }
+        }
+        int cost = 99999;
+        Direction optimalDir = null;
+        for (int i = 0; i < directions.length; i++) {
+            Direction dir = directions[i];
+            if (rc.canMove(dir)) {
+                if (costs[i] < cost) {
+                    cost = costs[i];
+                    optimalDir = dir;
+                }
+            }
+        }
+        if (optimalDir != null) {
+            if (rc.canMove(optimalDir)) {
+                rc.setIndicatorString("here2");
+                rc.move(optimalDir);
+            }
+        }
+
     }
 
     //1. bug pathing
@@ -226,18 +311,26 @@ public class Unit{
         if (last!= null && (((calls>>4)&1) > 0) && (myLocation.distanceSquaredTo(last) <=4)) { //just completed your 8th, 16th, etc, call last turn
             //you're stagnating
             for (int i = 0; i < dirs.length; i++) {
-                int cost = 0;
-                // Preference tier for moving towards target
-                if (i >=1){
-                    cost+=5;
+                MapLocation newLocation = myLocation.add(dirs[i]);
+                // Movement invalid, set higher cost than starting value
+                if (!rc.onTheMap(newLocation)) {
+                    costs[i] = 999999;
                 }
-                if (i >= 3) {
-                    cost += 50;
+                else {
+                    int cost = 0;
+                    // Preference tier for moving towards target
+                    if (i >=1){
+                        cost+=5;
+                    }
+                    if (i >= 3) {
+                        cost += 50;
+                    }
+                    if (i >=5 ){
+                        cost+=30;
+                    }
+                    costs[i] = cost;
                 }
-                if (i >=5 ){
-                    cost+=30;
-                }
-                costs[i] = cost;
+                
                 
             }
             int cost = 99999;
@@ -366,7 +459,7 @@ public class Unit{
     }
 
     public MapLocation findHomeArchon() throws GameActionException {
-        if (rc.getType() != RobotType.ARCHON) {
+        if (rc.getType() == RobotType.ARCHON) {
             return rc.getLocation();
         }
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam());

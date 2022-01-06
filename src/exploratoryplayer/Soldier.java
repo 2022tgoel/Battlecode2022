@@ -7,7 +7,7 @@ public class Soldier extends Unit {
     int counter = 0;
     int archon_index = -1;
     double s_attraction = 0.5;
-    double m_attraction = 10.0;
+    double m_attraction = 1000.0;
     double s_repulsion = 1;
     double m_repulsion = 1/10;
 
