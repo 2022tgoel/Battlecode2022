@@ -100,7 +100,7 @@ public class Soldier extends Unit {
     }
 
     public Direction friendlyDir() throws GameActionException {
-        Direction d = Direction.NORTH; // placeholder
+        Direction d = Direction.CENTER; // placeholder
         RobotInfo[] friendlyRobos = rc.senseNearbyRobots(9, rc.getTeam());
         MapLocation loc = rc.getLocation();
         int num = friendlyRobos.length;
