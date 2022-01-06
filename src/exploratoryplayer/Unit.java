@@ -268,18 +268,26 @@ public class Unit{
         if (last!= null && (((calls>>4)&1) > 0) && (myLocation.distanceSquaredTo(last) <=4)) { //just completed your 8th, 16th, etc, call last turn
             //you're stagnating
             for (int i = 0; i < dirs.length; i++) {
-                int cost = 0;
-                // Preference tier for moving towards target
-                if (i >=1){
-                    cost+=5;
+                MapLocation newLocation = myLocation.add(dirs[i]);
+                // Movement invalid, set higher cost than starting value
+                if (!rc.onTheMap(newLocation)) {
+                    costs[i] = 999999;
                 }
-                if (i >= 3) {
-                    cost += 50;
+                else {
+                    int cost = 0;
+                    // Preference tier for moving towards target
+                    if (i >=1){
+                        cost+=5;
+                    }
+                    if (i >= 3) {
+                        cost += 50;
+                    }
+                    if (i >=5 ){
+                        cost+=30;
+                    }
+                    costs[i] = cost;
                 }
-                if (i >=5 ){
-                    cost+=30;
-                }
-                costs[i] = cost;
+                
                 
             }
             int cost = 99999;

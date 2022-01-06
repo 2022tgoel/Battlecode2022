@@ -45,7 +45,35 @@ public class Miner extends Unit {
     }
 
     public void wait(){
-        //TODO 
+        //stays at around an ideal dist
+        MapLocation my = rc.getLocation();
+        int[] costs = new int[8];
+        int idealDistSquared = 10;
+        for (Direction d : directions){
+            MapLocation newLocation = myLocation.add(dirs[i]);
+            if (!rc.onTheMap(newLocation)) {
+                costs[i] = 999999;
+            }
+            else {
+                costs[i] = 100*Math.abs(newLocation.distanceSquaredTo(homeArchon)-idealDistSquared)
+                costs[i] += rc.senseRubble(newLocation)
+            }
+        }
+        int cost = 99999;
+        Direction optimalDir = null;
+        for (int i = 0; i < dirs.length; i++) {
+            Direction dir = dirs[i];
+            if (rc.canMove(dir)) {
+                if (costs[i] < cost) {
+                    cost = costs[i];
+                    optimalDir = dir;
+                }
+            }
+        }
+        if (optimalDir != null) {
+            if (rc.canMove(optimalDir)) rc.move(optimalDir);
+        }
+
     }
     
     MapLocation miningTarget = null;

@@ -28,19 +28,25 @@ public class Soldier extends Unit {
     */
     @Override
     public void run() throws GameActionException {
+        attemptAttack(); //attack first priority
+        boolean b = senseArchon();
+        if (b) mode = 3; // switch to hunting mode
         switch (mode){
             case 0:
                 moveInDirection(friendlyDir()); //placeholder
             case 1:
                 moveInDirection(friendlyDir());
-                boolean b = senseArchon();
-                if (b) mode = 3; // switch to hunting mode
             case 2:
                 fuzzyMove(homeArchon);
             case 3:
                 boolean b = approachArchon();
                 if (!b) mode =1; // switch to exploration again
         }
+        if (archon_index==-1){ //if you are not in hunting mode
+            boolean b= detectArchon(); 
+            if (b) mode = 3;
+        }
+        counter+=1;
     }
 
     public boolean isExploring() throws GameActionException{
