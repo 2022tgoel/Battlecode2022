@@ -13,7 +13,7 @@ public class Archon extends Unit {
 
  	@Override
     public void run() throws GameActionException {
-        if (enemySoldiersInRange()){
+        if (turn > 200){
             fortify();
         }
         else {
@@ -52,6 +52,7 @@ public class Archon extends Unit {
 
             }
         }
+        turn_update();
     }
     /**
      * enemySoldiersInRange() checks if a soldier that might want to attack in nearby

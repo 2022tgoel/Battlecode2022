@@ -34,6 +34,11 @@ public class Unit{
         
     }
 
+    static int turn = 0;
+    public void turn_update(){
+        turn++;
+    }
+
     public void senseArchon() throws GameActionException {
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         // if there are any nearby enemy robots, attack the one with the least health
