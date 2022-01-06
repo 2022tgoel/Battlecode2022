@@ -13,30 +13,14 @@ public class Builder extends Unit {
 
     @Override
     public void run() throws GameActionException {
-        if (isExploring()){
-            moveInDirection(exploratoryDir);
-        }
-        if (adjacentToEdge()) {
-            exploratoryDir = getExploratoryDir();
-        }
-        attemptAttack();
-    }
-
-    public void attemptAttack() throws GameActionException {
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.BUILDER.actionRadiusSquared, rc.getTeam());
-        // if there are any nearby enemy robots, attack the one with the least health
-        if (nearbyBots.length > 0) {
-            RobotInfo weakestBot = nearbyBots[0];
-            for (RobotInfo bot : nearbyBots) {
-                if (bot.health < weakestBot.health) {
-                    weakestBot = bot;
-                }
+        /* builds watchtowers in surrounding regoin */
+        Direction[] dirs = {Direction.NORTHEAST,Direction.SOUTHEAST, Direction.SOUTHWEST,Direction.NORTHWEST,}; 
+        MapLocation my = rc.getLocation();
+        for (int i =0 ;i < dirs.length; i++){
+            MapLocation watchtowerLocation  = my.add(dirs[i]);
+            if (rc.canBuildRobot(RobotType.WATCHTOWER, dirs[i])){
+                rc.buildRobot(RobotType.WATCHTOWER, dirs[i]);
             }
-            rc.attack(weakestBot.location);
         }
-    }
-
-    public boolean isExploring() throws GameActionException {
-        return true;
     }
 }
