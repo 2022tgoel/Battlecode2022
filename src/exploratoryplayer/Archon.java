@@ -74,7 +74,7 @@ public class Archon extends Unit {
         turn_update();
     }
 
-    public boolean buildConvoy(){
+    public boolean buildConvoy() throws GameActionException{
         boolean complete = true;
         for (Direction dir: dirs) {
             for (int i= 0; i < 3; i++){

@@ -17,11 +17,11 @@ public class Soldier extends Unit {
         super(rc);
     }
 
-    int mode = 0;
+    int mode = 1;
     /*
     modes explanation
 
-    0 is waiting 
+    0 is nothing for now 
     1 is exploring - following miners
     2 is recovery - retreating due to low health
     3 is hunting
@@ -33,7 +33,6 @@ public class Soldier extends Unit {
         if (b) mode = 3; // switch to hunting mode
         switch (mode){
             case 0:
-                moveInDirection(friendlyDir()); //placeholder
             case 1:
                 moveInDirection(friendlyDir());
             case 2:

@@ -28,8 +28,14 @@ public class Miner extends Unit {
         switch (mode){
             case 0:
                 wait();
+                if (surroundedBySoldiers()){
+                    mode = 1;
+                }
             case 1:
-                moveInDirection(getExploratoryDir());
+                moveInDirection(exploratoryDir);
+                if (adjacentToEdge()) {
+                    exploratoryDir = getExploratoryDir();
+                }
                 boolean b = senseArchon();
                 if (b) mode = 3; // switch to hunting mode
             case 2:
@@ -44,7 +50,7 @@ public class Miner extends Unit {
         }
     }
 
-    public void wait(){
+    public void wait() throws GameActionException{
         //stays at around an ideal dist
         MapLocation my = rc.getLocation();
         int[] costs = new int[8];
@@ -74,6 +80,16 @@ public class Miner extends Unit {
             if (rc.canMove(optimalDir)) rc.move(optimalDir);
         }
 
+    }
+
+    public boolean surroundedBySoldiers(){
+        int s = 0;
+        for (RobotInfo r :rc.senseNearbyRobots(RobotType.MINER.actionRadiusSquared, rc.getTeam()) ){
+            if (r.type == RobotType.SOLDIER){
+                s++;
+            }
+        }
+        return s > 5;
     }
     
     MapLocation miningTarget = null;
