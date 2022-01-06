@@ -51,22 +51,19 @@ public class Archon extends Unit {
 
     public Direction[] sortedDirections() throws GameActionException {
         Direction[] dirs = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
-
-        Arrays.sort(dirs, (a,b) -> {
-            try {
-                return getRubble(a) - getRubble(b);
-            } catch (GameActionException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            return 0;
-        });
+        Arrays.sort(dirs, (a,b) -> getRubble(a) - getRubble(b));
         return dirs;
     }
 
-    public int getRubble(Direction d) throws GameActionException {
-        MapLocation loc = rc.getLocation();
-        return rc.senseRubble(loc.add(d));
+    public int getRubble(Direction d) {
+        try {
+            MapLocation loc = rc.getLocation();
+            return rc.senseRubble(loc.add(d));
+        } catch (GameActionException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return 0;
+        }
     }
 
     public int[] chooseBuildOrder() {
