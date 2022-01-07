@@ -235,6 +235,10 @@ public class Archon extends Unit {
                     num_defenders++;
                 }
             }
+            if (s <= defenseNum) {
+                postRank(RANK.DEFENDER);
+                rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
+            } 
             
         }
     }
