@@ -56,6 +56,9 @@ public class Soldier extends Unit {
                         break;
                     case DEFENSIVE_RUSH:
                         defensiveMove();
+                        break;
+                    default:
+                        break;
                       //  fuzzyMove(getEnemySoldiersLocation());
                 }
                 detectArchonThreat();
@@ -79,6 +82,7 @@ public class Soldier extends Unit {
                     break;
                 case HUNTING:
                     approachArchon();
+                    break;
                 default:
                     break;
             }
@@ -378,10 +382,12 @@ public class Soldier extends Unit {
         }
         else {
             // clear channel if threat is no longer active
-            data = rc.readSharedArray(dRushChannel);
-            if (data != 0) {
-                if ((round_num - threatDetectedRound) > 10) {
-                    rc.writeSharedArray(dRushChannel, 0);
+            if (dRushChannel != -1) {
+                data = rc.readSharedArray(dRushChannel);
+                if (data != 0) {
+                    if ((round_num - threatDetectedRound) > 10) {
+                        rc.writeSharedArray(dRushChannel, 0);
+                    }
                 }
             }
         }
