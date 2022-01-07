@@ -7,44 +7,71 @@ public class Archon extends Unit {
     int counter = 0;
     int[] build_order = chooseBuildOrder();
     int built_units = 0;
+    int num_soldiers = 0;
+    int num_miners = 0;
     int num_builders = 0;
-    boolean fortified = true;
+    boolean CONSTRUCT_SPECIAL_UNIT = false;
+
+    RANK unitRank;
 	public Archon(RobotController rc) throws GameActionException {
         super(rc);
     }
 
  	@Override
     public void run() throws GameActionException {
+        // refresh the posted rank with each bot
+        pullRank();
+        // don't update unitRank if the previous special unit wasn't built
+        if (!CONSTRUCT_SPECIAL_UNIT) {
+            unitRank = specialUnit();
+        }
+
         // Pick a direction to build in.
         Direction[] dirs = sortedDirections();
         for (Direction dir: dirs) {
-            if (rc.getTeamGoldAmount(rc.getTeam()) >= 50) {
-                if (rc.canBuildRobot(RobotType.SAGE, dir)) {
-                    rc.buildRobot(RobotType.SAGE, dir);
+            // don't iterate through directions if this is a normal unit
+            if (unitRank == RANK.DEFAULT) {
+                break;
+            }
+            // if unit is special, build it now.
+
+            if (unitRank == RANK.CONVOY_LEADER) {
+                rc.setIndicatorString("Trying to build a CONVOY LEADER");
+                if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
+                    rc.buildRobot(RobotType.SOLDIER, dir);
+                    postRank(RANK.CONVOY_LEADER);
+                    num_soldiers += 1;
+                    CONSTRUCT_SPECIAL_UNIT = false;
                     break;
                 }
             }
-            else if (built_units < build_order[counter % 3]) {
+        }
+
+        for (Direction dir: dirs) {
+            if (built_units < build_order[counter % 3]) {
                 switch (counter % 3) {
                     case 0:
-                        rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + counter);
+                        // rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + counter);
                         if (rc.canBuildRobot(RobotType.MINER, dir)) {
                             rc.buildRobot(RobotType.MINER, dir);
                             built_units++;
+                            num_miners++;
                         }
                         break;
                     case 1:
-                        rc.setIndicatorString("Trying to build a soldier");
+                        // rc.setIndicatorString("Trying to build a soldier");
                         if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
                             rc.buildRobot(RobotType.SOLDIER, dir);
                             built_units++;
+                            num_soldiers++;
                         }
                         break;
                     case 2:
-                        rc.setIndicatorString("Trying to build a builder");
+                        // rc.setIndicatorString("Trying to build a builder");
                         if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
                             rc.buildRobot(RobotType.BUILDER, dir);
                             built_units++;
+                            num_builders++;
                         }
                         break;
                 }
@@ -56,6 +83,31 @@ public class Archon extends Unit {
         }
         attemptHeal();
         turn_update();
+    }
+
+    public RANK specialUnit() {
+        if (rc.getRoundNum() % 50 == 0 ) {
+            CONSTRUCT_SPECIAL_UNIT = true;
+            return RANK.CONVOY_LEADER;
+        }
+        else {
+            return RANK.DEFAULT;
+        }
+    }
+
+    public void postRank(RANK rank) throws GameActionException {
+        switch (rank) {
+            case DEFAULT:
+                break;
+            case CONVOY_LEADER:
+                MapLocation loc = rc.getLocation();
+                int loc_int = 1 * 10000 + loc.x * 100 + loc.y;
+                rc.writeSharedArray(63, loc_int);
+        }
+    }
+
+    public void pullRank() throws GameActionException {
+        rc.writeSharedArray(63, 0);
     }
     /**
      * enemySoldiersInRange() checks if a soldier that might want to attack in nearby

@@ -1,9 +1,12 @@
 package pathfindingplayer;
 
 import battlecode.common.*;
+import pathfindingplayer.RANK;
+
 import java.util.*;
 
 public class Soldier extends Unit {
+
     int counter = 0;
     int archon_index = -1;
     double s_attraction = 0.0;
@@ -12,13 +15,16 @@ public class Soldier extends Unit {
     double m_repulsion = 1/10;
     double a_repulsion = 100;
 
+    RANK rank;
+    int mode = 0;
+
     MapLocation target;
     Direction exploratoryDir = usefulDir();
 
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
+        rank = findRank();
     }
-    int mode = 0;
     /*
     0 - exploring 
     1 - going to archon
@@ -48,6 +54,28 @@ public class Soldier extends Unit {
         }
         attemptAttack();
         counter += 1;
+        rc.setIndicatorString("RANK: " + rank.toString());
+    }
+
+    public RANK findRank() throws GameActionException {
+        int data = rc.readSharedArray(63);
+        int status = data / 10000;
+        int x = (data - 10000) / 100;
+        int y = data - 10000 - x * 100;
+        if (homeArchon.equals(new MapLocation(x, y)))
+            if (status == 0) {
+                return RANK.DEFAULT;
+            }
+            else if (status == 1) {
+                return RANK.CONVOY_LEADER;
+            }
+            // add more logic later
+            else {
+                return RANK.DEFAULT;
+            }
+        else {
+            return RANK.DEFAULT;
+        }
     }
 
     public boolean isLowHealth() throws GameActionException {
