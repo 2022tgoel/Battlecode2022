@@ -365,7 +365,7 @@ public class Soldier extends Unit {
                 // channel already written too.
                 if (x == homeArchon.x && y == homeArchon.y) {
                     dRushChannel = i;
-                    break;
+                    return;
                 }
                 if (data == 0) {
                     dRushChannel = i;
