@@ -57,7 +57,12 @@ public class Soldier extends Unit {
                         detectArchonThreat();
                         break;
                     case DEFENSIVE_RUSH:
-                        moveToEnemySoldiers();
+                        if (rc.getLocation().distanceSquaredTo(target) < 10){
+                            moveToEnemySoldiers();
+                        }
+                        else {
+                            fuzzyMove(homeArchon);
+                        }
                         break;
                     default:
                         break;
