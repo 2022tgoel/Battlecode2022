@@ -233,7 +233,6 @@ public class Soldier extends Unit {
                 momentumDir = optimalDir;
             }
         }
-<<<<<<< HEAD
     }
 
     public MapLocation[] findThreatenedArchons() throws GameActionException {
@@ -263,8 +262,6 @@ public class Soldier extends Unit {
             }
             return archons;
         }
-=======
->>>>>>> d2db73b2638e1bc1956ad68bf192de9701838f85
     }
 
     public void detectArchonThreat() throws GameActionException {
