@@ -281,14 +281,7 @@ public class Soldier extends Unit {
         if (numThreatenedArchons == 0) {
             return null;
         }
-        else {
-            // only return threatened archons.
-            MapLocation[] threatenedArchons = new MapLocation[numThreatenedArchons];
-            for (int i = 0; i < numThreatenedArchons; i++) {
-                threatenedArchons[i] = archons[i];
-            }
-            return archons;
-        }
+        return archons;
     }
 
     public void detectArchonThreat() throws GameActionException {
