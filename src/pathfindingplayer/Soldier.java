@@ -54,13 +54,13 @@ public class Soldier extends Unit {
                 switch (mode) {
                     case WAITING:
                         waitAtDist(20, true);
+                        detectArchonThreat();
                         break;
                     default:
                         fuzzyMove(getEnemySoldiersLocation());
                         break;
                 }
                 rc.setIndicatorString("before");
-                detectArchonThreat();
                 rc.setIndicatorString("after");
             }
         }

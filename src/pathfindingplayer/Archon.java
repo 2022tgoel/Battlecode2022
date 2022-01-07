@@ -220,8 +220,20 @@ public class Archon extends Unit {
             rc.buildRobot(RobotType.SOLDIER, dir);
             built_units++;
             num_soldiers++;
+            int s =0;
+            // 2. choose defnesive or offensive
+            for (RobotInfo r :rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam()) ){
+                if (r.type == RobotType.SOLDIER){
+                    s++;
+                }
+            }
+            if (s <= defenseNum) {
+                postRank(RANK.DEFENDER);
+                rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
+                num_defenders++;
+            }
             // if you have a low number of defenders, or you have a surplus of soldiers, build a defender
-            if (num_defenders < 3 || (round_num/num_archons % 10 == 0 && num_soldiers > 3 * num_defenders)){ //about every 10 turns for this archon
+            /*if (num_defenders < 3 || (round_num/num_archons % 10 == 0 && num_soldiers > 3 * num_defenders)){ //about every 10 turns for this archon
                 int s =0;
                 // 2. choose defnesive or offensive
                 for (RobotInfo r :rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam()) ){
@@ -234,7 +246,7 @@ public class Archon extends Unit {
                     rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
                     num_defenders++;
                 }
-            }
+            }*/
             
         }
     }
