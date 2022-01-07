@@ -26,6 +26,7 @@ public class Soldier extends Unit {
     MODE mode = MODE.EXPLORATORY;
 
     MapLocation target;
+    RobotInfo[] nearbyAllies;
     Direction exploratoryDir = usefulDir();
     int[] exploratoryDir2 = getExploratoryDir();
 	public Soldier(RobotController rc) throws GameActionException {
@@ -41,7 +42,8 @@ public class Soldier extends Unit {
         round_num = rc.getRoundNum();
         attemptAttack();
         if (rank == RANK.DEFENDER){
-            waitAtDist(20);
+            nearbyAllies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam());
+            waitAtDist(20, true);
         }
         else {
             boolean b;
@@ -93,6 +95,61 @@ public class Soldier extends Unit {
             }
         }
         return RANK.DEFAULT;
+    }
+    /**
+     * waitAtDist() stays near the home archon
+     **/
+    public void waitAtDist(int idealDistSquared, boolean shouldRepel) throws GameActionException{
+        //stays at around an ideal dist
+        MapLocation myLocation = rc.getLocation();
+        int buffer = 4;
+        // rc.setIndicatorString("" + Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared));
+        if (Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared) <= buffer){
+            // rc.setIndicatorString("here");
+            return; //you're already in range
+        }
+        int[] costs = new int[8];
+        for (int i = 0; i < 8; i++){
+            MapLocation newLocation = myLocation.add(directions[i]);
+            int cost = 0;
+            if (!rc.onTheMap(newLocation)) {
+                cost = 999999;
+            }
+            else {
+                cost = 10*Math.abs(newLocation.distanceSquaredTo(homeArchon)-idealDistSquared);
+                //cost += rc.senseRubble(newLocation);
+            }
+            if (shouldRepel){ //don't go near fellow ally soldiers
+                for (RobotInfo robot : nearbyAllies) {
+                    if (robot.type == rc.getType()) {
+                        cost -= newLocation.distanceSquaredTo(robot.location); //trying to maximize distance
+                    }
+                }
+            }
+            costs[i] = cost;
+
+        }
+        String s = " ";
+        for (int i =0; i < 8; i++) s += directions[i] + ": " + costs[i] + " ";
+        rc.setIndicatorString(s);
+        int cost = 99999;
+        Direction optimalDir = null;
+        for (int i = 0; i < directions.length; i++) {
+            Direction dir = directions[i];
+            if (rc.canMove(dir)) {
+                if (costs[i] < cost) {
+                    cost = costs[i];
+                    optimalDir = dir;
+                }
+            }
+        }
+        if (optimalDir != null) {
+            if (rc.canMove(optimalDir)) {
+                // rc.setIndicatorString("here2");
+                rc.move(optimalDir);
+            }
+        }
+
     }
 
     public boolean isLowHealth() throws GameActionException {

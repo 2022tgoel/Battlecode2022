@@ -177,48 +177,6 @@ public class Unit{
         }
         //should not reach here, if it does the location you were passing is not adjacent!
     }
-    /**
-     * waitAtDist() stays near the home archon
-     **/
-    public void waitAtDist(int idealDistSquared) throws GameActionException{
-        //stays at around an ideal dist
-        MapLocation myLocation = rc.getLocation();
-        int buffer = 5;
-        // rc.setIndicatorString("" + Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared));
-        if (Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared) < buffer){
-            // rc.setIndicatorString("here");
-            return; //you're already in range
-        }
-        int[] costs = new int[8];
-        for (int i = 0; i < 8; i++){
-            MapLocation newLocation = myLocation.add(directions[i]);
-            if (!rc.onTheMap(newLocation)) {
-                costs[i] = 999999;
-            }
-            else {
-                costs[i] = 100*Math.abs(newLocation.distanceSquaredTo(homeArchon)-idealDistSquared);
-                costs[i] += rc.senseRubble(newLocation);
-            }
-        }
-        int cost = 99999;
-        Direction optimalDir = null;
-        for (int i = 0; i < directions.length; i++) {
-            Direction dir = directions[i];
-            if (rc.canMove(dir)) {
-                if (costs[i] < cost) {
-                    cost = costs[i];
-                    optimalDir = dir;
-                }
-            }
-        }
-        if (optimalDir != null) {
-            if (rc.canMove(optimalDir)) {
-                // rc.setIndicatorString("here2");
-                rc.move(optimalDir);
-            }
-        }
-
-    }
 
     //1. bug pathing
 

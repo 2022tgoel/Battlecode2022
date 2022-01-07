@@ -187,7 +187,7 @@ public class Archon extends Unit {
         if (!rc.canBuildRobot(RobotType.SOLDIER, dir)) return;
         //1. find num soliders nearby
         int s =0;
-        for (RobotInfo r :rc.senseNearbyRobots(RobotType.ARCHON.visionRadiusSquared, rc.getTeam()) ){
+        for (RobotInfo r :rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam()) ){
             if (r.type == RobotType.SOLDIER){
                 s++;
             }
@@ -197,7 +197,7 @@ public class Archon extends Unit {
         if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
             rc.buildRobot(RobotType.SOLDIER, dir);
             built_units++;
-            if (s <= 40) {
+            if (s <= 25) {
                 postRank(RANK.DEFENDER);
                 rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
             } 
@@ -231,7 +231,7 @@ public class Archon extends Unit {
      * enemySoldiersInRange() checks if a soldier that might want to attack in nearby
      **/
     public boolean enemySoldiersInRange() throws GameActionException{
-        for (RobotInfo r :rc.senseNearbyRobots(RobotType.ARCHON.visionRadiusSquared, rc.getTeam().opponent()) ){
+        for (RobotInfo r :rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam().opponent()) ){
             if (r.type == RobotType.SOLDIER){
                 return true;
             }
@@ -285,7 +285,7 @@ public class Archon extends Unit {
 
     public void attemptHeal() throws GameActionException {
         boolean soldiers_home = false;
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.ARCHON.actionRadiusSquared, rc.getTeam());
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(rc.getType().actionRadiusSquared, rc.getTeam());
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
             RobotInfo weakestBot = nearbyBots[0];
