@@ -5,6 +5,8 @@ import java.util.*;
 
 public class Archon extends Unit {
     int counter = 0;
+    int archonNumber = -1;
+
     int[] build_order = chooseBuildOrder();
     int built_units = 0;
     int num_soldiers = 0;
@@ -15,10 +17,14 @@ public class Archon extends Unit {
     RANK unitRank;
 	public Archon(RobotController rc) throws GameActionException {
         super(rc);
+        archonNumber = getArchonNumber();
     }
 
- 	@Override
+    @Override
     public void run() throws GameActionException {
+        if (counter == 2) {
+            clearArchonNumbers();
+        }
         // refresh the posted rank with each bot
         pullRank();
         // don't update unitRank if the previous special unit wasn't built
@@ -83,6 +89,7 @@ public class Archon extends Unit {
         }
         attemptHeal();
         turn_update();
+        rc.setIndicatorString("archonNumber: " + archonNumber);
     }
 
     public RANK specialUnit() {
@@ -93,6 +100,27 @@ public class Archon extends Unit {
         else {
             return RANK.DEFAULT;
         }
+    }
+
+    public void clearArchonNumbers() throws GameActionException {
+        // if you don't read all 0s for the first four numbers, set them to zero.
+        for (int i = 0; i < 4; i++) {
+            if (rc.readSharedArray(i) != 0) {
+                rc.writeSharedArray(i, 0);
+            }
+        }
+    }
+
+    public int getArchonNumber() throws GameActionException {
+        int data;
+        for (int i = 0; i < 4; i++) {
+            data = rc.readSharedArray(i);
+            if (data == 0){
+                rc.writeSharedArray(i, 1);
+                return i;
+            }
+        }
+        return -1;
     }
 
     public void postRank(RANK rank) throws GameActionException {
