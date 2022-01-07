@@ -115,6 +115,8 @@ public class Archon extends Unit {
         }
         attemptHeal();
 
+        // stagnate dRush data so that it must be continuously updated.
+        clearDRush();
         // turn of all flags
         CONSTRUCT_SPECIAL_UNIT = false;
         CONSTRUCTED_SPECIAL_UNIT = false;
@@ -129,6 +131,14 @@ public class Archon extends Unit {
         }
         else {
             return RANK.DEFAULT;
+        }
+    }
+
+    public void clearDRush() throws GameActionException{
+        if (rc.getRoundNum() % 10 == 0) {
+            for (int i = 0; i < 4; i++) {
+                rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i, 0);
+            }
         }
     }
 

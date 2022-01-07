@@ -19,6 +19,7 @@ public class Soldier extends Unit {
     int threatDetectedRound = 10000;
     int round_num = 0;
     int archon_index = -1;
+    int dRushChannel = -1;
     double s_attraction = 0.0;
     double m_attraction = 10.0;
     double s_repulsion = 10;
@@ -299,12 +300,21 @@ public class Soldier extends Unit {
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         int threatLevel = 0;
         int data;
+        int num_enemies = 0;
+        double cx = 0;
+        double cy = 0;
         for (RobotInfo enemy : enemies) {
             if (enemy.type == RobotType.SOLDIER) {
                 threatLevel += 1;
+                cx += (double) enemy.location.x;
+                cy += (double) enemy.location.y;
+                num_enemies += 1;
             }
             else if (enemy.type == RobotType.SAGE) {
                 threatLevel += 4;
+                cx += (double) enemy.location.x;
+                cy += (double) enemy.location.y;
+                num_enemies += 1;
             }
         }
         if (threatLevel >= 4) {
@@ -313,25 +323,20 @@ public class Soldier extends Unit {
                 data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
                 // go through channels until you find an empty one to communicate with.
                 if (data == 0) {
-                    rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i, locationToInt(homeArchon));
+                    MapLocation avgPos = new MapLocation((int) (cx / num_enemies), (int) (cy / num_enemies));
+                    rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i, locationToInt(avgPos));
+                    dRushChannel = i;
                     break;
                 }
             }
             threatDetectedRound = round_num;
         }
         else {
-            for (int i = 0; i < 4; i++) {
-                // rc.writeSharedArray(, value);
-                data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
-                // go through channels until you find an empty one to communicate with.
-                if (data != 0) {
-                    int x = data / 64;
-                    int y = data % 64;
-                    // clear channel if threat is no longer active
-                    if (homeArchon.x == x && homeArchon.y == y && (round_num - threatDetectedRound) > 10) {
-                        rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i, 0);
-                        break;
-                    }
+            // clear channel if threat is no longer active
+            data = rc.readSharedArray(dRushChannel);
+            if (data != 0) {
+                if ((round_num - threatDetectedRound) > 10) {
+                    rc.writeSharedArray(dRushChannel, 0);
                 }
             }
         }
