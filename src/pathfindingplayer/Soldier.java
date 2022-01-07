@@ -355,7 +355,7 @@ public class Soldier extends Unit {
                 threatLevel += 4;
             }
         }
-        if (threatLevel >= 4) {
+        if (threatLevel >= 2) {
             for (int i = 0; i < 4; i++) {
                 // rc.writeSharedArray(, value);
                 data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
@@ -368,23 +368,17 @@ public class Soldier extends Unit {
                     break;
                 }
                 if (data == 0) {
-                    MapLocation avgPos = new MapLocation(homeArchon.x, homeArchon.y);
-                    rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i, locationToInt(avgPos));
                     dRushChannel = i;
-                    break;
+                    
                 }
             }
+            rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + dRushChannel, locationToInt(homeArchon));
             threatDetectedRound = round_num;
         }
         else {
             // clear channel if threat is no longer active
             if (dRushChannel != -1) {
                 data = rc.readSharedArray(dRushChannel);
-                if (data != 0) {
-                    if ((round_num - threatDetectedRound) > 10) {
-                        rc.writeSharedArray(dRushChannel, 0);
-                    }
-                }
             }
         }
     }
