@@ -75,10 +75,11 @@ public class Soldier extends Unit {
                     fuzzyMove(homeArchon);
                     break;
                 case EXPLORATORY:
-                    moveInDirection(exploratoryDir2);
+                    moveInDirection(friendlyDir());
+                    /*
                     if (adjacentToEdge()) {
                         exploratoryDir2 = getExploratoryDir();
-                    }
+                    }*/
                     break;
                 case HUNTING:
                     approachArchon();
@@ -96,7 +97,7 @@ public class Soldier extends Unit {
         boolean homeArchonThreatened = false;
         if (threatenedArchons!=null){
             for (MapLocation archon : threatenedArchons){
-                if (archon == homeArchon) homeArchonThreatened = true;
+                if (archon.equals(homeArchon)) homeArchonThreatened = true;
             }
         }
         
