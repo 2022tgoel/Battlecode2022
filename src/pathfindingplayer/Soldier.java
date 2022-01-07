@@ -59,7 +59,6 @@ public class Soldier extends Unit {
                     // only find closest archon if there is more then one
                     if (threatenedArchons.length > 1) {
                         for (MapLocation loc: threatenedArchons) {
-                            if (loc == null) break;
                             if (loc.distanceSquaredTo(rc.getLocation()) < min_dist) {
                                 min_dist = loc.distanceSquaredTo(rc.getLocation());
                                 closest = loc;
@@ -76,6 +75,8 @@ public class Soldier extends Unit {
                     }
                 case HUNTING:
                     approachArchon();
+                default:
+                    break;
             }
         }
         counter += 1;
@@ -287,7 +288,7 @@ public class Soldier extends Unit {
             for (int i = 0; i < numThreatenedArchons; i++) {
                 threatenedArchons[i] = archons[i];
             }
-            return archons;
+            return threatenedArchons;
         }
     }
 

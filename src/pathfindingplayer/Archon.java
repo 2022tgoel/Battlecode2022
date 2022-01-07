@@ -227,7 +227,7 @@ public class Archon extends Unit {
     public void clearArchonNumbers() throws GameActionException {
         // if you don't read all 0s for the first four numbers, set them to zero.
         for (int i = 0; i < 4; i++) {
-            if (rc.readSharedArray(i) != 0) {
+            if ((rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + i)) != 0) {
                 rc.writeSharedArray(i, 0);
             }
         }
@@ -236,7 +236,7 @@ public class Archon extends Unit {
     public int getArchonNumber() throws GameActionException {
         int data;
         for (int i = 0; i < 4; i++) {
-            data = rc.readSharedArray(i);
+            data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + i);
             if (data == 0){
                 rc.writeSharedArray(i, 1);
                 if (i == rc.getArchonCount() - 1) {
