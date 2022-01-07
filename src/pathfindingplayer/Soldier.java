@@ -34,17 +34,13 @@ public class Soldier extends Unit {
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
         rank = findRank();
+        momentumDir = directions[rng.nextInt(8)];
     }
-    /*
-    0 - exploring 
-    1 - going to archon
-    */
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
         attemptAttack();
         if (rank == RANK.DEFENDER){
-            nearbyAllies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam());
             waitAtDist(20, true);
             detectArchonThreat();
         }
@@ -70,17 +66,19 @@ public class Soldier extends Unit {
                 fuzzyMove(homeArchon);
             }
             else if (mode == MODE.EXPLORATORY) {
+               // exploreMove();
+                
                 moveInDirection(exploratoryDir2);
                 if (adjacentToEdge()) {
                     exploratoryDir2 = getExploratoryDir();
-                } 
+                }
             }
             else if (mode == MODE.HUNTING){
                 b = approachArchon();
                 if (!b) mode = MODE.EXPLORATORY;
             }
-
-            if (archon_index==-1){ 
+            
+            if (mode == MODE.EXPLORATORY){ 
                 b = senseArchon();
                 if (b) mode = MODE.HUNTING;
                 else {
@@ -90,7 +88,7 @@ public class Soldier extends Unit {
             }
         }
         counter += 1;
-        rc.setIndicatorString("RANK: " + rank.toString());
+      //  rc.setIndicatorString("RANK: " + rank.toString());
     }
 
     public RANK findRank() throws GameActionException {
@@ -121,6 +119,7 @@ public class Soldier extends Unit {
     public void waitAtDist(int idealDistSquared, boolean shouldRepel) throws GameActionException{
         //stays at around an ideal dist
         MapLocation myLocation = rc.getLocation();
+        RobotInfo[] nearbyAllies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam());
         int buffer = 4;
         // rc.setIndicatorString("" + Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared));
         if (Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared) <= buffer){
@@ -136,21 +135,24 @@ public class Soldier extends Unit {
             }
             else {
                 cost = 10*Math.abs(newLocation.distanceSquaredTo(homeArchon)-idealDistSquared);
-                //cost += rc.senseRubble(newLocation);
-            }
-            if (shouldRepel){ //don't go near fellow ally soldiers
-                for (RobotInfo robot : nearbyAllies) {
-                    if (robot.type == rc.getType()) {
-                        cost -= newLocation.distanceSquaredTo(robot.location); //trying to maximize distance
+                if (shouldRepel){ //don't go near fellow ally soldiers
+                    for (RobotInfo robot : nearbyAllies) {
+                        if (robot.type == rc.getType()) {
+                            cost -= newLocation.distanceSquaredTo(robot.location); //trying to maximize distance
+                        }
                     }
                 }
+                //cost += rc.senseRubble(newLocation);
             }
+            
             costs[i] = cost;
 
         }
+        /*
         String s = " ";
         for (int i =0; i < 8; i++) s += directions[i] + ": " + costs[i] + " ";
         rc.setIndicatorString(s);
+        */
         int cost = 99999;
         Direction optimalDir = null;
         for (int i = 0; i < directions.length; i++) {
@@ -168,6 +170,70 @@ public class Soldier extends Unit {
                 rc.move(optimalDir);
             }
         }
+
+    }
+
+    Direction momentumDir = null;
+    public void exploreMove() throws GameActionException{
+        MapLocation myLocation = rc.getLocation();
+        RobotInfo[] nearbyAllies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam());
+        Direction[] dirs = {momentumDir, momentumDir.rotateLeft(), momentumDir.rotateRight(), 
+                momentumDir.rotateLeft().rotateLeft(), momentumDir.rotateRight().rotateRight(), 
+                momentumDir.opposite().rotateLeft(), momentumDir.opposite().rotateRight(), momentumDir.opposite()};
+        int[] costs = new int[8];
+        for (int i = 0; i < 8; i++){
+            MapLocation newLocation = myLocation.add(dirs[i]);
+            int cost = 0;
+            if (!rc.onTheMap(newLocation)) {
+                cost = 999999;
+            }
+            else {
+                //momentum component
+                if (i >=1){
+                    cost+=10;
+                }
+                if (i >= 3) {
+                    cost += 30;
+                }
+                if (i >=5 ){
+                    cost+=30;
+                }
+                
+
+                //repelling component
+                for (RobotInfo robot : nearbyAllies) {
+                    if (robot.type == rc.getType()) {
+                        cost -= newLocation.distanceSquaredTo(robot.location); //trying to maximize distance
+                    }
+                }
+                //rubble component
+                cost += rc.senseRubble(newLocation);
+            }
+            costs[i] = cost;
+
+        }
+        String s = " ";
+        for (int i =0; i < 8; i++) s += costs[i] + " ";
+        rc.setIndicatorString(s);
+        int cost = 99999;
+        Direction optimalDir = null;
+        for (int i = 0; i < dirs.length; i++) {
+            Direction dir = dirs[i];
+            if (rc.canMove(dir)) {
+                if (costs[i] < cost) {
+                    cost = costs[i];
+                    optimalDir = dir;
+                }
+            }
+        }
+        if (optimalDir != null) {
+            if (rc.canMove(optimalDir)) {
+                // rc.setIndicatorString("here2");
+                rc.move(optimalDir);
+                momentumDir = optimalDir;
+            }
+        }
+<<<<<<< HEAD
     }
 
     public MapLocation[] findThreatenedArchons() throws GameActionException {
@@ -197,6 +263,8 @@ public class Soldier extends Unit {
             }
             return archons;
         }
+=======
+>>>>>>> d2db73b2638e1bc1956ad68bf192de9701838f85
     }
 
     public void detectArchonThreat() throws GameActionException {
