@@ -46,6 +46,7 @@ public class Archon extends Unit {
             unitRank = specialUnit();
         }
 
+        // TODO, let individual units choose how they're placed.
         // if you have an order or a special unit you want to build then do it
         Direction[] dirs = sortedDirections();
         if (unitRank != RANK.DEFAULT) {

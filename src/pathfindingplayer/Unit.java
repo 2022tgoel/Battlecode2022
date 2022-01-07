@@ -7,6 +7,7 @@ public class Unit{
 
     RobotController rc;
     int archon_index = -1;
+    RANK[] rank_map = initializeRankMap();
     final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
     MapLocation homeArchon;
@@ -26,6 +27,7 @@ public class Unit{
         rc = robotController;
         rng.setSeed((long) rc.getID());
         homeArchon = findHomeArchon();
+        initializeRankMap();
     }
 
     /**
@@ -471,5 +473,18 @@ public class Unit{
             }
         }
         return rc.getLocation();
+    }
+
+    public RANK[] initializeRankMap() {
+        RANK[] map = new RANK[64];
+        RANK[] ranks = RANK.values();
+        for (int i = 0; i < ranks.length; i++) {
+            map[ranks[i].getValue()] = ranks[i];
+        }
+        return map;
+    }
+
+    public RANK getRank(int index) {
+        return rank_map[index];
     }
 }
