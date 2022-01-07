@@ -7,6 +7,12 @@ import java.util.*;
 
 public class Soldier extends Unit {
 
+    enum MODE {
+        EXPLORATORY,
+        HUNTING,
+        ;
+    }
+
     int counter = 0;
     int round_num = 0;
     int archon_index = -1;
@@ -17,7 +23,7 @@ public class Soldier extends Unit {
     double a_repulsion = 100;
 
     RANK rank;
-    int mode = 0;
+    MODE mode = MODE.EXPLORATORY;
 
     MapLocation target;
     Direction exploratoryDir = usefulDir();
@@ -42,30 +48,28 @@ public class Soldier extends Unit {
             if (isLowHealth()) {
                 fuzzyMove(homeArchon);
             }
-            else if (mode == 0){
+            else if (mode == MODE.EXPLORATORY) {
                 moveInDirection(exploratoryDir2);
                 if (adjacentToEdge()) {
                     exploratoryDir2 = getExploratoryDir();
                 } 
             }
-            else if (mode == 1){
+            else if (mode == MODE.HUNTING){
                 b = approachArchon();
-                if (!b) mode = 0;
+                if (!b) mode = MODE.EXPLORATORY;
             }
 
             if (archon_index==-1){ 
                 b = senseArchon();
-                if (b) mode = 1;
+                if (b) mode = MODE.HUNTING;
                 else {
                     b= detectArchon(); 
-                    if (b) mode = 1; //switch to hunting
+                    if (b) mode = MODE.HUNTING; //switch to hunting
                 }
             }
         }
         counter += 1;
-        if (rank != RANK.DEFAULT){
-            rc.setIndicatorString("RANK: " + rank.toString());
-        }
+        rc.setIndicatorString("RANK: " + rank.toString());
     }
 
     public RANK findRank() throws GameActionException {
