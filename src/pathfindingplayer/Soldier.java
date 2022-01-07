@@ -360,6 +360,13 @@ public class Soldier extends Unit {
                 // rc.writeSharedArray(, value);
                 data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
                 // go through channels until you find an empty one to communicate with.
+                int x = data / 64;
+                int y = data % 64;
+                // channel already written too.
+                if (x == homeArchon.x && y == homeArchon.y) {
+                    dRushChannel = i;
+                    break;
+                }
                 if (data == 0) {
                     MapLocation avgPos = new MapLocation(homeArchon.x, homeArchon.y);
                     rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i, locationToInt(avgPos));
