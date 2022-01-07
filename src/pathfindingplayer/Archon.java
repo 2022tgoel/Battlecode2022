@@ -156,8 +156,8 @@ public class Archon extends Unit {
             rc.buildRobot(RobotType.SOLDIER, dir);
             built_units++;
         }
-        if (s <= 40) rc.writeSharedArray(63, 1);
-        else rc.writeSharedArray(63, 0);
+        if (s <= 40) rc.writeSharedArray(62, 1);
+        else rc.writeSharedArray(62, 0);
         rc.setIndicatorString(s + " ");
         
     }

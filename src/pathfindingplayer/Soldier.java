@@ -25,8 +25,7 @@ public class Soldier extends Unit {
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
         rank = findRank();
-        defensive = (rc.readSharedArray(63) > 0);
-        rc.setIndicatorString(rc.readSharedArray(63) + "");
+        defensive = (rc.readSharedArray(62) > 0);
     }
     /*
     0 - exploring 
