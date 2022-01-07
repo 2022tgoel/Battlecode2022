@@ -78,7 +78,12 @@ public class Soldier extends Unit {
             }
         }
         counter += 1;
-        rc.setIndicatorString("MODE: " + mode.toString());
+        if (rank != RANK.DEFENDER) {
+            rc.setIndicatorString("MODE: " + mode.toString());
+        }
+        else {
+            rc.setIndicatorString("RANK: " + rank.toString());
+        }
     }
 
     public MODE determineMode() throws GameActionException {
@@ -125,8 +130,12 @@ public class Soldier extends Unit {
     }
 
     public boolean archonDied() throws GameActionException{
-        RobotInfo home = rc.senseRobotAtLocation(homeArchon);
-        return (home == null || home.type != RobotType.ARCHON);
+        RobotInfo home;
+        if (rc.canSenseLocation(homeArchon)) {
+            home = rc.senseRobotAtLocation(homeArchon);
+            return (home == null || home.type != RobotType.ARCHON);
+        }
+        return false;
     }
     /**
      * waitAtDist() stays near the home archon
@@ -261,8 +270,10 @@ public class Soldier extends Unit {
             if (data != 0) {
                 int x = data / 64;
                 int y = data % 64;
-                archons[numThreatenedArchons] = new MapLocation(x, y);
-                numThreatenedArchons += 1;
+                if (validCoords(x, y)) {
+                    archons[numThreatenedArchons] = new MapLocation(x, y);
+                    numThreatenedArchons++;
+                }
             }
         }
 

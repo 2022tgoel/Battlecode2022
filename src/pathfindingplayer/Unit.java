@@ -43,7 +43,7 @@ public class Unit{
      **/
     public boolean detectArchon() throws GameActionException {
         for (int i = 0; i < 4; i++) {
-            int data = rc.readSharedArray(i);
+            int data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + i);
             if (data != 0) {
                 // rc.setIndicatorString("archon found UWU");
                 archon_index = i;
@@ -77,7 +77,7 @@ public class Unit{
         //check that the loc is not already broadcasted
         int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
         for (int i= 0; i < 4; i++){
-            int data = rc.readSharedArray(i);
+            int data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + i);
             int x = data / 64;
             int y = data % 64;
             if (loc.x == x && loc.y == y) {
