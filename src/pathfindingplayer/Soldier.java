@@ -332,8 +332,6 @@ public class Soldier extends Unit {
         double cy = 0;
         for (RobotInfo enemy : enemies) {
             if (enemy.type == RobotType.SOLDIER) {
-                cx += (double) enemy.location.x;
-                cy += (double) enemy.location.y;
                 num_enemies += 1;
             }
             else if (enemy.type == RobotType.SAGE) {
@@ -349,21 +347,12 @@ public class Soldier extends Unit {
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         int threatLevel = 0;
         int data;
-        int num_enemies = 0;
-        double cx = 0;
-        double cy = 0;
         for (RobotInfo enemy : enemies) {
             if (enemy.type == RobotType.SOLDIER) {
                 threatLevel += 1;
-                cx += (double) enemy.location.x;
-                cy += (double) enemy.location.y;
-                num_enemies += 1;
             }
             else if (enemy.type == RobotType.SAGE) {
                 threatLevel += 4;
-                cx += (double) enemy.location.x;
-                cy += (double) enemy.location.y;
-                num_enemies += 1;
             }
         }
         if (threatLevel >= 4) {
@@ -372,7 +361,7 @@ public class Soldier extends Unit {
                 data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
                 // go through channels until you find an empty one to communicate with.
                 if (data == 0) {
-                    MapLocation avgPos = new MapLocation((int) (cx / (double) num_enemies), (int) (cy / (double) num_enemies));
+                    MapLocation avgPos = new MapLocation(homeArchon.x, homeArchon.y);
                     rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i, locationToInt(avgPos));
                     dRushChannel = i;
                     break;
