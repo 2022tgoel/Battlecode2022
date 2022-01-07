@@ -8,6 +8,7 @@ import java.util.*;
 public class Soldier extends Unit {
 
     int counter = 0;
+    int round_num = 0;
     int archon_index = -1;
     double s_attraction = 0.0;
     double m_attraction = 10.0;
@@ -33,6 +34,7 @@ public class Soldier extends Unit {
     */
     @Override
     public void run() throws GameActionException {
+        round_num = rc.getRoundNum();
         attemptAttack();
         if (defensive){
             waitAtDist(20);
@@ -62,16 +64,26 @@ public class Soldier extends Unit {
                 }
             }
         }
-        rc.setIndicatorString(defensive + " ");
+        // rc.setIndicatorString(defensive + " ");
         counter += 1;
-        rc.setIndicatorString("RANK: " + rank.toString());
+        // rc.setIndicatorString("RANK: " + rank.toString());
     }
 
     public RANK findRank() throws GameActionException {
-        int data = rc.readSharedArray(63);
+        rc.setIndicatorString("READY TO READ");
+        int data;
+        // receives data a round late due to turnqueue
+        if (round_num % 2 == 0) {
+            data = rc.readSharedArray(CHANNEL.SEND_RANKS1.getValue());
+        }
+        else {
+            data = rc.readSharedArray(CHANNEL.SEND_RANKS2.getValue());
+        }
+
         int status = data / 10000;
-        int x = (data - 10000) / 100;
-        int y = data - 10000 - x * 100;
+        int x = (data - (10000 * status)) / 100;
+        int y = (data - (10000 * status) - (x * 100));
+        rc.setIndicatorString("STATUS: " + status + " X: " + x + " Y: " + y);
         if (homeArchon.equals(new MapLocation(x, y)))
             if (status == 0) {
                 return RANK.DEFAULT;
@@ -82,7 +94,7 @@ public class Soldier extends Unit {
             // add more logic later
             else {
                 return RANK.DEFAULT;
-            }
+        }
         else {
             return RANK.DEFAULT;
         }
@@ -200,7 +212,7 @@ public class Soldier extends Unit {
                 }
             }
         }
-        rc.setIndicatorString("dir: " + d + "| attraction: " + Math.round(dx1) + ", " + Math.round(dy1) + " | repulsion: " + Math.round(dx2) + ", " + Math.round(dy2));
+        // rc.setIndicatorString("dir: " + d + "| attraction: " + Math.round(dx1) + ", " + Math.round(dy1) + " | repulsion: " + Math.round(dx2) + ", " + Math.round(dy2));
         // rc.setIndicatorString("vs: " + Math.round(cxs / num_soldiers) + ", " + Math.round(cys / num_soldiers) + " | vm: " + Math.round(cxm / num_miners) + ", " + Math.round(cym / num_miners));
         return d;
     }
@@ -222,7 +234,7 @@ public class Soldier extends Unit {
                 d = Direction.SOUTHWEST;
             }
         }
-        rc.setIndicatorString(d.dx + " " + d.dy);
+        // rc.setIndicatorString(d.dx + " " + d.dy);
         Direction[] dirs = {d, d.rotateLeft(), d.rotateRight()};
         return dirs[rng.nextInt(dirs.length)];
     }

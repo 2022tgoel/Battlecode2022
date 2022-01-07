@@ -14,7 +14,12 @@ public class Archon extends Unit {
     int num_miners = 0;
     int num_builders = 0;
     int num_archons;
+    boolean PASS_ON = false;
     boolean CONSTRUCT_SPECIAL_UNIT = false;
+    boolean CONSTRUCTED_SPECIAL_UNIT = false;
+
+    // if another archon is commanding you to do something
+    RANK ORDER;
 
     RANK unitRank;
 	public Archon(RobotController rc) throws GameActionException {
@@ -29,76 +34,122 @@ public class Archon extends Unit {
         if (round_num % num_archons != archonNumber) {
             return;
         }
-
-        if (round_num == 2) {
-            clearArchonNumbers();
-        }
         // refresh the posted rank with each bot
-        pullRank();
-        // don't update unitRank if the previous special unit wasn't built
-        if (!CONSTRUCT_SPECIAL_UNIT) {
+        clearRanks();
+        ORDER = getOrder();
+
+        // If you recieved an order, then set the rank of the current unit to the order
+        if (ORDER != RANK.DEFAULT) {
+            unitRank = ORDER;
+        }
+        else {
             unitRank = specialUnit();
         }
 
-        // Pick a direction to build in.
+        // if you have an order or a special unit you want to build then do it
         Direction[] dirs = sortedDirections();
-        for (Direction dir: dirs) {
-            // don't iterate through directions if this is a normal unit
-            if (unitRank == RANK.DEFAULT) {
-                break;
-            }
-            // if unit is special, build it now.
-
-            if (unitRank == RANK.CONVOY_LEADER) {
-                rc.setIndicatorString("Trying to build a CONVOY LEADER");
-                if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
-                    rc.buildRobot(RobotType.SOLDIER, dir);
-                    postRank(RANK.CONVOY_LEADER);
-                    num_soldiers += 1;
-                    CONSTRUCT_SPECIAL_UNIT = false;
-                    break;
+        if (unitRank != RANK.DEFAULT) {
+            // Pick a direction to build in.
+            for (Direction dir: dirs) {
+                if (unitRank == RANK.CONVOY_LEADER) {
+                    // rc.setIndicatorString("Trying to build a CONVOY LEADER");
+                    if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
+                        rc.setIndicatorString("I BUILT A CONVOY LEADER");
+                        rc.buildRobot(RobotType.SOLDIER, dir);
+                        postRank(RANK.CONVOY_LEADER);
+                        num_soldiers += 1;
+                        CONSTRUCTED_SPECIAL_UNIT = true;
+                        break;
+                    }
                 }
             }
         }
 
-        for (Direction dir: dirs) {
-            if (built_units < build_order[counter % 3]) {
-                switch (counter % 3) {
-                    case 0:
-                        // rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + counter);
-                        if (rc.canBuildRobot(RobotType.MINER, dir)) {
-                            rc.buildRobot(RobotType.MINER, dir);
-                            built_units++;
-                            num_miners++;
-                        }
-                        break;
-                    case 1:
-                      //  rc.setIndicatorString("Trying to build a soldier");
-                        buildSoldier(dir);
-                        break;
-                    case 2:
-                        // rc.setIndicatorString("Trying to build a builder");
-                        if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
-                            rc.buildRobot(RobotType.BUILDER, dir);
-                            built_units++;
-                            num_builders++;
-                        }
-                        break;
-                }
+        // if you received an order and you couldn't build it, or if you couldn't build a special unit and wanted to, send another order
+        if ((unitRank != RANK.DEFAULT && CONSTRUCT_SPECIAL_UNIT == true && PASS_ON) || (ORDER != RANK.DEFAULT && !CONSTRUCTED_SPECIAL_UNIT)) {
+            if (ORDER != RANK.DEFAULT) {
+                rc.setIndicatorString("ORDERING A " + ORDER.toString());
+                postOrder(ORDER);
             }
             else {
-                counter++;
-                built_units = 0;
+                rc.setIndicatorString("ORDERING A " + unitRank.toString());
+                postOrder(unitRank);
+            }
+        }
+
+        // if you received an order and you couldn't build it, DON't WASTE RESOURCES
+        if (ORDER == RANK.DEFAULT) {
+            for (Direction dir: dirs) {
+                if (built_units < build_order[counter % 3]) {
+                    switch (counter % 3) {
+                        case 0:
+                            // rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + counter);
+                            if (rc.canBuildRobot(RobotType.MINER, dir)) {
+                                rc.buildRobot(RobotType.MINER, dir);
+                                built_units++;
+                                num_miners++;
+                            }
+                            break;
+                        case 1:
+                          //  rc.setIndicatorString("Trying to build a soldier");
+                            buildSoldier(dir);
+                            break;
+                        case 2:
+                            // rc.setIndicatorString("Trying to build a builder");
+                            if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
+                                rc.buildRobot(RobotType.BUILDER, dir);
+                                built_units++;
+                                num_builders++;
+                            }
+                            break;
+                    }
+                }
+                else {
+                    counter++;
+                    built_units = 0;
+                }
             }
         }
         attemptHeal();
         turn_update();
-        rc.setIndicatorString("archonNumber: " + archonNumber);
+        CONSTRUCT_SPECIAL_UNIT = false;
+        CONSTRUCTED_SPECIAL_UNIT = false;
+        // rc.setIndicatorString("BUILDING RANK: " + unitRank.toString());
+        // rc.setIndicatorString("archonNumber: " + archonNumber);
+    }
+
+    public void postOrder(RANK order) throws GameActionException {
+        rc.setIndicatorString("ORDERING A " + ORDER.toString() + " ON CHANNEL " + CHANNEL.ORDERS.getValue());
+        rc.writeSharedArray(CHANNEL.ORDERS.getValue(), order.getValue());
+    }
+
+    public RANK getOrder() throws GameActionException {
+        rc.setIndicatorString("READING ORDERS FROM CHANNEL " + CHANNEL.ORDERS.getValue());
+        int data = rc.readSharedArray(CHANNEL.ORDERS.getValue());
+        // rc.setIndicatorString("DATA RECIEVED ");
+        if (data == 0) {
+            return RANK.DEFAULT;
+        }
+
+        clearOrder();
+
+        if (data == 1) {
+            rc.setIndicatorString("MUST BUILD CONVOY LEADER");
+            return RANK.CONVOY_LEADER;
+        }
+        else {
+            return RANK.DEFAULT;
+        }
+    }
+
+    public void clearOrder() throws GameActionException {
+        rc.writeSharedArray(CHANNEL.ORDERS.getValue(), 0);
     }
 
     public RANK specialUnit() {
         if (rc.getRoundNum() % 50 == 0 ) {
             CONSTRUCT_SPECIAL_UNIT = true;
+            PASS_ON = true;
             return RANK.CONVOY_LEADER;
         }
         else {
@@ -121,6 +172,9 @@ public class Archon extends Unit {
             data = rc.readSharedArray(i);
             if (data == 0){
                 rc.writeSharedArray(i, 1);
+                if (i == rc.getArchonCount() - 1) {
+                    clearArchonNumbers();
+                }
                 return i;
             }
         }
@@ -134,12 +188,22 @@ public class Archon extends Unit {
             case CONVOY_LEADER:
                 MapLocation loc = rc.getLocation();
                 int loc_int = 1 * 10000 + loc.x * 100 + loc.y;
-                rc.writeSharedArray(63, loc_int);
+                if (round_num % 2 == 0) {
+                    rc.writeSharedArray(CHANNEL.SEND_RANKS1.getValue(), loc_int);
+                }
+                else {
+                    rc.writeSharedArray(CHANNEL.SEND_RANKS2.getValue(), loc_int);
+                }
         }
     }
 
-    public void pullRank() throws GameActionException {
-        rc.writeSharedArray(63, 0);
+    public void clearRanks() throws GameActionException {
+        if (round_num % 2 == 0) {
+            rc.writeSharedArray(CHANNEL.SEND_RANKS1.getValue(), 0);
+        }
+        else {
+            rc.writeSharedArray(CHANNEL.SEND_RANKS2.getValue(), 0);
+        }
     }
     public void buildSoldier(Direction dir) throws GameActionException{ 
         if (!rc.canBuildRobot(RobotType.SOLDIER, dir)) return;

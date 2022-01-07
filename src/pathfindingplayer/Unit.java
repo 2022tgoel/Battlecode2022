@@ -181,9 +181,9 @@ public class Unit{
         //stays at around an ideal dist
         MapLocation myLocation = rc.getLocation();
         int buffer = 5;
-        rc.setIndicatorString("" + Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared));
+        // rc.setIndicatorString("" + Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared));
         if (Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared) < buffer){
-            rc.setIndicatorString("here");
+            // rc.setIndicatorString("here");
             return; //you're already in range
         }
         int[] costs = new int[8];
@@ -210,7 +210,7 @@ public class Unit{
         }
         if (optimalDir != null) {
             if (rc.canMove(optimalDir)) {
-                rc.setIndicatorString("here2");
+                // rc.setIndicatorString("here2");
                 rc.move(optimalDir);
             }
         }
@@ -442,7 +442,7 @@ public class Unit{
 
         dirs[4] = dir;
         // print directions
-        rc.setIndicatorString("dirs: " + dirs[0][0] + " " + dirs[0][1] + " " + dirs[1][0] + " " + dirs[1][1] + " " + dirs[2][0] + " " + dirs[2][1] + " " + dirs[3][0] + " " + dirs[3][1] + " " + dirs[4][0] + " " + dirs[4][1] + " | " + (center.x - cur.x) + " " + (center.y - cur.y) + " | " + center.x + " " + center.y + " | " + cur.x + " " + cur.y);
+        // rc.setIndicatorString("dirs: " + dirs[0][0] + " " + dirs[0][1] + " " + dirs[1][0] + " " + dirs[1][1] + " " + dirs[2][0] + " " + dirs[2][1] + " " + dirs[3][0] + " " + dirs[3][1] + " " + dirs[4][0] + " " + dirs[4][1] + " | " + (center.x - cur.x) + " " + (center.y - cur.y) + " | " + center.x + " " + center.y + " | " + cur.x + " " + cur.y);
 
         return dirs[rng.nextInt(dirs.length)];
     }
