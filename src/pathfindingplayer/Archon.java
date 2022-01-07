@@ -73,12 +73,8 @@ public class Archon extends Unit {
                         }
                         break;
                     case 1:
-                        // rc.setIndicatorString("Trying to build a soldier");
-                        if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
-                            rc.buildRobot(RobotType.SOLDIER, dir);
-                            built_units++;
-                            num_soldiers++;
-                        }
+                      //  rc.setIndicatorString("Trying to build a soldier");
+                        buildSoldier(dir);
                         break;
                     case 2:
                         // rc.setIndicatorString("Trying to build a builder");
@@ -145,11 +141,31 @@ public class Archon extends Unit {
     public void pullRank() throws GameActionException {
         rc.writeSharedArray(63, 0);
     }
+    public void buildSoldier(Direction dir) throws GameActionException{ 
+        if (!rc.canBuildRobot(RobotType.SOLDIER, dir)) return;
+        //1. find num soliders nearby
+        int s =0;
+        for (RobotInfo r :rc.senseNearbyRobots(RobotType.ARCHON.visionRadiusSquared, rc.getTeam()) ){
+            if (r.type == RobotType.SOLDIER){
+                s++;
+            }
+        }
+        
+        // 2. choose defnesive or offensive
+        if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
+            rc.buildRobot(RobotType.SOLDIER, dir);
+            built_units++;
+        }
+        if (s <= 40) rc.writeSharedArray(63, 1);
+        else rc.writeSharedArray(63, 0);
+        rc.setIndicatorString(s + " ");
+        
+    }
     /**
      * enemySoldiersInRange() checks if a soldier that might want to attack in nearby
      **/
     public boolean enemySoldiersInRange() throws GameActionException{
-        for (RobotInfo r :rc.senseNearbyRobots(RobotType.ARCHON.actionRadiusSquared, rc.getTeam().opponent()) ){
+        for (RobotInfo r :rc.senseNearbyRobots(RobotType.ARCHON.visionRadiusSquared, rc.getTeam().opponent()) ){
             if (r.type == RobotType.SOLDIER){
                 return true;
             }
@@ -216,7 +232,7 @@ public class Archon extends Unit {
             }
             if (soldiers_home) {
                 if (rc.canRepair(weakestBot.location)) {
-                    rc.setIndicatorString("Succesful Heal!");
+                  //  rc.setIndicatorString("Succesful Heal!");
                     rc.repair(weakestBot.location);
                 }
             }

@@ -20,10 +20,13 @@ public class Soldier extends Unit {
 
     MapLocation target;
     Direction exploratoryDir = usefulDir();
-
+    int[] exploratoryDir2 = getExploratoryDir();
+    boolean defensive;
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
         rank = findRank();
+        defensive = (rc.readSharedArray(63) > 0);
+        rc.setIndicatorString(rc.readSharedArray(63) + "");
     }
     /*
     0 - exploring 
@@ -31,28 +34,36 @@ public class Soldier extends Unit {
     */
     @Override
     public void run() throws GameActionException {
-        boolean b;
+        attemptAttack();
+        if (defensive){
+            waitAtDist(20);
+        }
+        else {
+            boolean b;
+            if (isLowHealth()) {
+                fuzzyMove(homeArchon);
+            }
+            else if (mode == 0){
+                moveInDirection(exploratoryDir2);
+                if (adjacentToEdge()) {
+                    exploratoryDir2 = getExploratoryDir();
+                } 
+            }
+            else if (mode == 1){
+                b = approachArchon();
+                if (!b) mode = 0;
+            }
 
-        if (isLowHealth()) {
-            fuzzyMove(homeArchon);
-        }
-        else if (mode == 0){
-            moveInDirection(friendlyDir()); 
-        }
-        else if (mode == 1){
-            b = approachArchon();
-            if (!b) mode = 0;
-        }
-
-        if (archon_index==-1){ 
-            b = senseArchon();
-            if (b) mode = 1;
-            else {
-                b= detectArchon(); 
-                if (b) mode = 1; //switch to hunting
+            if (archon_index==-1){ 
+                b = senseArchon();
+                if (b) mode = 1;
+                else {
+                    b= detectArchon(); 
+                    if (b) mode = 1; //switch to hunting
+                }
             }
         }
-        attemptAttack();
+        rc.setIndicatorString(defensive + " ");
         counter += 1;
         rc.setIndicatorString("RANK: " + rank.toString());
     }

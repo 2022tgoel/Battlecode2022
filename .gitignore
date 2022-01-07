@@ -1,3 +1,4 @@
+*.zip
 client32/*
 dist/*
 build/*

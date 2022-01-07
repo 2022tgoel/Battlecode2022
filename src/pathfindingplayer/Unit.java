@@ -175,12 +175,11 @@ public class Unit{
         //should not reach here, if it does the location you were passing is not adjacent!
     }
     /**
-     * waitATurn() stays near the home archon
+     * waitAtDist() stays near the home archon
      **/
-    public void waitATurn() throws GameActionException{
+    public void waitAtDist(int idealDistSquared) throws GameActionException{
         //stays at around an ideal dist
-        MapLocation myLocation = rc.getLocation(); 
-        int idealDistSquared = 10;
+        MapLocation myLocation = rc.getLocation();
         int buffer = 5;
         rc.setIndicatorString("" + Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared));
         if (Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared) < buffer){

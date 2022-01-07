@@ -9,6 +9,7 @@ public class Miner extends Unit {
     double m_repulsion = 1/10;
 
     int[] exploratoryDir = getExploratoryDir();
+    
 	public Miner(RobotController rc) throws GameActionException {
         super(rc);
     }
