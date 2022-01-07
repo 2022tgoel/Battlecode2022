@@ -11,6 +11,7 @@ public class Archon extends Unit {
     int[] build_order = chooseBuildOrder();
     int built_units = 0;
     int num_soldiers = 0;
+    int num_defenders = 0;
     int num_miners = 0;
     int num_builders = 0;
     int num_archons;
@@ -218,7 +219,9 @@ public class Archon extends Unit {
         else {
             rc.buildRobot(RobotType.SOLDIER, dir);
             built_units++;
-            if (round_num/num_archons % 1 == 0){ //about every 10 turns for this archon
+            num_soldiers++;
+            // if you have a low number of defenders, or you have a surplus of soldiers, build a defender
+            if (num_defenders < 3 || (round_num/num_archons % 10 == 0 && num_soldiers > 3 * num_defenders)){ //about every 10 turns for this archon
                 int s =0;
                 // 2. choose defnesive or offensive
                 for (RobotInfo r :rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam()) ){
@@ -229,7 +232,8 @@ public class Archon extends Unit {
                 if (s <= defenseNum) {
                     postRank(RANK.DEFENDER);
                     rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
-                } 
+                    num_defenders++;
+                }
             }
             
         }
@@ -304,13 +308,13 @@ public class Archon extends Unit {
     public int[] chooseBuildOrder() {
         int mapArea = rc.getMapHeight() * rc.getMapHeight();
         if (mapArea < 1400) {
-            return new int[]{2, 3, 0}; // miners, soldiers, builders
+            return new int[]{2, 2, 0}; // miners, soldiers, builders
         }
         else if (mapArea < 2200) {
             return new int[]{2, 2, 0}; // miners, soldiers, builders
         }
         else {
-            return new int[]{3, 4, 0}; // miners, soldiers, builders
+            return new int[]{2, 2, 0}; // miners, soldiers, builders
         }
     }
 
