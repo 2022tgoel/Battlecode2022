@@ -400,9 +400,7 @@ public class Soldier extends Unit {
             return false;
         }
     }
-    public Direction friendlyDir() throws GameActionException {
-
-        Direction d = exploratoryDir; 
+    public Direction friendlyDir() throws GameActionException { 
         RobotInfo[] friendlyRobos = rc.senseNearbyRobots(-1, rc.getTeam());
         MapLocation loc = rc.getLocation();
 
@@ -458,7 +456,7 @@ public class Soldier extends Unit {
         }
         // if there are no miners, explore.
         if (num_miners == 0) {
-            return d;
+            return exploratoryDir;
         }
 
         double dx1 = ((cxm / num_miners) - (double) loc.x) * m_attraction;
@@ -469,44 +467,11 @@ public class Soldier extends Unit {
         double dx = dx1 + dx2;
         double dy = dy1 + dy2;
         // convert dx and dy to direction
-        // values are derived from tangent of 22.5 and 67.5
-        if (dy > 0) {
-            if (dy > 2.4 * Math.abs(dx)) {
-                d = Direction.NORTH;
-            }
-            else if (dy > 0.4 * Math.abs(dx)) {
-                if (dx > 0) {
-                    d = Direction.NORTHEAST;
-                }
-                else {
-                    d = Direction.NORTHWEST;
-                }
-            }
-            else {
-                if (dx > 0) {
-                    d = Direction.EAST;
-                }
-                else {
-                    d = Direction.WEST;
-                }
-            }
-        }
-        else {
-            if (dy < -2.4 * Math.abs(dx)) {
-                d = Direction.SOUTH;
-            }
-            else if (dy < -0.4 * Math.abs(dx)) {
-                if (dx > 0) {
-                    d = Direction.SOUTHEAST;
-                }
-                else {
-                    d = Direction.SOUTHWEST;
-                }
-            }
-        }
-        // rc.setIndicatorString("dir: " + d + "| attraction: " + Math.round(dx1) + ", " + Math.round(dy1) + " | repulsion: " + Math.round(dx2) + ", " + Math.round(dy2));
-        // rc.setIndicatorString("vs: " + Math.round(cxs / num_soldiers) + ", " + Math.round(cys / num_soldiers) + " | vm: " + Math.round(cxm / num_miners) + ", " + Math.round(cym / num_miners));
-        return d;
+        Direction potDir = doubleToDirection(dx, dy);
+        if (potDir != null)
+            return potDir;
+        else
+            return exploratoryDir;
     }
 
     public Direction usefulDir() throws GameActionException {

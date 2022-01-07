@@ -4,11 +4,8 @@ import battlecode.common.*;
 import java.util.*;
 
 public class Miner extends Unit {
-    boolean archon_found = false;
-    int archon_index = -1;
-    double m_repulsion = 1/10;
-
     int[] exploratoryDir = getExploratoryDir();
+    double soldier_repulsion = 2.0;
     
 	public Miner(RobotController rc) throws GameActionException {
         super(rc);
@@ -18,14 +15,13 @@ public class Miner extends Unit {
     public void run() throws GameActionException {
         //Direction d = fuzzyMove(new MapLocation(27, 15));
        // rc.setIndicatorString(d.toString());
-        
-        rc.setIndicatorString("exploratoryDir: " + exploratoryDir[0] + " " + exploratoryDir[1]);
         if (!mining_detour()) {
-            moveInDirection(exploratoryDir);
+            moveInDirection(safeDir(exploratoryDir));
         }
         if (adjacentToEdge()) {
             exploratoryDir = getExploratoryDir();
         }
+        rc.setIndicatorString("exploratoryDir: " + exploratoryDir[0] + " " + exploratoryDir[1]);
         senseArchon();
     }
 
@@ -40,13 +36,72 @@ public class Miner extends Unit {
             if (target != null) {
                 if (!cur.equals(target)){
                     //sense if there is a lucrative nearby area and move there instead
-                    moveToLocation(target);
+                    moveInDirection(safeDir(target));
                     return true;
                 }
             }
             return false;
         }
         return true;
+    }
+
+    public Direction safeDir(MapLocation dir) throws GameActionException {
+        Direction d = rc.getLocation().directionTo(dir);
+        double[] doubleDir = directionToVector(d);
+        double[] soldier_repulsion = fleeFromSoldiers();
+        double[] archon_repulsion = archonRepulsion();
+        double[] newDir = addVectors(doubleDir, soldier_repulsion);
+        newDir = addVectors(newDir, archon_repulsion);
+        return doubleToDirection(newDir[0], newDir[1]);
+    }
+
+    public Direction safeDir(int[] dir) throws GameActionException {
+        Direction d = doubleToDirection((double) dir[0], (double) dir[1]);
+        double[] doubleDir = directionToVector(d);
+        double[] soldier_repulsion = fleeFromSoldiers();
+        double[] archon_repulsion = archonRepulsion();
+        double[] newDir = addVectors(doubleDir, soldier_repulsion);
+        newDir = addVectors(newDir, archon_repulsion);
+        return doubleToDirection(newDir[0], newDir[1]);
+    }
+
+    public double[] archonRepulsion() throws GameActionException {
+        MapLocation cur = rc.getLocation();
+        Direction d = rc.getLocation().directionTo(homeArchon).opposite();
+        if (cur.distanceSquaredTo(homeArchon) <= 5) {
+            return directionToVector(d);
+        }
+        else return new double[]{0,0};
+    }
+
+    public double[] fleeFromSoldiers() {
+        double[] result = {0.0,0.0};
+        MapLocation my = rc.getLocation();
+        int num_enemies = 0;
+        RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+
+        // if no bots from opposite team return
+        if (enemies.length == 0) {
+            return result;
+        }
+        for (RobotInfo ri : enemies) {
+            if (ri.type == RobotType.SOLDIER || ri.type == RobotType.WATCHTOWER || ri.type == RobotType.SAGE) {
+                result[0] += ri.location.x;
+                result[1] += ri.location.y;
+                num_enemies += 1;
+            }
+        }
+
+        // if no damaging enemies from enemy team, return
+        if (num_enemies == 0) {
+            return result;
+        }
+
+        result[0] /= num_enemies;
+        result[1] /= num_enemies;
+        result[0] = -1 * (result[0] - my.x) * soldier_repulsion;
+        result[1] = -1 * (result[1] - my.y) * soldier_repulsion;
+        return result;
     }
 
     /**

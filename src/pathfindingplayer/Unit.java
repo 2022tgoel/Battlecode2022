@@ -391,4 +391,75 @@ public class Unit{
     public RANK getRank(int index) {
         return rank_map[index];
     }
+
+    public double[] directionToVector(Direction dir) throws GameActionException {
+        switch (dir) {
+            case NORTH:
+                return new double[]{0, 1};
+            case NORTHEAST:
+                return new double[]{0.7, 0.7};
+            case EAST:
+                return new double[]{1, 0};
+            case SOUTHEAST:
+                return new double[]{0.7, -0.7};
+            case SOUTH:
+                return new double[]{0, -1};
+            case SOUTHWEST:
+                return new double[]{-0.7, -0.7};
+            case WEST:
+                return new double[]{-1, 0};
+            case NORTHWEST:
+                return new double[]{-0.7, 0.7};
+            default:
+                return new double[]{0, 0};
+        }
+
+    }
+
+    public double[] addVectors(double[] doubleDir, double[] repulsion) {
+        double[] newDir = new double[2];
+        newDir[0] = doubleDir[0] + repulsion[0];
+        newDir[1] = doubleDir[1] + repulsion[1];
+        return newDir;
+    }
+
+    public Direction doubleToDirection(double dx, double dy) {
+        Direction d = null;
+        // values are derived from tangent of 22.5 and 67.5
+        if (dy > 0) {
+            if (dy > 2.4 * Math.abs(dx)) {
+                d = Direction.NORTH;
+            }
+            else if (dy > 0.4 * Math.abs(dx)) {
+                if (dx > 0) {
+                    d = Direction.NORTHEAST;
+                }
+                else {
+                    d = Direction.NORTHWEST;
+                }
+            }
+            else {
+                if (dx > 0) {
+                    d = Direction.EAST;
+                }
+                else {
+                    d = Direction.WEST;
+                }
+            }
+        }
+        else {
+            if (dy < -2.4 * Math.abs(dx)) {
+                d = Direction.SOUTH;
+            }
+            else if (dy < -0.4 * Math.abs(dx)) {
+                if (dx > 0) {
+                    d = Direction.SOUTHEAST;
+                }
+                else {
+                    d = Direction.SOUTHWEST;
+                }
+            }
+        }
+        return d;
+    }
 }
