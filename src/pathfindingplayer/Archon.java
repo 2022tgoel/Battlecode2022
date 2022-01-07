@@ -5,6 +5,7 @@ import java.util.*;
 
 public class Archon extends Unit {
     int counter = 0;
+    int round_num;
     int archonNumber = -1;
 
     int[] build_order = chooseBuildOrder();
@@ -12,17 +13,24 @@ public class Archon extends Unit {
     int num_soldiers = 0;
     int num_miners = 0;
     int num_builders = 0;
+    int num_archons;
     boolean CONSTRUCT_SPECIAL_UNIT = false;
 
     RANK unitRank;
 	public Archon(RobotController rc) throws GameActionException {
         super(rc);
         archonNumber = getArchonNumber();
+        num_archons = rc.getArchonCount();
     }
 
     @Override
     public void run() throws GameActionException {
-        if (counter == 2) {
+        round_num = rc.getRoundNum();
+        if (round_num % num_archons != archonNumber) {
+            return;
+        }
+
+        if (round_num == 2) {
             clearArchonNumbers();
         }
         // refresh the posted rank with each bot
