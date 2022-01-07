@@ -113,6 +113,8 @@ public class Archon extends Unit {
         }
         attemptHeal();
         turn_update();
+
+        // turn of all flags
         CONSTRUCT_SPECIAL_UNIT = false;
         CONSTRUCTED_SPECIAL_UNIT = false;
         PASS_ON = false;

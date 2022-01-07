@@ -63,31 +63,32 @@ public class Soldier extends Unit {
             }
         }
         counter += 1;
-        rc.setIndicatorString("RANK: " + rank.toString());
+        if (rank != RANK.DEFAULT){
+            rc.setIndicatorString("RANK: " + rank.toString());
+        }
     }
 
     public RANK findRank() throws GameActionException {
         rc.setIndicatorString("READY TO READ");
         int data;
-        // receives data a round late due to turnqueue
-        if (round_num % 2 == 0) {
-            data = rc.readSharedArray(CHANNEL.SEND_RANKS1.getValue());
-        }
-        else {
-            data = rc.readSharedArray(CHANNEL.SEND_RANKS2.getValue());
-        }
+        // check all channels to see if you've received a rank
+        for (int i = 0; i < 2; i++) {
+            if (i == 0) {
+                data = rc.readSharedArray(CHANNEL.SEND_RANKS1.getValue());
+            }
+            else {
+                data = rc.readSharedArray(CHANNEL.SEND_RANKS2.getValue());
+            }
 
-        int status = data / 10000;
-        int x = (data - (10000 * status)) / 100;
-        int y = (data - (10000 * status) - (x * 100));
-        rc.setIndicatorString("STATUS: " + status + " X: " + x + " Y: " + y);
-        // THIS MUST BE CHANGED TO ACCOUNT FOR NEW RANKS
-        if (homeArchon.equals(new MapLocation(x, y))) {
-            return getRank(status);
+            int status = data / 10000;
+            int x = (data - (10000 * status)) / 100;
+            int y = (data - (10000 * status) - (x * 100));
+            rc.setIndicatorString("STATUS: " + status + " X: " + x + " Y: " + y);
+            if (homeArchon.equals(new MapLocation(x, y))) {
+                return getRank(status);
+            }
         }
-        else {
-            return RANK.DEFAULT;
-        }
+        return RANK.DEFAULT;
     }
 
     public boolean isLowHealth() throws GameActionException {
