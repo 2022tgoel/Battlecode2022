@@ -10,6 +10,8 @@ public class Soldier extends Unit {
     enum MODE {
         EXPLORATORY,
         HUNTING,
+        LOW_HEALTH,
+        DEFENSIVE_RUSH
         ;
     }
 
@@ -45,50 +47,55 @@ public class Soldier extends Unit {
             detectArchonThreat();
         }
         else {
-            boolean b;
-            threatenedArchons = findThreatenedArchons();
-            if (threatenedArchons != null) {
-                // find closest maplocation to robot
-                MapLocation closest = threatenedArchons[0];
-                int min_dist = Integer.MAX_VALUE;
-                // only find closest archon if there is more then one
-                if (threatenedArchons.length > 1) {
-                    for (MapLocation loc: threatenedArchons) {
-                        if (loc.distanceSquaredTo(rc.getLocation()) < min_dist) {
-                            min_dist = loc.distanceSquaredTo(rc.getLocation());
-                            closest = loc;
+            mode = determineMode();
+            switch (mode) {
+                case DEFENSIVE_RUSH:
+                    // find closest maplocation to robot
+                    MapLocation closest = threatenedArchons[0];
+                    int min_dist = Integer.MAX_VALUE;
+                    // only find closest archon if there is more then one
+                    if (threatenedArchons.length > 1) {
+                        for (MapLocation loc: threatenedArchons) {
+                            if (loc.distanceSquaredTo(rc.getLocation()) < min_dist) {
+                                min_dist = loc.distanceSquaredTo(rc.getLocation());
+                                closest = loc;
+                            }
                         }
                     }
-                }
-                fuzzyMove(closest);
-            }
-            else if (isLowHealth()) {
-                fuzzyMove(homeArchon);
-            }
-            else if (mode == MODE.EXPLORATORY) {
-               // exploreMove();
-                
-                moveInDirection(exploratoryDir2);
-                if (adjacentToEdge()) {
-                    exploratoryDir2 = getExploratoryDir();
-                }
-            }
-            else if (mode == MODE.HUNTING){
-                b = approachArchon();
-                if (!b) mode = MODE.EXPLORATORY;
-            }
-            
-            if (mode == MODE.EXPLORATORY){ 
-                b = senseArchon();
-                if (b) mode = MODE.HUNTING;
-                else {
-                    b= detectArchon(); 
-                    if (b) mode = MODE.HUNTING; //switch to hunting
-                }
+                    fuzzyMove(closest);
+                case LOW_HEALTH:
+                    fuzzyMove(homeArchon);
+                case EXPLORATORY:
+                    moveInDirection(exploratoryDir2);
+                    if (adjacentToEdge()) {
+                        exploratoryDir2 = getExploratoryDir();
+                    }
+                case HUNTING:
+                    approachArchon();
             }
         }
         counter += 1;
-      //  rc.setIndicatorString("RANK: " + rank.toString());
+        rc.setIndicatorString("MODE: " + mode.toString());
+    }
+
+    public MODE determineMode() throws GameActionException {
+        // this is global
+        threatenedArchons = findThreatenedArchons();
+        if (threatenedArchons != null) {
+            return MODE.DEFENSIVE_RUSH;
+        }
+        else if (isLowHealth()) {
+            return MODE.LOW_HEALTH;
+        }
+        else if (detectArchon()) {
+            return MODE.HUNTING;
+        }
+        else if (senseArchon()) {
+            return MODE.HUNTING;
+        }
+        else {
+            return MODE.EXPLORATORY;
+        }
     }
 
     public RANK findRank() throws GameActionException {
