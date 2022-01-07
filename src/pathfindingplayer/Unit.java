@@ -42,6 +42,13 @@ public class Unit{
      * @return true if it found an archon
      **/
     public boolean detectArchon() throws GameActionException {
+        if (archon_index != -1) {
+            int data = rc.readSharedArray(archon_index);
+            if (data != 0) {
+                // rc.setIndicatorString("archon found UWU");
+                return true;
+            }
+        }
         for (int i = 0; i < 4; i++) {
             int data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + i);
             if (data != 0) {
