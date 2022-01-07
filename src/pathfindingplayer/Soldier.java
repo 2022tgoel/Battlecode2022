@@ -43,6 +43,9 @@ public class Soldier extends Unit {
         round_num = rc.getRoundNum();
         attemptAttack();
         if (rank == RANK.DEFENDER){
+            if (archonDied()){
+                rank = RANK.DEFAULT; //stop being a defenders
+            }
             waitAtDist(20, true);
             detectArchonThreat();
         }
@@ -119,6 +122,11 @@ public class Soldier extends Unit {
             }
         }
         return RANK.DEFAULT;
+    }
+
+    public boolean archonDied() throws GameActionException{
+        RobotInfo home = rc.senseRobotAtLocation(homeArchon);
+        return (home == null || home.type != RobotType.ARCHON);
     }
     /**
      * waitAtDist() stays near the home archon
