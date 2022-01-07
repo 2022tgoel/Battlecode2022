@@ -47,13 +47,12 @@ public class Soldier extends Unit {
                 fuzzyMove(homeArchon);
             }
             else if (mode == MODE.EXPLORATORY) {
-                exploreMove();
-               // moveInDirection(friendlyDir());
-                /*
+               // exploreMove();
+                
                 moveInDirection(exploratoryDir2);
                 if (adjacentToEdge()) {
                     exploratoryDir2 = getExploratoryDir();
-                }*/
+                }
             }
             else if (mode == MODE.HUNTING){
                 b = approachArchon();

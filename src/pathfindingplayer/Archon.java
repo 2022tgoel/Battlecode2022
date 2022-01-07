@@ -27,6 +27,7 @@ public class Archon extends Unit {
         super(rc);
         archonNumber = getArchonNumber();
         num_archons = rc.getArchonCount();
+        calcDefenseNum();
     }
 
     @Override
@@ -185,6 +186,24 @@ public class Archon extends Unit {
             rc.writeSharedArray(CHANNEL.SEND_RANKS2.getValue(), 0);
         }
     }
+    static int defenseNum = 24; //defualt
+    public void calcDefenseNum() throws GameActionException {
+        MapLocation my = rc.getLocation();
+        int w = rc.getMapWidth();
+        int h = rc.getMapHeight();
+        if (my.x-5 < 0){
+            defenseNum-=(10-2*my.x); //closer you are, more you subtract
+        }
+        if (my.y-5 < 0){
+            defenseNum-=(10-2*my.y);
+        }
+        if (my.x+5 > w){
+            defenseNum-=(10-2*(w-my.x));
+        }
+        if (my.y+5 > h){
+            defenseNum-=(10-2*(h-my.y));
+        }
+    }
     public void buildSoldier(Direction dir) throws GameActionException{ 
         if (!rc.canBuildRobot(RobotType.SOLDIER, dir)) return;
         //1. find num soliders nearby
@@ -199,7 +218,7 @@ public class Archon extends Unit {
         if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
             rc.buildRobot(RobotType.SOLDIER, dir);
             built_units++;
-            if (s <= 25) {
+            if (s <= defenseNum) {
                 postRank(RANK.DEFENDER);
                 rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
             } 
