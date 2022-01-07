@@ -56,6 +56,7 @@ public class Soldier extends Unit {
                         break;
                     case DEFENSIVE_RUSH:
                         defensiveMove();
+                      //  fuzzyMove(getEnemySoldiersLocation());
                 }
                 detectArchonThreat();
             }
@@ -83,16 +84,19 @@ public class Soldier extends Unit {
             }
         }
         counter += 1;
-        if (rank != RANK.DEFENDER) {
-            rc.setIndicatorString("MODE: " + mode.toString());
-        }
-        else {
-            rc.setIndicatorString("RANK: " + rank.toString());
-        }
+        rc.setIndicatorString("MODE: " + mode.toString());
     }
     public MODE determineDefenderMode() throws GameActionException {
         threatenedArchons = findThreatenedArchons();
-        if (threatenedArchons != null) {
+
+        boolean homeArchonThreatened = false;
+        if (threatenedArchons!=null){
+            for (MapLocation archon : threatenedArchons){
+                if (archon == homeArchon) homeArchonThreatened = true;
+            }
+        }
+        
+        if (homeArchonThreatened) {
             return MODE.DEFENSIVE_RUSH;
         }
         else return MODE.WAITING; 
@@ -315,6 +319,26 @@ public class Soldier extends Unit {
             }
             return threatenedArchons;
         }
+    }
+
+    public MapLocation getEnemySoldiersLocation() throws GameActionException{
+        RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        int num_enemies = 0;
+        double cx = 0;
+        double cy = 0;
+        for (RobotInfo enemy : enemies) {
+            if (enemy.type == RobotType.SOLDIER) {
+                cx += (double) enemy.location.x;
+                cy += (double) enemy.location.y;
+                num_enemies += 1;
+            }
+            else if (enemy.type == RobotType.SAGE) {
+                cx += (double) enemy.location.x;
+                cy += (double) enemy.location.y;
+                num_enemies += 1;
+            }
+        }
+        return new MapLocation((int) (cx / num_enemies), (int) (cy / num_enemies));
     }
 
     public void detectArchonThreat() throws GameActionException {
