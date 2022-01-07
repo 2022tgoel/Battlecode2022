@@ -416,15 +416,15 @@ public class Unit{
 
     }
 
-    public double[] addVectors(double[] doubleDir, double[] repulsion) {
+    public double[] addVectors(double[] d1, double[] d2) {
         double[] newDir = new double[2];
-        newDir[0] = doubleDir[0] + repulsion[0];
-        newDir[1] = doubleDir[1] + repulsion[1];
+        newDir[0] = d1[0] + d2[0];
+        newDir[1] = d1[1] + d2[1];
         return newDir;
     }
 
     public Direction doubleToDirection(double dx, double dy) {
-        Direction d = null;
+        Direction d = Direction.CENTER;
         // values are derived from tangent of 22.5 and 67.5
         if (dy > 0) {
             if (dy > 2.4 * Math.abs(dx)) {
