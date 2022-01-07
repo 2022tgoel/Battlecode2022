@@ -91,7 +91,7 @@ public class Archon extends Unit {
                             }
                             break;
                         case 1:
-                          //  rc.setIndicatorString("Trying to build a soldier");
+                            //  rc.setIndicatorString("Trying to build a soldier");
                             buildSoldier(dir);
                             break;
                         case 2:
@@ -118,34 +118,6 @@ public class Archon extends Unit {
         // rc.setIndicatorString("archonNumber: " + archonNumber);
     }
 
-    public void postOrder(RANK order) throws GameActionException {
-        rc.setIndicatorString("ORDERING A " + ORDER.toString() + " ON CHANNEL " + CHANNEL.ORDERS.getValue());
-        rc.writeSharedArray(CHANNEL.ORDERS.getValue(), order.getValue());
-    }
-
-    public RANK getOrder() throws GameActionException {
-        rc.setIndicatorString("READING ORDERS FROM CHANNEL " + CHANNEL.ORDERS.getValue());
-        int data = rc.readSharedArray(CHANNEL.ORDERS.getValue());
-        // rc.setIndicatorString("DATA RECIEVED ");
-        if (data == 0) {
-            return RANK.DEFAULT;
-        }
-
-        clearOrder();
-
-        if (data == 1) {
-            rc.setIndicatorString("MUST BUILD CONVOY LEADER");
-            return RANK.CONVOY_LEADER;
-        }
-        else {
-            return RANK.DEFAULT;
-        }
-    }
-
-    public void clearOrder() throws GameActionException {
-        rc.writeSharedArray(CHANNEL.ORDERS.getValue(), 0);
-    }
-
     public RANK specialUnit() {
         if (rc.getRoundNum() % 50 == 0 ) {
             CONSTRUCT_SPECIAL_UNIT = true;
@@ -157,43 +129,47 @@ public class Archon extends Unit {
         }
     }
 
-    public void clearArchonNumbers() throws GameActionException {
-        // if you don't read all 0s for the first four numbers, set them to zero.
-        for (int i = 0; i < 4; i++) {
-            if (rc.readSharedArray(i) != 0) {
-                rc.writeSharedArray(i, 0);
-            }
+    public void postOrder(RANK order) throws GameActionException {
+        rc.setIndicatorString("ORDERING A " + ORDER.toString() + " ON CHANNEL " + CHANNEL.ORDERS.getValue());
+        rc.writeSharedArray(CHANNEL.ORDERS.getValue(), order.getValue());
+    }
+
+    public RANK getOrder() throws GameActionException {
+        // rc.setIndicatorString("READING ORDERS FROM CHANNEL " + CHANNEL.ORDERS.getValue());
+        int data = rc.readSharedArray(CHANNEL.ORDERS.getValue());
+        // rc.setIndicatorString("DATA RECIEVED ");
+        if (data == 0) {
+            return RANK.DEFAULT;
+        }
+
+        clearOrder();
+
+        if (data == 1) {
+            return RANK.CONVOY_LEADER;
+        }
+        else {
+            return RANK.DEFAULT;
         }
     }
 
-    public int getArchonNumber() throws GameActionException {
-        int data;
-        for (int i = 0; i < 4; i++) {
-            data = rc.readSharedArray(i);
-            if (data == 0){
-                rc.writeSharedArray(i, 1);
-                if (i == rc.getArchonCount() - 1) {
-                    clearArchonNumbers();
-                }
-                return i;
-            }
-        }
-        return -1;
+    public void clearOrder() throws GameActionException {
+        rc.writeSharedArray(CHANNEL.ORDERS.getValue(), 0);
     }
 
     public void postRank(RANK rank) throws GameActionException {
-        switch (rank) {
-            case DEFAULT:
-                break;
-            case CONVOY_LEADER:
-                MapLocation loc = rc.getLocation();
-                int loc_int = 1 * 10000 + loc.x * 100 + loc.y;
-                if (round_num % 2 == 0) {
-                    rc.writeSharedArray(CHANNEL.SEND_RANKS1.getValue(), loc_int);
-                }
-                else {
-                    rc.writeSharedArray(CHANNEL.SEND_RANKS2.getValue(), loc_int);
-                }
+        MapLocation loc = rc.getLocation();
+        int loc_int;
+        if (rank == RANK.DEFAULT) {
+            return;
+        }
+        else {
+            loc_int = rank.getValue() * 10000 + loc.x * 100 + loc.y;
+            if (round_num % 2 == 0) {
+                rc.writeSharedArray(CHANNEL.SEND_RANKS1.getValue(), loc_int);
+            }
+            else {
+                rc.writeSharedArray(CHANNEL.SEND_RANKS2.getValue(), loc_int);
+            }
         }
     }
 
@@ -219,11 +195,35 @@ public class Archon extends Unit {
         if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
             rc.buildRobot(RobotType.SOLDIER, dir);
             built_units++;
+            if (s <= 40) {
+                postRank(RANK.DEFENDER);
+                rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
+            } 
         }
-        if (s <= 40) rc.writeSharedArray(62, 1);
-        else rc.writeSharedArray(62, 0);
-        rc.setIndicatorString(s + " ");
-        
+    }
+
+    public void clearArchonNumbers() throws GameActionException {
+        // if you don't read all 0s for the first four numbers, set them to zero.
+        for (int i = 0; i < 4; i++) {
+            if (rc.readSharedArray(i) != 0) {
+                rc.writeSharedArray(i, 0);
+            }
+        }
+    }
+
+    public int getArchonNumber() throws GameActionException {
+        int data;
+        for (int i = 0; i < 4; i++) {
+            data = rc.readSharedArray(i);
+            if (data == 0){
+                rc.writeSharedArray(i, 1);
+                if (i == rc.getArchonCount() - 1) {
+                    clearArchonNumbers();
+                }
+                return i;
+            }
+        }
+        return -1;
     }
     /**
      * enemySoldiersInRange() checks if a soldier that might want to attack in nearby

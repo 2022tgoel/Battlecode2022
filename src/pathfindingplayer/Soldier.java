@@ -22,11 +22,9 @@ public class Soldier extends Unit {
     MapLocation target;
     Direction exploratoryDir = usefulDir();
     int[] exploratoryDir2 = getExploratoryDir();
-    boolean defensive;
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
         rank = findRank();
-        defensive = (rc.readSharedArray(62) > 0);
     }
     /*
     0 - exploring 
@@ -36,7 +34,7 @@ public class Soldier extends Unit {
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
         attemptAttack();
-        if (defensive){
+        if (rank == RANK.DEFENDER){
             waitAtDist(20);
         }
         else {
@@ -64,9 +62,8 @@ public class Soldier extends Unit {
                 }
             }
         }
-        // rc.setIndicatorString(defensive + " ");
         counter += 1;
-        // rc.setIndicatorString("RANK: " + rank.toString());
+        rc.setIndicatorString("RANK: " + rank.toString());
     }
 
     public RANK findRank() throws GameActionException {
@@ -90,6 +87,9 @@ public class Soldier extends Unit {
             }
             else if (status == 1) {
                 return RANK.CONVOY_LEADER;
+            }
+            else if (status == 2) {
+                return RANK.DEFENDER;
             }
             // add more logic later
             else {
