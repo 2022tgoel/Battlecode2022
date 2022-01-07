@@ -81,6 +81,8 @@ public class Soldier extends Unit {
         int x = (data - (10000 * status)) / 100;
         int y = (data - (10000 * status) - (x * 100));
         rc.setIndicatorString("STATUS: " + status + " X: " + x + " Y: " + y);
+        // THIS MUST BE CHANGED TO ACCOUNT FOR NEW RANKS
+        // if you can think of a better way to do this, please do lol
         if (homeArchon.equals(new MapLocation(x, y)))
             if (status == 0) {
                 return RANK.DEFAULT;
