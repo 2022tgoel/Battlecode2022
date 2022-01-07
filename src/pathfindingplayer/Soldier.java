@@ -50,18 +50,18 @@ public class Soldier extends Unit {
             }
             else {
                 mode = determineDefenderMode();
+                rc.setIndicatorString("MODE: " + mode.toString());
                 switch (mode) {
                     case WAITING:
                         waitAtDist(20, true);
                         break;
-                    case DEFENSIVE_RUSH:
-                        defensiveMove();
-                        break;
                     default:
+                        fuzzyMove(getEnemySoldiersLocation());
                         break;
-                      //  fuzzyMove(getEnemySoldiersLocation());
                 }
+                rc.setIndicatorString("before");
                 detectArchonThreat();
+                rc.setIndicatorString("after");
             }
         }
         else {
@@ -182,7 +182,7 @@ public class Soldier extends Unit {
         int buffer = 4;
         // rc.setIndicatorString("" + Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared));
         if (Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared) <= buffer){
-            // rc.setIndicatorString("here");
+            rc.setIndicatorString("here");
             return; //you're already in range
         }
         int[] costs = new int[8];
