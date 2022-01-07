@@ -11,7 +11,8 @@ public class Soldier extends Unit {
         EXPLORATORY,
         HUNTING,
         LOW_HEALTH,
-        DEFENSIVE_RUSH
+        DEFENSIVE_RUSH,
+        WAITING,
         ;
     }
 
@@ -45,28 +46,26 @@ public class Soldier extends Unit {
         attemptAttack();
         if (rank == RANK.DEFENDER){
             if (archonDied()){
-                rank = RANK.DEFAULT; //stop being a defenders
+                rank = RANK.DEFAULT; //stop being a defender bot
             }
-            waitAtDist(20, true);
-            detectArchonThreat();
+            else {
+                mode = determineDefenderMode();
+                switch (mode) {
+                    case WAITING:
+                        waitAtDist(20, true);
+                        break;
+                    case DEFENSIVE_RUSH:
+                        defensiveMove();
+                }
+                detectArchonThreat();
+            }
         }
         else {
             mode = determineMode();
             switch (mode) {
                 case DEFENSIVE_RUSH:
                     // find closest maplocation to robot
-                    MapLocation closest = threatenedArchons[0];
-                    int min_dist = Integer.MAX_VALUE;
-                    // only find closest archon if there is more then one
-                    if (threatenedArchons.length > 1) {
-                        for (MapLocation loc: threatenedArchons) {
-                            if (loc.distanceSquaredTo(rc.getLocation()) < min_dist) {
-                                min_dist = loc.distanceSquaredTo(rc.getLocation());
-                                closest = loc;
-                            }
-                        }
-                    }
-                    fuzzyMove(closest);
+                    defensiveMove();
                     break;
                 case LOW_HEALTH:
                     fuzzyMove(homeArchon);
@@ -90,6 +89,13 @@ public class Soldier extends Unit {
         else {
             rc.setIndicatorString("RANK: " + rank.toString());
         }
+    }
+    public MODE determineDefenderMode() throws GameActionException {
+        threatenedArchons = findThreatenedArchons();
+        if (threatenedArchons != null) {
+            return MODE.DEFENSIVE_RUSH;
+        }
+        else return MODE.WAITING; 
     }
 
     public MODE determineMode() throws GameActionException {
@@ -133,6 +139,21 @@ public class Soldier extends Unit {
             }
         }
         return RANK.DEFAULT;
+    }
+
+    public void defensiveMove() throws GameActionException{
+        MapLocation closest = threatenedArchons[0];
+        int min_dist = Integer.MAX_VALUE;
+        // only find closest archon if there is more then one
+        if (threatenedArchons.length > 1) {
+            for (MapLocation loc: threatenedArchons) {
+                if (loc.distanceSquaredTo(rc.getLocation()) < min_dist) {
+                    min_dist = loc.distanceSquaredTo(rc.getLocation());
+                    closest = loc;
+                }
+            }
+        }
+        fuzzyMove(closest);
     }
 
     public boolean archonDied() throws GameActionException{

@@ -215,22 +215,23 @@ public class Archon extends Unit {
     }
     public void buildSoldier(Direction dir) throws GameActionException{ 
         if (!rc.canBuildRobot(RobotType.SOLDIER, dir)) return;
-        //1. find num soliders nearby
-        int s =0;
-        for (RobotInfo r :rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam()) ){
-            if (r.type == RobotType.SOLDIER){
-                s++;
-            }
-        }
-        
-        // 2. choose defnesive or offensive
-        if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
+        else {
             rc.buildRobot(RobotType.SOLDIER, dir);
             built_units++;
-            if (s <= defenseNum) {
-                postRank(RANK.DEFENDER);
-                rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
-            } 
+            if (round_num/num_archons % 1 == 0){ //about every 10 turns for this archon
+                int s =0;
+                // 2. choose defnesive or offensive
+                for (RobotInfo r :rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam()) ){
+                    if (r.type == RobotType.SOLDIER){
+                        s++;
+                    }
+                }
+                if (s <= defenseNum) {
+                    postRank(RANK.DEFENDER);
+                    rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
+                } 
+            }
+            
         }
     }
 
