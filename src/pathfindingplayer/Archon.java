@@ -320,7 +320,7 @@ public class Archon extends Unit {
     public int[] chooseBuildOrder() {
         int mapArea = rc.getMapHeight() * rc.getMapHeight();
         if (mapArea < 1400) {
-            return new int[]{2, 2, 0}; // miners, soldiers, builders
+            return new int[]{3, 2, 0}; // miners, soldiers, builders
         }
         else if (mapArea < 2200) {
             return new int[]{2, 2, 0}; // miners, soldiers, builders

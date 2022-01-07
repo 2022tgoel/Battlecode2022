@@ -21,7 +21,7 @@ public class Soldier extends Unit {
     int round_num = 0;
     int archon_index = -1;
     int dRushChannel = -1;
-    double s_attraction = 0.0;
+    double s_attraction = 1.0;
     double m_attraction = 10.0;
     double s_repulsion = 10;
     double m_repulsion = 1/10;
@@ -56,8 +56,10 @@ public class Soldier extends Unit {
                         waitAtDist(20, true);
                         detectArchonThreat();
                         break;
-                    default:
+                    case DEFENSIVE_RUSH:
                         fuzzyMove(getEnemySoldiersLocation());
+                        break;
+                    default:
                         break;
                 }
                 rc.setIndicatorString("before");
