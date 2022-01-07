@@ -44,6 +44,7 @@ public class Soldier extends Unit {
         if (rank == RANK.DEFENDER){
             nearbyAllies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam());
             waitAtDist(20, true);
+            detectArchonThreat();
         }
         else {
             boolean b;
@@ -150,6 +151,19 @@ public class Soldier extends Unit {
             }
         }
 
+    }
+
+    public void detectArchonThreat() throws GameActionException {
+        RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        int num_threats = 0;
+        for (RobotInfo enemy : enemies) {
+            if (enemy.type == RobotType.SOLDIER || enemy.type == RobotType.SAGE) {
+                num_threats += 1;
+            }
+        }
+        if (num_threats >= 4) {
+            
+        }
     }
 
     public boolean isLowHealth() throws GameActionException {
