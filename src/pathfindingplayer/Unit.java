@@ -93,7 +93,7 @@ public class Unit{
                 indToPut = i;
             }
         }
-        int loc_int = loc.x * 64 + loc.y;
+        int loc_int = locationToInt(loc);
         rc.writeSharedArray(indToPut, loc_int);
         // rc.setIndicatorString("broadcasting succesful, archon_index " + available_index);
         return indToPut;
@@ -432,6 +432,10 @@ public class Unit{
             }
         }
         return rc.getLocation();
+    }
+
+    public int locationToInt(MapLocation loc) {
+        return 64 * loc.x + loc.y;
     }
 
     public RANK[] initializeRankMap() {

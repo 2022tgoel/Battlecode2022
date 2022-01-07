@@ -14,6 +14,7 @@ public class Soldier extends Unit {
     }
 
     int counter = 0;
+    int threatDetectedRound = 10000;
     int round_num = 0;
     int archon_index = -1;
     double s_attraction = 0.0;
@@ -26,6 +27,7 @@ public class Soldier extends Unit {
     MODE mode = MODE.EXPLORATORY;
 
     MapLocation target;
+    MapLocation[] threatenedArchons;
     RobotInfo[] nearbyAllies;
     Direction exploratoryDir = usefulDir();
     int[] exploratoryDir2 = getExploratoryDir();
@@ -48,7 +50,23 @@ public class Soldier extends Unit {
         }
         else {
             boolean b;
-            if (isLowHealth()) {
+            threatenedArchons = findThreatenedArchons();
+            if (threatenedArchons != null) {
+                // find closest maplocation to robot
+                MapLocation closest = threatenedArchons[0];
+                int min_dist = Integer.MAX_VALUE;
+                // only find closest archon if there is more then one
+                if (threatenedArchons.length > 1) {
+                    for (MapLocation loc: threatenedArchons) {
+                        if (loc.distanceSquaredTo(rc.getLocation()) < min_dist) {
+                            min_dist = loc.distanceSquaredTo(rc.getLocation());
+                            closest = loc;
+                        }
+                    }
+                }
+                fuzzyMove(closest);
+            }
+            else if (isLowHealth()) {
                 fuzzyMove(homeArchon);
             }
             else if (mode == MODE.EXPLORATORY) {
@@ -150,18 +168,77 @@ public class Soldier extends Unit {
                 rc.move(optimalDir);
             }
         }
+    }
 
+    public MapLocation[] findThreatenedArchons() throws GameActionException {
+        int data;
+        MapLocation[] archons = new MapLocation[4];
+        int numThreatenedArchons = 0;
+        for (int i = 0; i < 4; i++) {
+            // rc.writeSharedArray(, value);
+            data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
+            // go through channels until you find an empty one to communicate with.
+            if (data != 0) {
+                int x = data / 64;
+                int y = data % 64;
+                archons[numThreatenedArchons] = new MapLocation(x, y);
+                numThreatenedArchons += 1;
+            }
+        }
+
+        if (numThreatenedArchons == 0) {
+            return null;
+        }
+        else {
+            // only return threatened archons.
+            MapLocation[] threatenedArchons = new MapLocation[numThreatenedArchons];
+            for (int i = 0; i < numThreatenedArchons; i++) {
+                threatenedArchons[i] = archons[i];
+            }
+            return archons;
+        }
     }
 
     public void detectArchonThreat() throws GameActionException {
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        int num_threats = 0;
+        int threatLevel = 0;
+        int data;
         for (RobotInfo enemy : enemies) {
-            if (enemy.type == RobotType.SOLDIER || enemy.type == RobotType.SAGE) {
-                num_threats += 1;
+            if (enemy.type == RobotType.SOLDIER) {
+                threatLevel += 1;
+            }
+            else if (enemy.type == RobotType.SAGE) {
+                threatLevel += 4;
             }
         }
-        if (num_threats >= 4) {}
+        if (threatLevel >= 4) {
+            for (int i = 0; i < 4; i++) {
+                // rc.writeSharedArray(, value);
+                data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
+                // go through channels until you find an empty one to communicate with.
+                if (data == 0) {
+                    rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i, locationToInt(homeArchon));
+                    break;
+                }
+            }
+            threatDetectedRound = round_num;
+        }
+        else {
+            for (int i = 0; i < 4; i++) {
+                // rc.writeSharedArray(, value);
+                data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
+                // go through channels until you find an empty one to communicate with.
+                if (data != 0) {
+                    int x = data / 64;
+                    int y = data % 64;
+                    // clear channel if threat is no longer active
+                    if (homeArchon.x == x && homeArchon.y == y && (round_num - threatDetectedRound) > 10) {
+                        rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i, 0);
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     public boolean isLowHealth() throws GameActionException {
