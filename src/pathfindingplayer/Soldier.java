@@ -344,7 +344,7 @@ public class Soldier extends Unit {
                 data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
                 // go through channels until you find an empty one to communicate with.
                 if (data == 0) {
-                    MapLocation avgPos = new MapLocation((int) (cx / num_enemies), (int) (cy / num_enemies));
+                    MapLocation avgPos = new MapLocation((int) (cx / (double) num_enemies), (int) (cy / (double) num_enemies));
                     rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i, locationToInt(avgPos));
                     dRushChannel = i;
                     break;
