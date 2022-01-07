@@ -36,12 +36,6 @@ public class Unit{
     public void run() throws GameActionException{
         
     }
-
-    static int turn = 0;
-    public void turn_update(){
-        turn++;
-        
-    }
     //when you sense or detect, you get an archon_index
     /**
      * detectArchon() looks through the archon positions for a new one, then stores it in archon_index
@@ -160,66 +154,6 @@ public class Unit{
             rc.move(optimalDir);
         }
     }
-
-    /**
-     * goToAdjacentLocation() moves the robot to the passed location (which must be adjacent)
-     **/
-    public void goToAdjacentLocation(MapLocation loc) throws GameActionException{
-        MapLocation my = rc.getLocation();
-        for (Direction d : directions){
-            MapLocation adj = my.add(d);
-            if (adj.equals(loc)){
-                if (rc.canMove(d)){
-                    rc.move(d);  
-                }  
-                break;
-            }
-        }
-        //should not reach here, if it does the location you were passing is not adjacent!
-    }
-
-    //1. bug pathing
-
-    /**
-     * bugMove() is the method that moves to a location using the bug pathing algorithm 
-     * https://www.cs.cmu.edu/~motionplanning/lecture/Chap2-Bug-Alg_howie.pdf (bug 0)
-     *
-     * @param loc  location you wish to move to
-     *            
-     **/
-    public void bugMove(MapLocation loc) throws GameActionException{
-        bugMove(loc, 20); //will not go to squares with more that 20 rubble
-    }
-    static Direction bugDirection = null;
-    public void bugMove(MapLocation loc, int rubbleThreshold) throws GameActionException{
-        MapLocation cur = rc.getLocation();
-        if (cur.equals(loc)){
-            bugDirection = null;
-            return; //you're already there!
-        }
-        else {
-            Direction d = cur.directionTo(loc); // direction you would move if taking the direct path
-            if (rc.canMove(d) && rc.senseRubble(cur.add(d)) <= rubbleThreshold){
-                rc.move(d);
-                bugDirection = null;
-            }
-            else {
-                if (bugDirection == null) {
-                    bugDirection = d;
-                }
-                for (int i = 0; i < 8; ++i) {
-                    if (rc.canMove(bugDirection) && rc.senseRubble(cur.add(bugDirection)) <= rubbleThreshold){
-                        rc.move(bugDirection);
-                        bugDirection = bugDirection.rotateLeft();
-                    }
-                    bugDirection = bugDirection.rotateRight();
-                }
-                
-            }
-        }
-    }
-
-    //2. fuzzy moves
     /**
      * fuzzyMove() is the method that moves to a location using a weight of how within the correct direction you are
      *             how much rubble is in a square (rather that just thresholding rubbles)
