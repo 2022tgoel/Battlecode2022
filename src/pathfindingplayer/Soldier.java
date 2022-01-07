@@ -328,7 +328,7 @@ public class Soldier extends Unit {
         }
     }
 
-    public MapLocation moveToEnemySoldiers() throws GameActionException{
+    public void moveToEnemySoldiers() throws GameActionException{
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         int num_enemies = 0;
         double cx = 0;
@@ -344,7 +344,7 @@ public class Soldier extends Unit {
             }
         }
         if (num_enemies ==0) fuzzyMove(homeArchon);
-        else fuzzyMove(MapLocation((int) (cx / num_enemies), (int) (cy / num_enemies)));
+        else fuzzyMove(new MapLocation((int) (cx / num_enemies), (int) (cy / num_enemies)));
     }
 
     public void detectArchonThreat() throws GameActionException {
