@@ -166,7 +166,8 @@ public class Archon extends Unit {
             return;
         }
         else {
-            loc_int = rank.getValue() * 10000 + loc.x * 100 + loc.y;
+            // all locations are within 60, so can be compressed to 6 bits.
+            loc_int = rank.getValue() * 4096 + loc.x * 64 + loc.y;
             if (round_num % 2 == 0) {
                 rc.writeSharedArray(CHANNEL.SEND_RANKS1.getValue(), loc_int);
             }

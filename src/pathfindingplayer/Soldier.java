@@ -87,9 +87,9 @@ public class Soldier extends Unit {
                 data = rc.readSharedArray(CHANNEL.SEND_RANKS2.getValue());
             }
 
-            int status = data / 10000;
-            int x = (data - (10000 * status)) / 100;
-            int y = (data - (10000 * status) - (x * 100));
+            int status = data / 4096;
+            int x = (data - (4096 * status)) / 64;
+            int y = (data - (4096 * status) - (x * 64));
             rc.setIndicatorString("STATUS: " + status + " X: " + x + " Y: " + y);
             if (homeArchon.equals(new MapLocation(x, y))) {
                 return getRank(status);
@@ -161,9 +161,7 @@ public class Soldier extends Unit {
                 num_threats += 1;
             }
         }
-        if (num_threats >= 4) {
-            
-        }
+        if (num_threats >= 4) {}
     }
 
     public boolean isLowHealth() throws GameActionException {

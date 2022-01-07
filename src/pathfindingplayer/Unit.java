@@ -84,8 +84,8 @@ public class Unit{
         int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
         for (int i= 0; i < 4; i++){
             int data = rc.readSharedArray(i);
-            int x = data / 1000;
-            int y = data % 1000;
+            int x = data / 64;
+            int y = data % 64;
             if (loc.x == x && loc.y == y) {
                 return i; //already broadcasted, return index where it is stored
             }
@@ -93,7 +93,7 @@ public class Unit{
                 indToPut = i;
             }
         }
-        int loc_int = loc.x * 1000 + loc.y;
+        int loc_int = loc.x * 64 + loc.y;
         rc.writeSharedArray(indToPut, loc_int);
         // rc.setIndicatorString("broadcasting succesful, archon_index " + available_index);
         return indToPut;
@@ -106,8 +106,8 @@ public class Unit{
     public boolean approachArchon() throws GameActionException{
         int data = rc.readSharedArray(archon_index);
         if (data != 0) {
-            int x = data / 1000;
-            int y = data % 1000;
+            int x = data / 64;
+            int y = data % 64;
             MapLocation target = new MapLocation(x, y);
             if (rc.canSenseLocation(target) && !rc.canSenseRobotAtLocation(target)){
                 rc.writeSharedArray(archon_index, 0);
