@@ -40,6 +40,7 @@ public class Unit{
     static int turn = 0;
     public void turn_update(){
         turn++;
+        
     }
     //when you sense or detect, you get an archon_index
     /**
