@@ -344,7 +344,7 @@ public class Soldier extends Unit {
     }
     public Direction friendlyDir() throws GameActionException {
 
-        Direction d = exploratoryDir;
+        Direction d = exploratoryDir; 
         RobotInfo[] friendlyRobos = rc.senseNearbyRobots(-1, rc.getTeam());
         MapLocation loc = rc.getLocation();
 
