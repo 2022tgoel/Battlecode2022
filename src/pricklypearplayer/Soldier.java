@@ -22,11 +22,11 @@ public class Soldier extends Unit {
     int archon_index = -1;
     int dRushChannel = -1;
     double s_attraction = 0.0;
-    double m_attraction = 10.0;
-    double m_e_attraction = 20.0;
-    double s_repulsion = 10;
-    double m_repulsion = 1/10;
-    double exploration_weight = 0.0;
+    double m_attraction = 8.3;
+    double m_e_attraction = 16.2;
+    double s_repulsion = 8.3;
+    double m_repulsion = 0.1;
+    double exploration_weight = 0.25;
 
     RANK rank;
     MODE mode = MODE.EXPLORATORY;
@@ -58,7 +58,7 @@ public class Soldier extends Unit {
                     case EXPLORATORY:
                         int[] d = friendlyDir();
                         moveInDirection(d);
-                        rc.setIndicatorString("d: " + d[0] + " " + d[1] + "exp: " + exploratoryDir[0] + " " + exploratoryDir[1]);
+                        // rc.setIndicatorString("d: " + d[0] + " " + d[1] + "exp: " + exploratoryDir[0] + " " + exploratoryDir[1]);
                         break;
                     case HUNTING:
                         approachArchon();
@@ -105,7 +105,7 @@ public class Soldier extends Unit {
                     case EXPLORATORY:
                         int[] d = friendlyDir();
                         moveInDirection(d);
-                        rc.setIndicatorString("d: " + d[0] + " " + d[1] + "exp: " + exploratoryDir[0] + " " + exploratoryDir[1]);
+                        // rc.setIndicatorString("d: " + d[0] + " " + d[1] + "exp: " + exploratoryDir[0] + " " + exploratoryDir[1]);
                         break;
                     case HUNTING:
                         approachArchon();
@@ -459,22 +459,22 @@ public class Soldier extends Unit {
         RobotInfo[] friendlyRobos = rc.senseNearbyRobots(-1, rc.getTeam());
         for (RobotInfo robot: friendlyRobos) {
             if (robot.type == RobotType.SOLDIER) {
-                cxs += robot.location.x;
-                cys += robot.location.y;
+                cxs += (double) robot.location.x;
+                cys += (double) robot.location.y;
                 // increment repulsion
                 if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) <= 4) {
-                    dx2 += (loc.x - robot.location.x) * s_repulsion;
-                    dy2 += (loc.y - robot.location.y) * s_repulsion;
+                    dx2 += ((double) (loc.x - robot.location.x)) * s_repulsion;
+                    dy2 += ((double) (loc.y - robot.location.y)) * s_repulsion;
                 }
                 num_soldiers += 1;
             }
             else if (robot.type == RobotType.MINER) {
-                cxm += robot.location.x;
-                cym += robot.location.y;
+                cxm += (double) robot.location.x;
+                cym += (double) robot.location.y;
                 // increment repulsion
                 if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) <= 2) {
-                    dx2 += (loc.x - robot.location.x) * m_repulsion;
-                    dy2 += (loc.y - robot.location.y) * m_repulsion;
+                    dx2 += ((double) (loc.x - robot.location.x)) * m_repulsion;
+                    dy2 += ((double) (loc.y - robot.location.y)) * m_repulsion;
                 }
                 num_miners += 1;
             }
@@ -482,8 +482,8 @@ public class Soldier extends Unit {
         RobotInfo[] enemyRobos = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         for (RobotInfo robot: enemyRobos) {
             if (robot.type == RobotType.MINER) {
-                cxme += robot.location.x;
-                cyme += robot.location.y;
+                cxme += (double) robot.location.x;
+                cyme += (double) robot.location.y;
                 num_miners_enemy += 1;
             }
         }
@@ -501,9 +501,10 @@ public class Soldier extends Unit {
 
         double dx = dx1 + dx2;
         double dy = dy1 + dy2;
+        rc.setIndicatorString("d: " + dx + " " + dy + "exp: " + exploratoryDir[0] + " " + exploratoryDir[1]);
         // convert dx and dy to direction
         // normalize double vector
-        if (Math.abs(dx) > Math.abs(dy)) {
+        if (Math.abs(dx) >= Math.abs(dy)) {
             if (dx > 0) return new int[]{(int) 10, (int) (10.0 * dy / dx)};
             else if (dx < 0) return new int[]{(int) -10, (int) (-10.0 * dy / dx)};
             else return new int[]{0, (int) (10.0 * Math.signum(dy))};
