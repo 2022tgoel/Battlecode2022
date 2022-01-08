@@ -383,10 +383,7 @@ public class Soldier extends Unit {
         double cx = 0;
         double cy = 0;
         for (RobotInfo enemy : enemies) {
-            if (enemy.type == RobotType.SOLDIER) {
-                num_enemies += 1;
-            }
-            else if (enemy.type == RobotType.SAGE) {
+            if (enemy.type == RobotType.SOLDIER || enemy.type == RobotType.SAGE) {
                 cx += (double) enemy.location.x;
                 cy += (double) enemy.location.y;
                 num_enemies += 1;
