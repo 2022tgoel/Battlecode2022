@@ -39,7 +39,7 @@ public class Archon extends Unit {
         if (round_num % num_archons != archonNumber) {
             return;
         }
-        /*
+
         // refresh the posted rank with each bot
         clearRanks();
         ORDER = getOrder();
@@ -83,54 +83,51 @@ public class Archon extends Unit {
                 postOrder(unitRank);
             }
         }
-        */
-        /*
-        if (round_num ==150){
-            rc.resign();
-        }*/
         // if you received an order and you couldn't build it, DON't WASTE RESOURCES
-        for (Direction dir: dirs) {
-            int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
-            if (num_miners < (sizeBracket*10)/num_archons){
-                if (rc.canBuildRobot(RobotType.MINER, dir)) {
-                    rc.buildRobot(RobotType.MINER, dir);
-                    num_miners++;
-                    break;
+        if (unitRank == RANK.DEFAULT) {
+            for (Direction dir: dirs) {
+                int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
+                if (num_miners < (sizeBracket*10)/num_archons){
+                    if (rc.canBuildRobot(RobotType.MINER, dir)) {
+                        rc.buildRobot(RobotType.MINER, dir);
+                        num_miners++;
+                        break;
+                    }
+                    
+                }
+                if (built_units < build_order[counter % 3]) {
+                    switch (counter % 3) {
+                        case 0:
+                            // rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + counter);
+                            if (rc.canBuildRobot(RobotType.MINER, dir)) {
+                                rc.buildRobot(RobotType.MINER, dir);
+                                built_units++;
+                                num_miners++;
+                            }
+                            break;
+                        case 1:
+                            //  rc.setIndicatorString("Trying to build a soldier");
+                            buildSoldier(dir);
+                            break;
+                        case 2:
+                            // rc.setIndicatorString("Trying to build a builder");
+                            if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
+                                rc.buildRobot(RobotType.BUILDER, dir);
+                                built_units++;
+                                num_builders++;
+                            }
+                            break;
+                    }
+                }
+                else {
+                    counter++;
+                    built_units = 0;
                 }
                 
             }
-            if (built_units < build_order[counter % 3]) {
-                switch (counter % 3) {
-                    case 0:
-                        // rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + counter);
-                        if (rc.canBuildRobot(RobotType.MINER, dir)) {
-                            rc.buildRobot(RobotType.MINER, dir);
-                            built_units++;
-                            num_miners++;
-                        }
-                        break;
-                    case 1:
-                        //  rc.setIndicatorString("Trying to build a soldier");
-                        buildSoldier(dir);
-                        break;
-                    case 2:
-                        // rc.setIndicatorString("Trying to build a builder");
-                        if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
-                            rc.buildRobot(RobotType.BUILDER, dir);
-                            built_units++;
-                            num_builders++;
-                        }
-                        break;
-                }
-            }
-            else {
-                counter++;
-                built_units = 0;
-            }
-            
         }
-        attemptHeal();
 
+        attemptHeal();
         // stagnate dRush data so that it must be continuously updated.
         clearDRush();
         // turn of all flags

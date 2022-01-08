@@ -16,15 +16,17 @@ public class Soldier extends Unit {
     }
 
     int counter = 0;
+    int exploratoryDirUpdateRound = 0;
     int threatDetectedRound = 10000;
     int round_num = 0;
     int archon_index = -1;
     int dRushChannel = -1;
-    double s_attraction = 1.0;
+    double s_attraction = 0.0;
     double m_attraction = 10.0;
+    double m_e_attraction = 20.0;
     double s_repulsion = 10;
     double m_repulsion = 1/10;
-    double a_repulsion = 100;
+    double exploration_weight = 0.0;
 
     RANK rank;
     MODE mode = MODE.EXPLORATORY;
@@ -32,8 +34,7 @@ public class Soldier extends Unit {
     MapLocation target;
     MapLocation[] threatenedArchons;
     RobotInfo[] nearbyAllies;
-    Direction exploratoryDir = usefulDir();
-    int[] exploratoryDir2 = getExploratoryDir();
+    int[] exploratoryDir = getExploratoryDir();
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
         rank = findRank();
@@ -43,53 +44,87 @@ public class Soldier extends Unit {
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
         attemptAttack();
-        if (rank == RANK.DEFENDER){
-            if (archonDied()){
-                rank = RANK.DEFAULT; //stop being a defender bot
-            }
-            else {
-                mode = determineDefenderMode();
-                rc.setIndicatorString("MODE: " + mode.toString());
+        switch (rank) {
+            case CONVOY_LEADER:
+                mode = determineMode();
                 switch (mode) {
-                    case WAITING:
-                        waitAtDist(20, true);
-                        detectArchonThreat();
-                        break;
                     case DEFENSIVE_RUSH:
-                        if (rc.getLocation().distanceSquaredTo(homeArchon) < 36){
-                            moveToEnemySoldiers();
-                        }
-                        else {
-                            fuzzyMove(homeArchon);
-                        }
+                        // find closest maplocation to robot
+                        defensiveMove();
+                        break;
+                    case LOW_HEALTH:
+                        fuzzyMove(homeArchon);
+                        break;
+                    case EXPLORATORY:
+                        int[] d = friendlyDir();
+                        moveInDirection(d);
+                        rc.setIndicatorString("d: " + d[0] + " " + d[1] + "exp: " + exploratoryDir[0] + " " + exploratoryDir[1]);
+                        break;
+                    case HUNTING:
+                        approachArchon();
                         break;
                     default:
                         break;
                 }
+                break;
+            case DEFENDER:
+                if (archonDied()){
+                    rank = RANK.DEFAULT; //stop being a defender bot
+                }
+                else {
+                    mode = determineDefenderMode();
+                    rc.setIndicatorString("MODE: " + mode.toString());
+                    switch (mode) {
+                        case WAITING:
+                            waitAtDist(20, true);
+                            detectArchonThreat();
+                            break;
+                        case DEFENSIVE_RUSH:
+                            if (rc.getLocation().distanceSquaredTo(homeArchon) < 36){
+                                moveToEnemySoldiers();
+                            }
+                            else {
+                                fuzzyMove(homeArchon);
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                break;
+            case DEFAULT:
+                mode = determineMode();
+                switch (mode) {
+                    case DEFENSIVE_RUSH:
+                        // find closest maplocation to robot
+                        defensiveMove();
+                        break;
+                    case LOW_HEALTH:
+                        fuzzyMove(homeArchon);
+                        break;
+                    case EXPLORATORY:
+                        int[] d = friendlyDir();
+                        moveInDirection(d);
+                        rc.setIndicatorString("d: " + d[0] + " " + d[1] + "exp: " + exploratoryDir[0] + " " + exploratoryDir[1]);
+                        break;
+                    case HUNTING:
+                        approachArchon();
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            default:
+                break;
             }
-        }
-        else {
-            mode = determineMode();
-            switch (mode) {
-                case DEFENSIVE_RUSH:
-                    // find closest maplocation to robot
-                    defensiveMove();
-                    break;
-                case LOW_HEALTH:
-                    fuzzyMove(homeArchon);
-                    break;
-                case EXPLORATORY:
-                    moveInDirection(friendlyDir());
-                    break;
-                case HUNTING:
-                    approachArchon();
-                    break;
-                default:
-                    break;
-            }
+
+        if (adjacentToEdge()) {
+            if (round_num - exploratoryDirUpdateRound > 2)
+                exploratoryDir = getExploratoryDir();
+                exploratoryDirUpdateRound = round_num;
         }
         counter += 1;
-        rc.setIndicatorString("MODE: " + mode.toString());
+        // rc.setIndicatorString("MODE: " + mode.toString());
     }
     public MODE determineDefenderMode() throws GameActionException {
         threatenedArchons = findThreatenedArchons();
@@ -109,11 +144,15 @@ public class Soldier extends Unit {
 
     public MODE determineMode() throws GameActionException {
         // this is global
-        /*
         threatenedArchons = findThreatenedArchons();
+        MapLocation cur = rc.getLocation();
         if (threatenedArchons != null) {
-            return MODE.DEFENSIVE_RUSH;
+            for (MapLocation archon : threatenedArchons){
+                if (cur.distanceSquaredTo(archon) < 145) 
+                    return MODE.DEFENSIVE_RUSH;
+            }
         }
+        /*
         if (isLowHealth()) {
             return MODE.LOW_HEALTH;
         }*/
@@ -400,71 +439,78 @@ public class Soldier extends Unit {
             return false;
         }
     }
-    public Direction friendlyDir() throws GameActionException { 
-        RobotInfo[] friendlyRobos = rc.senseNearbyRobots(-1, rc.getTeam());
+    public int[] friendlyDir() throws GameActionException { 
         MapLocation loc = rc.getLocation();
-
         // average position of soldiers and miners
         double cxs = 0;
         double cys = 0;
         double cxm = 0;
         double cym = 0;
-
+        double cxme = 0;
+        double cyme = 0;
         // repulsion from friendly robots
         double dx2 = 0;
         double dy2 = 0;
 
-        double incrementx = 0;
-        double incrementy = 0;
+        double num_miners = 0;
+        double num_soldiers = 0;
+        double num_miners_enemy = 0;
 
-        int num_miners = 0;
-        int num_soldiers = 0;
-
+        RobotInfo[] friendlyRobos = rc.senseNearbyRobots(-1, rc.getTeam());
         for (RobotInfo robot: friendlyRobos) {
             if (robot.type == RobotType.SOLDIER) {
-                incrementx = robot.location.x;
-                incrementy = robot.location.y;
-
+                cxs += robot.location.x;
+                cys += robot.location.y;
                 // increment repulsion
                 if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) <= 4) {
                     dx2 += (loc.x - robot.location.x) * s_repulsion;
                     dy2 += (loc.y - robot.location.y) * s_repulsion;
                 }
-                cxs += incrementx;
-                cys += incrementy;
                 num_soldiers += 1;
             }
             else if (robot.type == RobotType.MINER) {
-                incrementx = robot.location.x;
-                incrementy = robot.location.y;
+                cxm += robot.location.x;
+                cym += robot.location.y;
                 // increment repulsion
                 if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) <= 2) {
                     dx2 += (loc.x - robot.location.x) * m_repulsion;
                     dy2 += (loc.y - robot.location.y) * m_repulsion;
                 }
-                cxm += incrementx;
-                cym += incrementy;
                 num_miners += 1;
             }
         }
-        // if there are no miners, explore.
-        if (num_miners == 0) {
-            return exploratoryDir;
+        RobotInfo[] enemyRobos = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        for (RobotInfo robot: enemyRobos) {
+            if (robot.type == RobotType.MINER) {
+                cxme += robot.location.x;
+                cyme += robot.location.y;
+                num_miners_enemy += 1;
+            }
         }
+        double dx1 = 0;
+        double dy1 = 0;
+        if (num_miners > 0) dx1 += ((cxm / num_miners) - ((double) loc.x)) * m_attraction;
+        if (num_soldiers > 0) dx1 += ((cxs / num_soldiers) - ((double) loc.x)) * s_attraction;
+        if (num_miners_enemy > 0) dx1 += ((cxme / num_miners_enemy) - ((double) loc.x)) * m_e_attraction;
+        dx1 += ((double) exploratoryDir[0]) * exploration_weight;
 
-        double dx1 = ((cxm / num_miners) - (double) loc.x) * m_attraction;
-        dx1 += ((cxs / num_soldiers) - (double) loc.x) * s_attraction;
-        double dy1 = ((cym / num_miners) - (double) loc.y) * m_attraction;
-        dy1 += ((cys / num_soldiers) - (double) loc.y) * s_attraction;
+        if (num_miners > 0) dy1 = ((cym / num_miners) - ((double) loc.y)) * m_attraction;
+        if (num_soldiers > 0) dy1 += ((cys / num_soldiers) - ((double) loc.y)) * s_attraction;
+        if (num_miners_enemy > 0) dy1 += ((cyme / num_miners_enemy) - ((double) loc.y)) * m_e_attraction;
+        dy1 += ((double) exploratoryDir[1]) * exploration_weight;
 
         double dx = dx1 + dx2;
         double dy = dy1 + dy2;
         // convert dx and dy to direction
-        Direction potDir = doubleToDirection(dx, dy);
-        if (potDir != null)
-            return potDir;
-        else
-            return exploratoryDir;
+        // normalize double vector
+        if (Math.abs(dx) > Math.abs(dy)) {
+            if (dx > 0) return new int[]{(int) 10, (int) (10.0 * dy / dx)};
+            else return new int[]{(int) -10, (int) (-10.0 * dy / dx)};
+        }
+        else {
+            if (dy > 0) return new int[]{(int) (10.0 * dx / dy), (int) 10};
+            else return new int[]{(int) (-10.0 * dx / dy), (int) -10};
+        }
     }
 
     public Direction usefulDir() throws GameActionException {

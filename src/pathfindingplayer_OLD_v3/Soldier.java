@@ -203,7 +203,7 @@ public class Soldier extends Unit {
                     enemy_soldiers = true;
             }
             if (enemy_soldiers) {
-                rc.attack(weakestBot.location);
+                if (rc.canAttack(weakestBot.location)) rc.attack(weakestBot.location);
             }
             else {
                 for (RobotInfo bot : nearbyBots) {
@@ -212,7 +212,7 @@ public class Soldier extends Unit {
                             weakestBot = bot;
                         }
                 }
-                rc.attack(weakestBot.location);
+                if (rc.canAttack(weakestBot.location)) rc.attack(weakestBot.location);
             }
         }
     }
