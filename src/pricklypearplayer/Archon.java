@@ -11,7 +11,6 @@ public class Archon extends Unit {
     int[] build_order = chooseBuildOrder();
     int built_units = 0;
     int num_soldiers = 0;
-    int num_defenders = 0;
     int num_miners = 0;
     int num_builders = 0;
     int num_archons_init;
@@ -251,31 +250,13 @@ public class Archon extends Unit {
             rc.writeSharedArray(CHANNEL.SEND_RANKS2.getValue(), 0);
         }
     }
-    static int defenseNum = 24; //defualt
-    public void calcDefenseNum() throws GameActionException {
-        MapLocation my = rc.getLocation();
-        int w = rc.getMapWidth();
-        int h = rc.getMapHeight();
-        if (my.x-5 < 0){
-            defenseNum-=(10-2*my.x); //closer you are, more you subtract
-        }
-        if (my.y-5 < 0){
-            defenseNum-=(10-2*my.y);
-        }
-        if (my.x+5 > w){
-            defenseNum-=(10-2*(w-my.x));
-        }
-        if (my.y+5 > h){
-            defenseNum-=(10-2*(h-my.y));
-        }
-    }
+
     public void buildSoldier(Direction dir) throws GameActionException{ 
         if (!rc.canBuildRobot(RobotType.SOLDIER, dir)) return;
         else {
             rc.buildRobot(RobotType.SOLDIER, dir);
             built_units++;
             num_soldiers++;
-            // 2. choose defnesive or offensive
             int s =0;
             // 2. choose defnesive or offensive
             for (RobotInfo r :rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam()) ){
