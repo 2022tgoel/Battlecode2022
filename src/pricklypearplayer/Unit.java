@@ -249,7 +249,7 @@ public class Unit{
                     costs[i] = 999999;
                 }
                 else {
-                    int cost = rubbleWeight * Math.pow(rc.senseRubble(newLocation), 2);
+                    int cost = (int) (rubbleWeight * Math.pow(rc.senseRubble(newLocation), 2));
                     // Preference tier for moving towards target
                     if (i >=1){
                         cost+=5;
