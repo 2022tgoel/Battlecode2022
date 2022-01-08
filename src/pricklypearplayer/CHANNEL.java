@@ -10,6 +10,7 @@ public enum CHANNEL {
     fARCHON_STATUS3(6),
     fARCHON_STATUS4(7),
     UNIT_BUILT(8),
+    ALIVE(9),
     ORDERS(61),
     SEND_RANKS1(62),
     SEND_RANKS2(63);

@@ -14,7 +14,8 @@ public class Archon extends Unit {
     int num_defenders = 0;
     int num_miners = 0;
     int num_builders = 0;
-    int num_archons;
+    int num_archons_init;
+    int num_archons_alive;
     int mapArea = getMapArea();
     
     boolean PASS_ON = false;
@@ -28,7 +29,8 @@ public class Archon extends Unit {
 	public Archon(RobotController rc) throws GameActionException {
         super(rc);
         archonNumber = getArchonNumber();
-        num_archons = rc.getArchonCount();
+        num_archons_alive = rc.getArchonCount();
+        num_archons_init = num_archons_alive;
         calcDefenseNum();
     }
     @Override
@@ -36,7 +38,10 @@ public class Archon extends Unit {
         round_num = rc.getRoundNum();
         Direction[] dirs = sortedDirections();
         
-        if (round_num % num_archons != archonNumber) {
+        // handles all the logistics for when an archon dies
+        checkDead();
+        if (round_num % num_archons_alive != archonNumber) {
+            rc.setIndicatorString("ARCHON NUM: " + archonNumber);
             return;
         }
 
@@ -87,7 +92,7 @@ public class Archon extends Unit {
         if (unitRank == RANK.DEFAULT) {
             for (Direction dir: dirs) {
                 int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
-                if (num_miners < (sizeBracket*10)/num_archons){
+                if (num_miners < (sizeBracket*10)/num_archons_init){
                     if (rc.canBuildRobot(RobotType.MINER, dir)) {
                         rc.buildRobot(RobotType.MINER, dir);
                         num_miners++;
@@ -134,6 +139,44 @@ public class Archon extends Unit {
         CONSTRUCT_SPECIAL_UNIT = false;
         CONSTRUCTED_SPECIAL_UNIT = false;
         PASS_ON = false;
+        rc.setIndicatorString("ARCHON NUM: " + archonNumber);
+    }
+
+    public void checkDead() throws GameActionException {
+        // none dead
+        int archonCount = rc.getArchonCount();
+        if (archonCount >= num_archons_alive) {
+            return;
+        }
+        else {
+            num_archons_alive = rc.getArchonCount();
+            int cur_data = rc.readSharedArray(CHANNEL.ALIVE.getValue());
+            int binary_sum = 0;
+            int tempData = cur_data;
+            for (int i = num_archons_init - 1; i >= 0; i--) {
+                if (tempData / (int) Math.pow(2.0, (double) i) == 1) {
+                    binary_sum += 1;
+                    tempData -= (int) Math.pow(2.0, (double) i);
+                }
+            }
+
+            // if you're the last one, clear the data
+            if (binary_sum == num_archons_alive - 1) {
+                rc.writeSharedArray(CHANNEL.ALIVE.getValue(), 0);
+            }
+            else {
+                int data = (int) (Math.pow(2.0, ((double) archonNumber)));
+                rc.writeSharedArray(CHANNEL.ALIVE.getValue(), cur_data + data);
+            }
+            // if 4 archons alive, binary sum is 3, if 3 archons alive, binary sum is 2...
+            archonNumber = binary_sum;
+        }
+    }
+
+    public void setAlive() throws GameActionException {
+        int cur_data = rc.readSharedArray(CHANNEL.ALIVE.getValue());
+        int data = (int) (Math.pow(2.0, ((double) archonNumber)));
+        rc.writeSharedArray(CHANNEL.ALIVE.getValue(), cur_data + data);
     }
 
     public RANK specialUnit() {
@@ -233,8 +276,7 @@ public class Archon extends Unit {
             built_units++;
             num_soldiers++;
             // 2. choose defnesive or offensive
-            /*
-            if (num_defenders < 3 || (round_num/num_archons % 10 == 0 && num_soldiers > 3 * num_defenders)){ //about every 10 turns for this archon
+            if (num_defenders < 3){ //about every 10 turns for this archon
                 int s =0;
                 // 2. choose defnesive or offensive
                 for (RobotInfo r :rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam()) ){
@@ -247,8 +289,7 @@ public class Archon extends Unit {
                     rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
                     num_defenders++;
                 }
-            }*/
-            
+            }
         }
     }
 
