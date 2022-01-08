@@ -276,19 +276,16 @@ public class Archon extends Unit {
             built_units++;
             num_soldiers++;
             // 2. choose defnesive or offensive
-            if (num_defenders < 3){ //about every 10 turns for this archon
-                int s =0;
-                // 2. choose defnesive or offensive
-                for (RobotInfo r :rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam()) ){
-                    if (r.type == RobotType.SOLDIER){
-                        s++;
-                    }
+            int s =0;
+            // 2. choose defnesive or offensive
+            for (RobotInfo r :rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam()) ){
+                if (r.type == RobotType.SOLDIER){
+                    s++;
                 }
-                if (s <= defenseNum) {
-                    postRank(RANK.DEFENDER);
-                    rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
-                    num_defenders++;
-                }
+            }
+            if (s <= 3) { //3 scouts 
+                postRank(RANK.DEFENDER);
+                rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
             }
         }
     }
