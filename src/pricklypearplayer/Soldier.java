@@ -127,7 +127,7 @@ public class Soldier extends Unit {
         if (!attacked) {
             attemptAttack();
         }
-        
+
         counter += 1;
         // rc.setIndicatorString("MODE: " + mode.toString());
     }
@@ -506,15 +506,16 @@ public class Soldier extends Unit {
         rc.setIndicatorString("d: " + dx + " " + dy + "exp: " + exploratoryDir[0] + " " + exploratoryDir[1]);
         // convert dx and dy to direction
         // normalize double vector
+        double dir_strength = 4.0;
         if (Math.abs(dx) >= Math.abs(dy)) {
-            if (dx > 0) return new int[]{(int) 10, (int) (10.0 * dy / dx)};
-            else if (dx < 0) return new int[]{(int) -10, (int) (-10.0 * dy / dx)};
-            else return new int[]{0, (int) (10.0 * Math.signum(dy))};
+            if (dx > 0) return new int[]{(int) dir_strength, (int) (dir_strength * dy / dx)};
+            else if (dx < 0) return new int[]{(int) -dir_strength, (int) (-dir_strength * dy / dx)};
+            else return new int[]{0, (int) (dir_strength * Math.signum(dy))};
         }
         else {
-            if (dy > 0) return new int[]{(int) (10.0 * dx / dy), (int) 10};
-            else if (dy < 0) return new int[]{(int) (-10.0 * dx / dy), (int) -10};
-            else return new int[]{(int) (10.0 * Math.signum(dx)), 0};
+            if (dy > 0) return new int[]{(int) (dir_strength * dx / dy), (int) dir_strength};
+            else if (dy < 0) return new int[]{(int) (-dir_strength * dx / dy), (int) -dir_strength};
+            else return new int[]{(int) (dir_strength * Math.signum(dx)), 0};
         }
     }
 
