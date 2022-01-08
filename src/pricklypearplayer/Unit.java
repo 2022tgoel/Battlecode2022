@@ -166,9 +166,9 @@ public class Unit{
     static MapLocation last = null;
     static MapLocation cur =null;
     public Direction fuzzyMove(MapLocation dest) throws GameActionException{
-        return fuzzyMove(dest, 2); //will not go to squares with more that 20 rubble
+        return fuzzyMove(dest, 0.1); //will not go to squares with more that 20 rubble
     }
-    public Direction fuzzyMove(MapLocation dest, int rubbleWeight) throws GameActionException{
+    public Direction fuzzyMove(MapLocation dest, double rubbleWeight) throws GameActionException{
         MapLocation myLocation = rc.getLocation();
         if (myLocation.equals(dest)){
             return null; //you're already there!
@@ -196,7 +196,7 @@ public class Unit{
         return null;
 
     }
-    public Direction getBestDirectionFuzzy(Direction toDest, int rubbleWeight) throws GameActionException{
+    public Direction getBestDirectionFuzzy(Direction toDest, double rubbleWeight) throws GameActionException{
         MapLocation myLocation = rc.getLocation();
         Direction[] dirs = {toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(),
                 toDest.rotateRight().rotateRight(), toDest.opposite().rotateLeft(), toDest.opposite().rotateRight(), toDest.opposite()};
@@ -249,7 +249,7 @@ public class Unit{
                     costs[i] = 999999;
                 }
                 else {
-                    int cost = rc.senseRubble(newLocation)* rubbleWeight;
+                    int cost = (int) (rubbleWeight * Math.pow(rc.senseRubble(newLocation), 2));
                     // Preference tier for moving towards target
                     if (i >=1){
                         cost+=5;
