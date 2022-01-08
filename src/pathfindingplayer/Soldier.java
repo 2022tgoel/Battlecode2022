@@ -446,13 +446,6 @@ public class Soldier extends Unit {
                 cym += incrementy;
                 num_miners += 1;
             }
-            else if (robot.type == RobotType.ARCHON) {
-                // increment repulsion
-                if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) <= 13) {
-                    dx2 += (loc.x - robot.location.x) * a_repulsion;
-                    dy2 += (loc.y - robot.location.y) * a_repulsion;
-                }
-            }
         }
         // if there are no miners, explore.
         if (num_miners == 0) {
