@@ -110,15 +110,17 @@ public class Unit{
             int x = data / 64;
             int y = data % 64;
             MapLocation target = new MapLocation(x, y);
-            if (rc.canSenseLocation(target) && !rc.canSenseRobotAtLocation(target)){
-                rc.writeSharedArray(archon_index, 0);
-                archon_index = -1;
-                return false;
+            if (rc.canSenseLocation(target)){
+                RobotInfo r = rc.senseRobotAtLocation(target);
+                if (r == null || r.type != RobotType.ARCHON){
+                    rc.writeSharedArray(archon_index, 0);
+                    archon_index = -1;
+                    return false;
+                }
+                
             }
-            else {
-                fuzzyMove(target);
-                return true;
-            }
+            fuzzyMove(target);
+            return true;
         }
         else {
             archon_index = -1; 
