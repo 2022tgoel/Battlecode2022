@@ -166,7 +166,7 @@ public class Unit{
     static MapLocation last = null;
     static MapLocation cur =null;
     public Direction fuzzyMove(MapLocation dest) throws GameActionException{
-        return fuzzyMove(dest, 0.25); //will not go to squares with more that 20 rubble
+        return fuzzyMove(dest, 0.1); //will not go to squares with more that 20 rubble
     }
     public Direction fuzzyMove(MapLocation dest, double rubbleWeight) throws GameActionException{
         MapLocation myLocation = rc.getLocation();
