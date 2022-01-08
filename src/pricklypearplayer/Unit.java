@@ -10,6 +10,7 @@ public class Unit{
     RANK[] rank_map = initializeRankMap();
     final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
+    int seed_increment = 1;
     MapLocation homeArchon;
     /** Array containing all the possible movement directions. */
     static final Direction[] directions = {
@@ -25,7 +26,7 @@ public class Unit{
 
     public Unit(RobotController robotController) throws GameActionException {
         rc = robotController;
-        rng.setSeed((long) rc.getID());
+        rng.setSeed((long) rc.getID() + seed_increment);
         homeArchon = findHomeArchon();
         initializeRankMap();
     }
