@@ -505,11 +505,13 @@ public class Soldier extends Unit {
         // normalize double vector
         if (Math.abs(dx) > Math.abs(dy)) {
             if (dx > 0) return new int[]{(int) 10, (int) (10.0 * dy / dx)};
-            else return new int[]{(int) -10, (int) (-10.0 * dy / dx)};
+            else if (dx < 0) return new int[]{(int) -10, (int) (-10.0 * dy / dx)};
+            else return new int[]{0, 10 * (int) Math.signum(dy)};
         }
         else {
             if (dy > 0) return new int[]{(int) (10.0 * dx / dy), (int) 10};
-            else return new int[]{(int) (-10.0 * dx / dy), (int) -10};
+            else if (dy < 0) return new int[]{(int) (-10.0 * dx / dy), (int) -10};
+            else return new int[]{10 * (int) Math.signum(dx), 0};
         }
     }
 
