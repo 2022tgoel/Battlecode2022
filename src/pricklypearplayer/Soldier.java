@@ -15,6 +15,7 @@ public class Soldier extends Unit {
         ;
     }
     boolean attacked = false;
+
     int counter = 0;
     int exploratoryDirUpdateRound = 0;
     int threatDetectedRound = 10000;
@@ -43,7 +44,7 @@ public class Soldier extends Unit {
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
-        attacked = attemptAttack();
+        attacked = attemptAttack(false);
         switch (rank) {
             case CONVOY_LEADER:
                 mode = determineMode();
@@ -125,7 +126,8 @@ public class Soldier extends Unit {
         }
 
         if (!attacked) {
-            attemptAttack();
+            // attack miners if they're the only things nearby
+            attemptAttack(true);
         }
 
         counter += 1;
@@ -541,7 +543,7 @@ public class Soldier extends Unit {
         return dirs[rng.nextInt(dirs.length)];
     }
 
-    public boolean attemptAttack() throws GameActionException {
+    public boolean attemptAttack(boolean attackMiners) throws GameActionException {
         boolean enemy_soldiers = false;
         boolean enemy_miners = false;
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
@@ -559,18 +561,20 @@ public class Soldier extends Unit {
                 if (rc.canAttack(weakestBot.location)) rc.attack(weakestBot.location);
             }
             else {
-                for (RobotInfo bot : nearbyBots) {
-                    if (bot.type == RobotType.MINER)
-                        if (bot.health < weakestBot.health) {
-                            weakestBot = bot;
-                        }
-                        enemy_miners = true;
+                if (attackMiners) {
+                    for (RobotInfo bot : nearbyBots) {
+                        if (bot.type == RobotType.MINER)
+                            if (bot.health < weakestBot.health) {
+                                weakestBot = bot;
+                            }
+                            enemy_miners = true;
 
+                    }
+                    if (rc.canAttack(weakestBot.location)) rc.attack(weakestBot.location);
                 }
-                if (rc.canAttack(weakestBot.location)) rc.attack(weakestBot.location);
             }
         }
-        if (!enemy_miners && !enemy_soldiers) {
+        if ((!enemy_miners || !attackMiners)  && !enemy_soldiers) {
             return false;
         }
         else {
