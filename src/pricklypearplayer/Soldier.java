@@ -234,7 +234,7 @@ public class Soldier extends Unit {
 
     }
 
-    Direction momentumDir = null;
+    Direction momentumDir = directions[rng.nextInt(directions.length)];
     public void exploreMove() throws GameActionException{
         MapLocation myLocation = rc.getLocation();
         RobotInfo[] nearbyAllies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam());
@@ -242,6 +242,12 @@ public class Soldier extends Unit {
                 momentumDir.rotateLeft().rotateLeft(), momentumDir.rotateRight().rotateRight(), 
                 momentumDir.opposite().rotateLeft(), momentumDir.opposite().rotateRight(), momentumDir.opposite()};
         int[] costs = new int[8];
+        int s = 0;
+        for (RobotInfo robot : nearbyAllies) {
+            if (robot.type == rc.getType()) {
+                s++; 
+            }
+        }
         for (int i = 0; i < 8; i++){
             MapLocation newLocation = myLocation.add(dirs[i]);
             int cost = 0;
@@ -250,32 +256,32 @@ public class Soldier extends Unit {
             }
             else {
                 //momentum component
-                if (i >=1){
-                    cost+=10;
-                }
-                if (i >= 3) {
-                    cost += 30;
-                }
-                if (i >=5 ){
-                    cost+=30;
-                }
-                
-
-                //repelling component
-                for (RobotInfo robot : nearbyAllies) {
-                    if (robot.type == rc.getType()) {
-                        cost -= newLocation.distanceSquaredTo(robot.location); //trying to maximize distance
+                if (s ==0 ){
+                    if (i >=1){
+                        cost+=25;
+                    }
+                    if (i >= 3) {
+                        cost += 25;
+                    }
+                    if (i >=5 ){
+                        cost+=25;
                     }
                 }
+                else {
+                    //repelling component
+                    for (RobotInfo robot : nearbyAllies) {
+                        if (robot.type == rc.getType()) {
+                            cost -= newLocation.distanceSquaredTo(robot.location); //trying to maximize distance
+                        }
+                    }
+                }
+                
                 //rubble component
                 cost += rc.senseRubble(newLocation);
             }
             costs[i] = cost;
 
         }
-        String s = " ";
-        for (int i =0; i < 8; i++) s += costs[i] + " ";
-        rc.setIndicatorString(s);
         int cost = 99999;
         Direction optimalDir = null;
         for (int i = 0; i < dirs.length; i++) {

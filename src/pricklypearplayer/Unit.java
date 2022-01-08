@@ -194,7 +194,7 @@ public class Unit{
                 if (rc.canMove(optimalDir)){ //if you can move in the optimalDir, then you can move toDest - toDest is into a wall
                     rc.move(optimalDir);
                     calls++; //only considered a call if you actually move
-                    if (((calls>>4)& 1) > 0) { //just completed your 8th, 16th, etc, call
+                    if (((calls>>3)& 1) > 0) { //just completed your 8th, 16th, etc, call
                         last = cur;
                         cur = myLocation;
                     }
@@ -211,7 +211,7 @@ public class Unit{
                 toDest.rotateRight().rotateRight(), toDest.opposite().rotateLeft(), toDest.opposite().rotateRight(), toDest.opposite()};
         int[] costs = new int[8];
        // if (false) {
-        if (last!= null && (((calls>>4)&1) > 0) && (myLocation.distanceSquaredTo(last) <=4)) { //just completed your 8th, 16th, etc, call last turn
+        if (last!= null && (((calls>>3)&1) > 0) && (myLocation.distanceSquaredTo(last) <=4)) { //just completed your 8th, 16th, etc, call last turn
             //you're stagnating
             for (int i = 0; i < dirs.length; i++) {
                 MapLocation newLocation = myLocation.add(dirs[i]);
