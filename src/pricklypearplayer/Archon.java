@@ -34,11 +34,11 @@ public class Archon extends Unit {
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
         Direction[] dirs = sortedDirections();
-        /*
+        
         if (round_num % num_archons != archonNumber) {
             return;
         }
-
+        /*
         // refresh the posted rank with each bot
         clearRanks();
         ORDER = getOrder();
