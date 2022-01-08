@@ -22,10 +22,10 @@ public class Soldier extends Unit {
     int round_num = 0;
     int archon_index = -1;
     int dRushChannel = -1;
-    double s_attraction = 2.0;
-    double m_attraction = 8.3;
-    double m_e_attraction = 16.2;
-    double s_repulsion = 0.0;
+    double s_attraction = 1.0;
+    double m_attraction = 3.0;
+    double m_e_attraction = 8.0;
+    double s_repulsion = 1.0;
     double m_repulsion = 0.1;
     double exploration_weight = 2.0;
 
@@ -36,9 +36,14 @@ public class Soldier extends Unit {
     MapLocation[] threatenedArchons;
     RobotInfo[] nearbyAllies;
     int[] exploratoryDir = getExploratoryDir();
+
+    public boolean SEARCH_FOR_CONVOY = false;
+
+    private int CONVOY_SEARCH_ROUND;
+
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
-        rank = findRank();
+        rank = findRank(true);
         momentumDir = directions[rng.nextInt(8)];
     }
     @Override
@@ -114,6 +119,12 @@ public class Soldier extends Unit {
                     default:
                         break;
                 }
+
+                if (findRank(false) == RANK.CONVOY_LEADER){
+                    SEARCH_FOR_CONVOY = true;
+                    CONVOY_SEARCH_ROUND = round_num;
+                }
+
                 break;
             default:
                 break;
@@ -174,7 +185,7 @@ public class Soldier extends Unit {
         }
     }
 
-    public RANK findRank() throws GameActionException {
+    public RANK findRank(boolean assign) throws GameActionException {
         rc.setIndicatorString("READY TO READ");
         int data;
         // check all channels to see if you've received a rank
@@ -189,8 +200,9 @@ public class Soldier extends Unit {
             int status = data / 4096;
             int x = (data - (4096 * status)) / 64;
             int y = (data - (4096 * status) - (x * 64));
-            rc.setIndicatorString("STATUS: " + status + " X: " + x + " Y: " + y);
-            if (homeArchon.equals(new MapLocation(x, y))) {
+
+            // only set rank if instructed to.
+            if (homeArchon.equals(new MapLocation(x, y)) && assign) {
                 return getRank(status);
             }
         }
@@ -466,7 +478,7 @@ public class Soldier extends Unit {
                 cxs += (double) robot.location.x;
                 cys += (double) robot.location.y;
                 // increment repulsion
-                if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) <= 4) {
+                if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) <= 2) {
                     dx2 += ((double) (loc.x - robot.location.x)) * s_repulsion;
                     dy2 += ((double) (loc.y - robot.location.y)) * s_repulsion;
                 }

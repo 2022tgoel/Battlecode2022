@@ -7,6 +7,7 @@ public class Archon extends Unit {
     int counter = 0;
     int round_num;
     int archonNumber = -1;
+    int archons_dead = 0;
 
     int[] build_order = chooseBuildOrder();
     int built_units = 0;
@@ -148,6 +149,7 @@ public class Archon extends Unit {
         }
         else {
             num_archons_alive = rc.getArchonCount();
+            archons_dead += 1;
             int cur_data = rc.readSharedArray(CHANNEL.ALIVE.getValue());
             int binary_sum = 0;
             int tempData = cur_data;
@@ -263,7 +265,11 @@ public class Archon extends Unit {
                     s++;
                 }
             }
-            if (s <= 3) { //3 scouts 
+            if (s <= 3 && archons_dead == 0) { //3 scouts 
+                postRank(RANK.DEFENDER);
+                rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
+            }
+            else if (s <= 10 && archons_dead > 2) {
                 postRank(RANK.DEFENDER);
                 rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
             }
