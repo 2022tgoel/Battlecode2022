@@ -152,6 +152,16 @@ public class Unit{
         // rc.setIndicatorString("I JUST MOVED TO " + toDest[0] + " " + toDest[1]);
     }
     /**
+     * moveInDirection() moves in a direction while avoiding rubble in that direction
+     * TODO: uses fuzzy move instead
+     **/
+    public void moveInDirection(Direction toDest) throws GameActionException{
+        Direction optimalDir = getBestDirectionFuzzy(toDest, 2);
+        if (optimalDir != null) {
+            rc.move(optimalDir);
+        }
+    }
+    /**
      * fuzzyMove() is the method that moves to a location using a weight of how within the correct direction you are
      *             how much rubble is in a square (rather that just thresholding rubbles)
      *

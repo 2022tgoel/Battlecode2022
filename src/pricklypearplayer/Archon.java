@@ -33,9 +33,12 @@ public class Archon extends Unit {
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
+        Direction[] dirs = sortedDirections();
+        /*
         if (round_num % num_archons != archonNumber) {
             return;
         }
+
         // refresh the posted rank with each bot
         clearRanks();
         ORDER = getOrder();
@@ -50,7 +53,7 @@ public class Archon extends Unit {
 
         // TODO: let individual units choose how they're placed.
         // if you have an order or a special unit you want to build then do it
-        Direction[] dirs = sortedDirections();
+        
         if (unitRank != RANK.DEFAULT) {
             // Pick a direction to build in.
             for (Direction dir: dirs) {
@@ -79,8 +82,9 @@ public class Archon extends Unit {
                 postOrder(unitRank);
             }
         }
-
+        */
         // if you received an order and you couldn't build it, DON't WASTE RESOURCES
+        ORDER = RANK.DEFAULT;
         if (ORDER == RANK.DEFAULT) {
             for (Direction dir: dirs) {
                 if (built_units < build_order[counter % 3]) {
@@ -220,6 +224,7 @@ public class Archon extends Unit {
             built_units++;
             num_soldiers++;
             // 2. choose defnesive or offensive
+            /*
             if (num_defenders < 3 || (round_num/num_archons % 10 == 0 && num_soldiers > 3 * num_defenders)){ //about every 10 turns for this archon
                 int s =0;
                 // 2. choose defnesive or offensive
@@ -233,7 +238,7 @@ public class Archon extends Unit {
                     rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
                     num_defenders++;
                 }
-            }
+            }*/
             
         }
     }
@@ -307,13 +312,13 @@ public class Archon extends Unit {
     public int[] chooseBuildOrder() {
         int mapArea = rc.getMapHeight() * rc.getMapHeight();
         if (mapArea < 1400) {
-            return new int[]{3, 2, 0}; // miners, soldiers, builders
+            return new int[]{2, 3, 0}; // miners, soldiers, builders
         }
         else if (mapArea < 2200) {
             return new int[]{2, 2, 0}; // miners, soldiers, builders
         }
         else {
-            return new int[]{2, 2, 0}; // miners, soldiers, builders
+            return new int[]{3, 4, 0}; // miners, soldiers, builders
         }
     }
 

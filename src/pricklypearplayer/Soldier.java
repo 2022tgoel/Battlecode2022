@@ -66,8 +66,6 @@ public class Soldier extends Unit {
                     default:
                         break;
                 }
-                rc.setIndicatorString("before");
-                rc.setIndicatorString("after");
             }
         }
         else {
@@ -81,10 +79,7 @@ public class Soldier extends Unit {
                     fuzzyMove(homeArchon);
                     break;
                 case EXPLORATORY:
-                    moveInDirection(exploratoryDir2);
-                    if (adjacentToEdge()) {
-                        exploratoryDir2 = getExploratoryDir();
-                    }
+                    moveInDirection(friendlyDir());
                     break;
                 case HUNTING:
                     approachArchon();
@@ -114,14 +109,15 @@ public class Soldier extends Unit {
 
     public MODE determineMode() throws GameActionException {
         // this is global
+        /*
         threatenedArchons = findThreatenedArchons();
         if (threatenedArchons != null) {
             return MODE.DEFENSIVE_RUSH;
         }
-        else if (isLowHealth()) {
+        if (isLowHealth()) {
             return MODE.LOW_HEALTH;
-        }
-        else if (detectArchon()) {
+        }*/
+        if (detectArchon()) {
             return MODE.HUNTING;
         }
         else if (senseArchon()) {
