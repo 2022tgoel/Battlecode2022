@@ -160,7 +160,9 @@ public class Unit{
     public void moveInDirection(Direction toDest) throws GameActionException{
         Direction optimalDir = getBestDirectionFuzzy(toDest, 2);
         if (optimalDir != null) {
-            rc.move(optimalDir);
+            if (rc.canMove(optimalDir)) {
+                rc.move(optimalDir);
+            }
         }
     }
     /**
