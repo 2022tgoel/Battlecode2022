@@ -30,7 +30,6 @@ public class Archon extends Unit {
         archonNumber = getArchonNumber();
         num_archons_alive = rc.getArchonCount();
         num_archons_init = num_archons_alive;
-        calcDefenseNum();
     }
     @Override
     public void run() throws GameActionException {
