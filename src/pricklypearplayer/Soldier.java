@@ -14,19 +14,19 @@ public class Soldier extends Unit {
         WAITING,
         ;
     }
-
+    boolean attacked = false;
     int counter = 0;
     int exploratoryDirUpdateRound = 0;
     int threatDetectedRound = 10000;
     int round_num = 0;
     int archon_index = -1;
     int dRushChannel = -1;
-    double s_attraction = 0.0;
+    double s_attraction = 2.0;
     double m_attraction = 8.3;
     double m_e_attraction = 16.2;
-    double s_repulsion = 8.3;
+    double s_repulsion = 0.0;
     double m_repulsion = 0.1;
-    double exploration_weight = 0.25;
+    double exploration_weight = 2.0;
 
     RANK rank;
     MODE mode = MODE.EXPLORATORY;
@@ -43,7 +43,7 @@ public class Soldier extends Unit {
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
-        attemptAttack();
+        attacked = attemptAttack();
         switch (rank) {
             case CONVOY_LEADER:
                 mode = determineMode();
@@ -123,6 +123,11 @@ public class Soldier extends Unit {
                 exploratoryDir = getExploratoryDir();
                 exploratoryDirUpdateRound = round_num;
         }
+
+        if (!attacked) {
+            attemptAttack();
+        }
+        
         counter += 1;
         // rc.setIndicatorString("MODE: " + mode.toString());
     }
@@ -538,8 +543,9 @@ public class Soldier extends Unit {
         return dirs[rng.nextInt(dirs.length)];
     }
 
-    public void attemptAttack() throws GameActionException {
+    public boolean attemptAttack() throws GameActionException {
         boolean enemy_soldiers = false;
+        boolean enemy_miners = false;
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
@@ -560,9 +566,17 @@ public class Soldier extends Unit {
                         if (bot.health < weakestBot.health) {
                             weakestBot = bot;
                         }
+                        enemy_miners = true;
+
                 }
                 if (rc.canAttack(weakestBot.location)) rc.attack(weakestBot.location);
             }
+        }
+        if (!enemy_miners && !enemy_soldiers) {
+            return false;
+        }
+        else {
+            return true;
         }
     }
 }
