@@ -15,6 +15,7 @@ public class Archon extends Unit {
     int num_miners = 0;
     int num_builders = 0;
     int num_archons;
+    int mapArea = getMapArea();
     
     boolean PASS_ON = false;
     boolean CONSTRUCT_SPECIAL_UNIT = false;
@@ -86,7 +87,16 @@ public class Archon extends Unit {
         // if you received an order and you couldn't build it, DON't WASTE RESOURCES
         ORDER = RANK.DEFAULT;
         if (ORDER == RANK.DEFAULT) {
-            for (Direction dir: dirs) {
+            for (Direction dir: directions) {
+                int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
+                if (num_miners < (sizeBracket*10)/num_archons){
+                    if (rc.canBuildRobot(RobotType.MINER, dir)) {
+                        rc.buildRobot(RobotType.MINER, dir);
+                        num_miners++;
+                        break;
+                    }
+                    
+                }
                 if (built_units < build_order[counter % 3]) {
                     switch (counter % 3) {
                         case 0:
@@ -291,7 +301,6 @@ public class Archon extends Unit {
             }
         }
     }
-
     public Direction[] sortedDirections() throws GameActionException {
         Direction[] dirs = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
         Arrays.sort(dirs, (a,b) -> getRubble(a) - getRubble(b));
@@ -309,16 +318,18 @@ public class Archon extends Unit {
         }
     }
 
+    public int getMapArea(){
+        return rc.getMapHeight() * rc.getMapHeight();
+    }
     public int[] chooseBuildOrder() {
-        int mapArea = rc.getMapHeight() * rc.getMapHeight();
         if (mapArea < 1400) {
-            return new int[]{2, 3, 0}; // miners, soldiers, builders
+            return new int[]{1, 3, 0}; // miners, soldiers, builders
         }
         else if (mapArea < 2200) {
-            return new int[]{2, 2, 0}; // miners, soldiers, builders
+            return new int[]{1, 2, 0}; // miners, soldiers, builders
         }
         else {
-            return new int[]{3, 4, 0}; // miners, soldiers, builders
+            return new int[]{2, 4, 0}; // miners, soldiers, builders
         }
     }
 
