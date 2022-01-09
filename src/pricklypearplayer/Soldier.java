@@ -12,10 +12,12 @@ public class Soldier extends Unit {
         LOW_HEALTH,
         DEFENSIVE_RUSH,
         WAITING,
+        CONVOY
         ;
     }
-    boolean attacked = false;
 
+    boolean attacked = false;
+    boolean convoy_found = false;
     int counter = 0;
     int exploratoryDirUpdateRound = 0;
     int threatDetectedRound = 10000;
@@ -29,6 +31,8 @@ public class Soldier extends Unit {
     double m_repulsion = 0.1;
     double exploration_weight = 2.0;
 
+    int convoyDeployRound = 10000;
+
     RANK rank;
     MODE mode = MODE.EXPLORATORY;
 
@@ -38,8 +42,7 @@ public class Soldier extends Unit {
     int[] exploratoryDir = getExploratoryDir();
 
     public boolean SEARCH_FOR_CONVOY = false;
-
-    private int CONVOY_SEARCH_ROUND;
+    private MapLocation convoyTarget;
 
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
@@ -51,28 +54,6 @@ public class Soldier extends Unit {
         round_num = rc.getRoundNum();
         attacked = attemptAttack(false);
         switch (rank) {
-            case CONVOY_LEADER:
-                mode = determineMode();
-                switch (mode) {
-                    case DEFENSIVE_RUSH:
-                        // find closest maplocation to robot
-                        defensiveMove();
-                        break;
-                    case LOW_HEALTH:
-                        fuzzyMove(homeArchon);
-                        break;
-                    case EXPLORATORY:
-                        int[] d = friendlyDir();
-                        moveInDirection(d);
-                        // rc.setIndicatorString("d: " + d[0] + " " + d[1] + "exp: " + exploratoryDir[0] + " " + exploratoryDir[1]);
-                        break;
-                    case HUNTING:
-                        approachArchon();
-                        break;
-                    default:
-                        break;
-                }
-                break;
             case DEFENDER:
                 if (archonDied()){
                     rank = RANK.DEFAULT; //stop being a defender bot
@@ -82,7 +63,7 @@ public class Soldier extends Unit {
                     rc.setIndicatorString("MODE: " + mode.toString());
                     switch (mode) {
                         case WAITING:
-                            waitAtDist(20, true);
+                            waitAtDist(homeArchon, 20, true);
                             detectArchonThreat();
                             break;
                         case DEFENSIVE_RUSH:
@@ -116,15 +97,22 @@ public class Soldier extends Unit {
                     case HUNTING:
                         approachArchon();
                         break;
+                    case CONVOY:
+                        if (convoyDeployRound >= round_num){
+                            waitAtDist(convoyTarget, 9, true);
+                            // rc.setIndicatorString("convoyDEPLOYROUND: " + convoyDeployRound);
+                        }
+                        else {
+                            if (archon_index != -1){
+                                approachArchon();
+                            }
+                            else {
+                                convoyDeployRound += 30;
+                            }
+                        }
                     default:
                         break;
                 }
-
-                if (findRank(false) == RANK.CONVOY_LEADER){
-                    SEARCH_FOR_CONVOY = true;
-                    CONVOY_SEARCH_ROUND = round_num;
-                }
-
                 break;
             default:
                 break;
@@ -143,6 +131,26 @@ public class Soldier extends Unit {
 
         counter += 1;
         // rc.setIndicatorString("MODE: " + mode.toString());
+    }
+
+    public boolean canHunt(){
+        if (round_num < 300) return true;
+        else return false;
+    }
+
+    public MapLocation findConvoy() throws GameActionException {
+        int data = rc.readSharedArray(CHANNEL.CONVOY.getValue());
+        if (data != 0) {
+            int x = data / 64;
+            int y = data % 64;
+            MapLocation loc = new MapLocation(x, y);
+            MapLocation cur = rc.getLocation();
+            int dist = cur.distanceSquaredTo(loc);
+            if (dist < 225) {
+                return loc;
+            }
+        }
+        return null;
     }
     public MODE determineDefenderMode() throws GameActionException {
         threatenedArchons = findThreatenedArchons();
@@ -170,19 +178,29 @@ public class Soldier extends Unit {
                     return MODE.DEFENSIVE_RUSH;
             }
         }
-        /*
-        if (isLowHealth()) {
-            return MODE.LOW_HEALTH;
-        }*/
-        if (detectArchon()) {
+
+        boolean canHunt = canHunt();
+
+        boolean archonDetected = detectArchon() || senseArchon();
+
+        //rc.setIndicatorString("archonDetected: " + detectArchon() + " " + archon_index);
+
+        if (archonDetected && canHunt) {
             return MODE.HUNTING;
         }
-        else if (senseArchon()) {
-            return MODE.HUNTING;
+
+        MapLocation loc = findConvoy();
+        if (loc != null){
+            if (!convoy_found) {
+                convoyDeployRound = 30 + (30 * (round_num / 30));
+                convoyTarget = loc;
+                convoy_found = true;
+            }
         }
-        else {
-            return MODE.EXPLORATORY;
-        }
+
+        if (convoy_found) return MODE.CONVOY;
+
+        return MODE.EXPLORATORY;
     }
 
     public RANK findRank(boolean assign) throws GameActionException {
@@ -235,14 +253,13 @@ public class Soldier extends Unit {
     /**
      * waitAtDist() stays near the home archon
      **/
-    public void waitAtDist(int idealDistSquared, boolean shouldRepel) throws GameActionException{
+    public void waitAtDist(MapLocation loc, int idealDistSquared, boolean shouldRepel) throws GameActionException{
         //stays at around an ideal dist
         MapLocation myLocation = rc.getLocation();
         RobotInfo[] nearbyAllies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam());
         int buffer = 4;
         // rc.setIndicatorString("" + Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared));
-        if (Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared) <= buffer){
-            rc.setIndicatorString("here");
+        if (Math.abs(myLocation.distanceSquaredTo(loc)-idealDistSquared) <= buffer){
             return; //you're already in range
         }
         int[] costs = new int[8];
@@ -253,7 +270,7 @@ public class Soldier extends Unit {
                 cost = 999999;
             }
             else {
-                cost = 10*Math.abs(newLocation.distanceSquaredTo(homeArchon)-idealDistSquared);
+                cost = 10*Math.abs(newLocation.distanceSquaredTo(loc)-idealDistSquared);
                 if (shouldRepel){ //don't go near fellow ally soldiers
                     for (RobotInfo robot : nearbyAllies) {
                         if (robot.type == rc.getType()) {

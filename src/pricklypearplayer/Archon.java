@@ -26,6 +26,8 @@ public class Archon extends Unit {
     RANK ORDER;
 
     RANK unitRank;
+    private boolean convoyDeployed;
+    private int CONVOY_DEPLOY_ROUND = 10000;
 	public Archon(RobotController rc) throws GameActionException {
         super(rc);
         archonNumber = getArchonNumber();
@@ -59,22 +61,7 @@ public class Archon extends Unit {
         // TODO: let individual units choose how they're placed.
         // if you have an order or a special unit you want to build then do it
         
-        if (unitRank != RANK.DEFAULT) {
-            // Pick a direction to build in.
-            for (Direction dir: dirs) {
-                if (unitRank == RANK.CONVOY_LEADER) {
-                    // rc.setIndicatorString("Trying to build a CONVOY LEADER");
-                    if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
-                        rc.setIndicatorString("I BUILT A CONVOY LEADER");
-                        rc.buildRobot(RobotType.SOLDIER, dir);
-                        postRank(RANK.CONVOY_LEADER);
-                        num_soldiers += 1;
-                        CONSTRUCTED_SPECIAL_UNIT = true;
-                        break;
-                    }
-                }
-            }
-        }
+        if (unitRank != RANK.DEFAULT) {}
 
         // if you received an order and you couldn't build it, or if you couldn't build a special unit and wanted to, send another order
         if ((unitRank != RANK.DEFAULT && CONSTRUCT_SPECIAL_UNIT == true && PASS_ON) || (ORDER != RANK.DEFAULT && !CONSTRUCTED_SPECIAL_UNIT)) {
@@ -130,7 +117,16 @@ public class Archon extends Unit {
                 
             }
         }
-
+        if (convoyDeployed && round_num > CONVOY_DEPLOY_ROUND) {
+            clearConvoy();
+            convoyDeployed = false;
+        }
+        if (shouldDeployConvoy()) {
+            rc.setIndicatorString("CONVOY BUILT");
+            CONVOY_DEPLOY_ROUND = round_num + 30;
+            deployConvoy();
+            convoyDeployed = true;
+        }
         attemptHeal();
         // stagnate dRush data so that it must be continuously updated.
         clearDRush();
@@ -138,7 +134,7 @@ public class Archon extends Unit {
         CONSTRUCT_SPECIAL_UNIT = false;
         CONSTRUCTED_SPECIAL_UNIT = false;
         PASS_ON = false;
-        rc.setIndicatorString("ARCHON NUM: " + archonNumber);
+        // rc.setIndicatorString("ARCHON NUM: " + archonNumber);
     }
 
     public void checkDead() throws GameActionException {
@@ -180,14 +176,7 @@ public class Archon extends Unit {
     }
 
     public RANK specialUnit() {
-        if (rc.getRoundNum() % 50 == 0 ) {
-            CONSTRUCT_SPECIAL_UNIT = true;
-            PASS_ON = true;
-            return RANK.CONVOY_LEADER;
-        }
-        else {
-            return RANK.DEFAULT;
-        }
+        return RANK.DEFAULT;
     }
 
     public void clearDRush() throws GameActionException{
@@ -196,6 +185,24 @@ public class Archon extends Unit {
                 rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i, 0);
             }
         }
+    }
+
+    public void deployConvoy() throws GameActionException {
+        int loc_int = locationToInt(homeArchon);
+        rc.writeSharedArray(CHANNEL.CONVOY.getValue(), loc_int);
+    }
+
+    public void clearConvoy() throws GameActionException {
+        rc.writeSharedArray(CHANNEL.CONVOY.getValue(), 0);
+    }
+
+    public boolean shouldDeployConvoy() {
+        if (round_num > 300) {
+            if (round_num % 50 == 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void postOrder(RANK order) throws GameActionException {
@@ -207,18 +214,7 @@ public class Archon extends Unit {
         // rc.setIndicatorString("READING ORDERS FROM CHANNEL " + CHANNEL.ORDERS.getValue());
         int data = rc.readSharedArray(CHANNEL.ORDERS.getValue());
         // rc.setIndicatorString("DATA RECIEVED ");
-        if (data == 0) {
-            return RANK.DEFAULT;
-        }
-
-        clearOrder();
-
-        if (data == 1) {
-            return RANK.CONVOY_LEADER;
-        }
-        else {
-            return RANK.DEFAULT;
-        }
+        return RANK.DEFAULT;
     }
 
     public void clearOrder() throws GameActionException {

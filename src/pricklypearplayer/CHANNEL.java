@@ -11,8 +11,7 @@ public enum CHANNEL {
     fARCHON_STATUS4(7),
     UNIT_BUILT(8),
     ALIVE(9),
-    CONVOY_ID1(10),
-    CONVOY_ID2(11),
+    CONVOY(10),
     ORDERS(61),
     SEND_RANKS1(62),
     SEND_RANKS2(63);
