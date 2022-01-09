@@ -43,6 +43,7 @@ public class Soldier extends Unit {
 
     public boolean SEARCH_FOR_CONVOY = false;
     private MapLocation convoyTarget;
+    private int current_archon_index = -1;
 
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
@@ -103,11 +104,17 @@ public class Soldier extends Unit {
                             // rc.setIndicatorString("convoyDEPLOYROUND: " + convoyDeployRound);
                         }
                         else {
-                            if (archon_index != -1){
+                            if (archon_index != -1 && current_archon_index == -1)
+                                current_archon_index = archon_index;
+                            else if (archon_index == -1 && current_archon_index == -1) {
+                                convoyDeployRound += 30;
+                            }
+                            // if you have a target seek it.
+                            if (rc.readSharedArray(current_archon_index) != 0){
                                 approachArchon();
                             }
                             else {
-                                convoyDeployRound += 30;
+                                convoy_found = false;
                             }
                         }
                     default:

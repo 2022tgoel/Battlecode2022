@@ -199,7 +199,7 @@ public class Archon extends Unit {
 
     public boolean shouldDeployConvoy() {
         if (round_num > 300) {
-            if (round_num % 50 == 0) {
+            if (round_num % 100 == 0) {
                 return true;
             }
         }
