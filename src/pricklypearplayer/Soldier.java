@@ -26,6 +26,7 @@ public class Soldier extends Unit {
     double s_attraction = 1.0;
     double m_attraction = 3.0;
     double m_e_attraction = 8.0;
+    double a_attraction = 30.0;
     double s_repulsion = 1.0;
     double m_repulsion = 0.1;
     double exploration_weight = 2.0;
@@ -480,6 +481,8 @@ public class Soldier extends Unit {
         double cym = 0;
         double cxme = 0;
         double cyme = 0;
+        double cxa = 0;
+        double cya = 0;
         // repulsion from friendly robots
         double dx2 = 0;
         double dy2 = 0;
@@ -487,6 +490,7 @@ public class Soldier extends Unit {
         double num_miners = 0;
         double num_soldiers = 0;
         double num_miners_enemy = 0;
+        double num_archons = 0;
 
         RobotInfo[] friendlyRobos = rc.senseNearbyRobots(-1, rc.getTeam());
         for (RobotInfo robot: friendlyRobos) {
@@ -510,6 +514,11 @@ public class Soldier extends Unit {
                 }
                 num_miners += 1;
             }
+            else if (robot.type == RobotType.ARCHON) {
+                cxa += (double) robot.location.x;
+                cya += (double) robot.location.y;
+                num_archons += 1;
+            }
         }
         RobotInfo[] enemyRobos = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         for (RobotInfo robot: enemyRobos) {
@@ -524,11 +533,13 @@ public class Soldier extends Unit {
         if (num_miners > 0) dx1 += ((cxm / num_miners) - ((double) loc.x)) * m_attraction;
         if (num_soldiers > 0) dx1 += ((cxs / num_soldiers) - ((double) loc.x)) * s_attraction;
         if (num_miners_enemy > 0) dx1 += ((cxme / num_miners_enemy) - ((double) loc.x)) * m_e_attraction;
+        if (num_archons > 0) dx1 += ((cxa / num_archons) - ((double) loc.x)) * a_attraction;
         dx1 += ((double) exploratoryDir[0]) * exploration_weight;
 
         if (num_miners > 0) dy1 = ((cym / num_miners) - ((double) loc.y)) * m_attraction;
         if (num_soldiers > 0) dy1 += ((cys / num_soldiers) - ((double) loc.y)) * s_attraction;
         if (num_miners_enemy > 0) dy1 += ((cyme / num_miners_enemy) - ((double) loc.y)) * m_e_attraction;
+        if (num_archons > 0) dy1 += ((cya / num_archons) - ((double) loc.y)) * a_attraction;
         dy1 += ((double) exploratoryDir[1]) * exploration_weight;
 
         double dx = dx1 + dx2;
@@ -572,41 +583,43 @@ public class Soldier extends Unit {
     }
 
     public boolean attemptAttack(boolean attackMiners) throws GameActionException {
-        boolean enemy_soldiers = false;
-        boolean enemy_miners = false;
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
-            RobotInfo weakestBot = nearbyBots[0];
+            int weakestSoldierHealth = Integer.MAX_VALUE;
+            int weakestMinerHealth = Integer.MAX_VALUE;
+            RobotInfo weakestSoldier = null;
+            RobotInfo weakestMiner = null;
+            RobotInfo archon = null;
             for (RobotInfo bot : nearbyBots) {
                 if (bot.type == RobotType.SOLDIER)
-                    if (bot.health < weakestBot.health) {
-                        weakestBot = bot;
+                    if (bot.health < weakestSoldierHealth) {
+                        weakestSoldier = bot;
                     }
-                    enemy_soldiers = true;
-            }
-            if (enemy_soldiers) {
-                if (rc.canAttack(weakestBot.location)) rc.attack(weakestBot.location);
-            }
-            else {
-                if (attackMiners) {
-                    for (RobotInfo bot : nearbyBots) {
-                        if (bot.type == RobotType.MINER)
-                            if (bot.health < weakestBot.health) {
-                                weakestBot = bot;
-                            }
-                            enemy_miners = true;
 
+                if (bot.type == RobotType.MINER)
+                    if (bot.health < weakestMinerHealth) {
+                        weakestMiner = bot;
                     }
-                    if (rc.canAttack(weakestBot.location)) rc.attack(weakestBot.location);
+                
+                if (bot.type == RobotType.ARCHON) {
+                    archon = bot;
                 }
             }
-        }
-        if ((!enemy_miners || !attackMiners)  && !enemy_soldiers) {
-            return false;
-        }
-        else {
+            if (weakestSoldier != null) {
+                if (rc.canAttack(weakestSoldier.location)) rc.attack(weakestSoldier.location);
+            }
+            else if (archon != null) {
+                if (rc.canAttack(archon.location)) rc.attack(archon.location);
+            }
+            else if (weakestMiner != null && attackMiners) {
+                if (rc.canAttack(weakestMiner.location)) rc.attack(weakestMiner.location);
+            }
+            else {
+                return false;
+            }
             return true;
         }
+        return false;
     }
 }
