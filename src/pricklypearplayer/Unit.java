@@ -47,6 +47,7 @@ public class Unit{
             int data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + archon_index);
             if (data != 0) {
                 rc.setIndicatorString("archon found UWU1 " + archon_index);
+                assert(archon_index != -1);
                 return true;
             }
         }
@@ -55,6 +56,7 @@ public class Unit{
             if (data != 0) {
                 rc.setIndicatorString("archon found UWU2 " + archon_index);
                 archon_index = i;
+                assert(archon_index != -1);
                 return true;
             }
         }

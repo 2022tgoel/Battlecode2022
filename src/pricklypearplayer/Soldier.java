@@ -22,7 +22,6 @@ public class Soldier extends Unit {
     int exploratoryDirUpdateRound = 0;
     int threatDetectedRound = 10000;
     int round_num = 0;
-    int archon_index = -1;
     int dRushChannel = -1;
     double s_attraction = 1.0;
     double m_attraction = 3.0;
@@ -183,7 +182,7 @@ public class Soldier extends Unit {
 
         boolean archonDetected = detectArchon() || senseArchon();
 
-        //rc.setIndicatorString("archonDetected: " + detectArchon() + " " + archon_index);
+        rc.setIndicatorString("archonDetected: " + detectArchon() + " " + archon_index);
 
         if (archonDetected && canHunt) {
             return MODE.HUNTING;
