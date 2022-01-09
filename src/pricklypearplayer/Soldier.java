@@ -26,7 +26,7 @@ public class Soldier extends Unit {
     double s_attraction = 1.0;
     double m_attraction = 3.0;
     double m_e_attraction = 8.0;
-    double a_attraction = 30.0;
+    double a_attraction = 100.0;
     double s_repulsion = 1.0;
     double m_repulsion = 0.1;
     double exploration_weight = 2.0;
