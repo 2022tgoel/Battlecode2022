@@ -35,6 +35,8 @@ public class Archon extends Unit {
         num_archons_init = num_archons_alive;
     }
     Direction[] dirs = sortedDirectionsNew();
+    private boolean kill_switch;
+    private int flipBackRound;
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
@@ -128,6 +130,12 @@ public class Archon extends Unit {
             deployConvoy();
             convoyDeployed = true;
         }
+
+        if (flipBackRound >= round_num) {
+
+        }
+
+        handleKillSwitch();
         attemptHeal();
         // stagnate dRush data so that it must be continuously updated.
         clearDRush();
@@ -170,6 +178,34 @@ public class Archon extends Unit {
         }
     }
 
+    public void handleKillSwitch() throws GameActionException{
+        if (shouldFlipKillSwitch()) {
+            throwKillSwitch();
+            flipBackRound = round_num + 1;
+        }
+
+        if (round_num > flipBackRound) {
+            kill_switch = false;
+            clearKillSwitch();
+        }
+    }
+
+    public void clearKillSwitch() throws GameActionException{
+        rc.writeSharedArray(CHANNEL.KILL_SWITCH.getValue(), 0);
+    }
+
+    public void throwKillSwitch() throws GameActionException {
+        rc.writeSharedArray(CHANNEL.KILL_SWITCH.getValue(), 1);
+        kill_switch = true;
+    }
+
+    public boolean shouldFlipKillSwitch() throws GameActionException {
+        if (round_num % 300 == 0 && round_num > 300) {
+            return true;
+        }
+        return false;
+    }
+
     public void setAlive() throws GameActionException {
         int cur_data = rc.readSharedArray(CHANNEL.ALIVE.getValue());
         int data = (int) (Math.pow(2.0, ((double) archonNumber)));
@@ -198,11 +234,11 @@ public class Archon extends Unit {
     }
 
     public boolean shouldDeployConvoy() {
-        if (round_num > 300) {
+        /* if (round_num > 300) {
             if (round_num % 100 == 0) {
                 return true;
             }
-        }
+        } */
         return false;
     }
 

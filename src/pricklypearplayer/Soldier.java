@@ -44,6 +44,7 @@ public class Soldier extends Unit {
     public boolean SEARCH_FOR_CONVOY = false;
     private MapLocation convoyTarget;
     private int current_archon_index = -1;
+    private boolean huntSwitch;
 
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
@@ -140,8 +141,16 @@ public class Soldier extends Unit {
         // rc.setIndicatorString("MODE: " + mode.toString());
     }
 
-    public boolean canHunt(){
+    public boolean canHunt() throws GameActionException {
         if (round_num < 300) return true;
+
+        if (huntSwitch) return true;
+        
+        int data = rc.readSharedArray(CHANNEL.KILL_SWITCH.getValue());
+        if (data != 0) {
+            huntSwitch = true;
+            return true;
+        }
         else return false;
     }
 
