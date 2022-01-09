@@ -200,7 +200,7 @@ public class Archon extends Unit {
     }
 
     public boolean shouldFlipKillSwitch() throws GameActionException {
-        if (round_num % 300 == 0 && round_num > 300) {
+        if (round_num % 400 == 0 && round_num > 450) {
             return true;
         }
         return false;
