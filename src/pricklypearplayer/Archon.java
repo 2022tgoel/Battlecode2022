@@ -34,10 +34,11 @@ public class Archon extends Unit {
         num_archons_alive = rc.getArchonCount();
         num_archons_init = num_archons_alive;
     }
+    Direction[] dirs = sortedDirectionsNew();
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
-        Direction[] dirs = sortedDirections();
+        
         
         // handles all the logistics for when an archon dies
         checkDead();
@@ -320,6 +321,25 @@ public class Archon extends Unit {
             }
         }
     }
+
+    public int distToWall(Direction d){
+        MapLocation my = rc.getLocation();
+        MapLocation n = my.add(d);
+        int min = 61;
+        min = Math.min(min, n.x);
+        min = Math.min(min, n.y);
+        min = Math.min(min, rc.getMapWidth() - n.x);
+        min = Math.min(min, rc.getMapHeight() - n.y);
+        return min;
+    }
+
+    public Direction[] sortedDirectionsNew() throws GameActionException {
+        
+        Direction[] dirs = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
+        Arrays.sort(dirs, (a,b) -> distToWall(b) - distToWall(a));
+        return dirs;
+    }
+
     public Direction[] sortedDirections() throws GameActionException {
         Direction[] dirs = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
         Arrays.sort(dirs, (a,b) -> getRubble(a) - getRubble(b));
