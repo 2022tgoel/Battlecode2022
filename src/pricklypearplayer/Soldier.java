@@ -100,7 +100,7 @@ public class Soldier extends Unit {
                         break;
                     case CONVOY:
                         if (convoyDeployRound >= round_num){
-                            waitAtDist(convoyTarget, 9, true);
+                            waitAtDist(convoyTarget, 36, true);
                             // rc.setIndicatorString("convoyDEPLOYROUND: " + convoyDeployRound);
                         }
                         else {
@@ -521,11 +521,6 @@ public class Soldier extends Unit {
                 }
                 num_miners += 1;
             }
-            else if (robot.type == RobotType.ARCHON) {
-                cxa += (double) robot.location.x;
-                cya += (double) robot.location.y;
-                num_archons += 1;
-            }
         }
         RobotInfo[] enemyRobos = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         for (RobotInfo robot: enemyRobos) {
@@ -533,6 +528,11 @@ public class Soldier extends Unit {
                 cxme += (double) robot.location.x;
                 cyme += (double) robot.location.y;
                 num_miners_enemy += 1;
+            }
+            else if (robot.type == RobotType.ARCHON) {
+                cxa += (double) robot.location.x;
+                cya += (double) robot.location.y;
+                num_archons += 1;
             }
         }
         double dx1 = 0;
