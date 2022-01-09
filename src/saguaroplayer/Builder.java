@@ -5,7 +5,6 @@ import java.util.*;
 
 public class Builder extends Unit {
     int travel_counter = 0;
-    MapLocation target;
     int[] exploratoryDir = getExploratoryDir();
 	public Builder(RobotController rc) throws GameActionException {
         super(rc);
@@ -14,13 +13,42 @@ public class Builder extends Unit {
     @Override
     public void run() throws GameActionException {
         /* builds watchtowers in surrounding regoin */
-        Direction[] dirs = {Direction.NORTHEAST,Direction.SOUTHEAST, Direction.SOUTHWEST,Direction.NORTHWEST,}; 
-        MapLocation my = rc.getLocation();
-        for (int i =0 ;i < dirs.length; i++){
-            MapLocation watchtowerLocation  = my.add(dirs[i]);
-            if (rc.canBuildRobot(RobotType.WATCHTOWER, dirs[i])){
-                rc.buildRobot(RobotType.WATCHTOWER, dirs[i]);
+        forTheGreaterGood();
+    }
+
+    public void forTheGreaterGood() throws GameActionException {
+        MapLocation cur = rc.getLocation();
+        MapLocation target = null;
+        if (rc.senseLead(cur) == 0) {
+            rc.disintegrate();
+        }
+        // robot finds closest spot to archon without lead on it, then destroys itself.
+        int distSquared;
+        int minDistSquared = 10000;
+        for (int dx = -4; dx <= 4; dx++) {
+            for (int dy = -4; dy <= 4; dy++) {
+                if (dx == 0 && dy == 0) continue;
+                if (validCoords(cur.x + dx, cur.y + dy)) {
+                    MapLocation loc = new MapLocation(cur.x + dx, cur.y + dy);
+                    if (loc.equals(homeArchon)) continue;
+                    if (rc.canSenseLocation(loc)) {
+                        int numLead = rc.senseLead(loc);
+                        if (numLead == 0) {
+                            distSquared = cur.distanceSquaredTo(loc);
+                            if (distSquared < minDistSquared) {
+                                minDistSquared = distSquared;
+                                target = loc;
+                            }
+                        }
+
+                    }
+                }
             }
         }
+        if (target != null) {
+            fuzzyMove(target);
+            rc.setIndicatorString("target: " + target.x + " " + target.y);
+        }
+        else moveInDirection(exploratoryDir);
     }
 }

@@ -362,13 +362,13 @@ public class Archon extends Unit {
     }
     public int[] chooseBuildOrder() {
         if (mapArea < 1400) {
-            return new int[]{1, 3, 0}; // miners, soldiers, builders
+            return new int[]{1, 3, 1}; // miners, soldiers, builders
         }
         else if (mapArea < 2200) {
-            return new int[]{1, 2, 0}; // miners, soldiers, builders
+            return new int[]{1, 2, 1}; // miners, soldiers, builders
         }
         else {
-            return new int[]{2, 2, 0}; // miners, soldiers, builders
+            return new int[]{2, 2, 1}; // miners, soldiers, builders
         }
     }
 

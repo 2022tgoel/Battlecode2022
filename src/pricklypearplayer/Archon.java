@@ -35,8 +35,8 @@ public class Archon extends Unit {
         num_archons_init = num_archons_alive;
     }
     Direction[] dirs = sortedDirectionsNew();
-    private boolean kill_switch;
     private int flipBackRound;
+    private boolean kill_switch;
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
