@@ -38,6 +38,7 @@ public class Miner extends Unit {
                 break;
             case FLEEING:
                 moveInDirection(fleeDirection);
+                // rc.setIndicatorString("fleeing: " + fleeDirection[0] + " " + fleeDirection[1]);
                 break;
         }
         if (adjacentToEdge()) {
@@ -112,7 +113,7 @@ public class Miner extends Unit {
             cys /= numSoldiers;
             MapLocation enemy_center = new MapLocation((int)cxs, (int)cys);
             Direction d = rc.getLocation().directionTo(enemy_center).opposite();
-            return new int[] {d.getDeltaX(), d.getDeltaY()};
+            return new int[] {d.getDeltaX() * 5, d.getDeltaY() * 5};
         }
         return null; 
     }

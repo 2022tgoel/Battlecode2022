@@ -191,13 +191,16 @@ public class Unit{
                         last = cur;
                         cur = myLocation;
                     }
-                }
+                } 
             }
             return optimalDir;
+            // find location
+
         }
         return null;
 
     }
+
     public Direction getBestDirectionFuzzy(Direction toDest, double rubbleWeight) throws GameActionException{
         MapLocation myLocation = rc.getLocation();
         Direction[] dirs = {toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(),
@@ -247,11 +250,11 @@ public class Unit{
             for (int i = 0; i < dirs.length; i++) {
                 MapLocation newLocation = myLocation.add(dirs[i]);
                 // Movement invalid, set higher cost than starting value
-                if (!rc.onTheMap(newLocation)) {
+                if (!validCoords(newLocation.x, newLocation.y)) {
                     costs[i] = 999999;
                 }
                 else {
-                    int cost = (int) (rubbleWeight * Math.pow(rc.senseRubble(newLocation), 2));
+                    int cost = (int) (rubbleWeight * Math.pow((double) rc.senseRubble(newLocation), 2.0));
                     // Preference tier for moving towards target
                     if (i >=1){
                         cost+=5;
@@ -259,20 +262,20 @@ public class Unit{
                     if (i >= 3) {
                         cost += 30;
                     }
-                    if (i >=5 ){
+                    if (i >=5){
                         cost+=30;
                     }
                     costs[i] = cost+ rng.nextInt(10); //some randomness
                 }
                 
             }
-            /*
+            
             String s = "";
             for (int i= 0; i < dirs.length;i++){
                 s+=String.valueOf(costs[i])+ " ";
             }
             s+=String.valueOf(rc.canMove(toDest));
-            rc.setIndicatorString(s);*/
+            rc.setIndicatorString(s);
             int cost = 99999;
             Direction optimalDir = null;
             for (int i = 0; i < dirs.length; i++) {
