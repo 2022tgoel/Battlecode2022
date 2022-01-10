@@ -79,6 +79,23 @@ public class Archon extends Unit {
         if (unitRank == RANK.DEFAULT) {
             for (Direction dir: dirs) {
                 int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
+                /* if (num_miners < (sizeBracket*5)/num_archons_init){
+                    if (rc.canBuildRobot(RobotType.MINER, dir)) {
+                        rc.buildRobot(RobotType.MINER, dir);
+                        num_miners++;
+                        break;
+                    }
+                    
+                }
+
+                if (num_builders < (sizeBracket*2)/num_archons_init) {
+                    if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
+                        rc.buildRobot(RobotType.BUILDER, dir);
+                        num_builders++;
+                        break;
+                    }
+                } */
+
                 if (num_miners < (sizeBracket*10)/num_archons_init){
                     if (rc.canBuildRobot(RobotType.MINER, dir)) {
                         rc.buildRobot(RobotType.MINER, dir);
@@ -87,6 +104,7 @@ public class Archon extends Unit {
                     }
                     
                 }
+
                 if (built_units < build_order[counter % 3]) {
                     switch (counter % 3) {
                         case 0:
@@ -117,16 +135,6 @@ public class Archon extends Unit {
                 }
                 
             }
-        }
-        if (convoyDeployed && round_num > CONVOY_DEPLOY_ROUND) {
-            clearConvoy();
-            convoyDeployed = false;
-        }
-        if (shouldDeployConvoy()) {
-            rc.setIndicatorString("CONVOY BUILT");
-            CONVOY_DEPLOY_ROUND = round_num + 30;
-            deployConvoy();
-            convoyDeployed = true;
         }
         attemptHeal();
         // stagnate dRush data so that it must be continuously updated.
@@ -362,13 +370,13 @@ public class Archon extends Unit {
     }
     public int[] chooseBuildOrder() {
         if (mapArea < 1400) {
-            return new int[]{1, 3, 1}; // miners, soldiers, builders
+            return new int[]{2, 2, 0}; // miners, soldiers, builders
         }
         else if (mapArea < 2200) {
-            return new int[]{1, 2, 1}; // miners, soldiers, builders
+            return new int[]{2, 2, 0}; // miners, soldiers, builders
         }
         else {
-            return new int[]{2, 2, 1}; // miners, soldiers, builders
+            return new int[]{2, 2, 0}; // miners, soldiers, builders
         }
     }
 

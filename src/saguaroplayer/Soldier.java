@@ -133,8 +133,7 @@ public class Soldier extends Unit {
     }
 
     public boolean canHunt(){
-        if (round_num < 300) return true;
-        else return false;
+        return true;
     }
 
     public MapLocation findConvoy() throws GameActionException {

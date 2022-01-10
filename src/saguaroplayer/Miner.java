@@ -21,7 +21,8 @@ public class Miner extends Unit {
        // rc.setIndicatorString("heehee 0");
         if (!mining_detour()) {
             // rc.setIndicatorString("heehee 1");
-            moveInDirection(exploratoryDir);
+            if (rc.getRoundNum() % 3 == 0)
+                moveInDirection(exploratoryDir);
             // rc.setIndicatorString("heehee 2");
         }
         if (adjacentToEdge()) {
@@ -49,91 +50,6 @@ public class Miner extends Unit {
             return false;
         }
         return true;
-    }
-
-    public Direction safeDir(MapLocation dir) throws GameActionException {
-        Direction d = rc.getLocation().directionTo(dir);
-        double[] doubleDir = directionToVector(d);
-        double[] soldier_repulsion = fleeFromSoldiers();
-        double[] archon_repulsion = archonRepulsion();
-        double[] newDir = addVectors(doubleDir, soldier_repulsion);
-        newDir = addVectors(newDir, archon_repulsion);
-        return doubleToDirection(newDir[0], newDir[1]);
-    }
-
-    public Direction safeDir(int[] dir) throws GameActionException {
-        Direction d = doubleToDirection((double) dir[0], (double) dir[1]);
-        double[] doubleDir = directionToVector(d);
-        double[] soldier_repulsion = fleeFromSoldiers();
-        double[] archon_repulsion = archonRepulsion();
-        double[] newDir = addVectors(doubleDir, soldier_repulsion);
-        newDir = addVectors(newDir, archon_repulsion);
-        double[] miner_repulsion = minerRepulsion();
-        newDir = addVectors(newDir, miner_repulsion);
-        return doubleToDirection(newDir[0], newDir[1]);
-    }
-
-    public double[] minerRepulsion() throws GameActionException {
-        double[] result = {0.0,0.0};
-        MapLocation my = rc.getLocation();
-        RobotInfo[] nearbyMiners = rc.senseNearbyRobots(4, rc.getTeam());
-
-        // if no bots from opposite team return
-        if (nearbyMiners.length == 0) {
-            return result;
-        }
-        for (RobotInfo ri : nearbyMiners) {
-            if (ri.type == RobotType.MINER) {
-                if ((Math.abs(ri.location.x - my.x) + Math.abs(ri.location.y - my.y)) <= 2) {
-                    result[0] += (my.x - ri.location.x) * miner_repulsion;
-                    result[1] += (my.y - ri.location.y) * miner_repulsion;
-                }
-            }
-        }
-
-        return result;
-    }
-
-    public double[] archonRepulsion() throws GameActionException {
-        MapLocation cur = rc.getLocation();
-        Direction d = rc.getLocation().directionTo(homeArchon).opposite();
-        if (cur.distanceSquaredTo(homeArchon) <= 5) {
-            double[] new_dir = directionToVector(d);
-            new_dir[0] *= archon_repulsion;
-            new_dir[1] *= archon_repulsion;
-            return new_dir;
-        }
-        else return new double[]{0.0,0.0};
-    }
-
-    public double[] fleeFromSoldiers() {
-        double[] result = {0.0,0.0};
-        MapLocation my = rc.getLocation();
-        int num_enemies = 0;
-        RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-
-        // if no bots from opposite team return
-        if (enemies.length == 0) {
-            return result;
-        }
-        for (RobotInfo ri : enemies) {
-            if (ri.type == RobotType.SOLDIER || ri.type == RobotType.WATCHTOWER || ri.type == RobotType.SAGE) {
-                result[0] += ri.location.x;
-                result[1] += ri.location.y;
-                num_enemies += 1;
-            }
-        }
-
-        // if no damaging enemies from enemy team, return
-        if (num_enemies == 0) {
-            return result;
-        }
-
-        result[0] /= num_enemies;
-        result[1] /= num_enemies;
-        result[0] = -1 * (result[0] - my.x) * soldier_repulsion;
-        result[1] = -1 * (result[1] - my.y) * soldier_repulsion;
-        return result;
     }
 
     /**

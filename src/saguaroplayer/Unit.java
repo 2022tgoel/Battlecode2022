@@ -310,34 +310,39 @@ public class Unit{
                 dir = new int[]{-8,-8};
             }
         }
-        int[][] dirs = new int[5][2];
+        int[][] dirs = new int[9][2];
         int counter = 0;
 
         int increment;
+        int init_val;
         if (dir[0] < 0) {
             increment = -4;
+            init_val = 8;
         } else {
             increment = 4;
+            init_val = -8;
         }
 
-        for (int i = 0; i != dir[0]; i+= increment) {
+        for (int i = init_val; i != dir[0]; i+= increment) {
             dirs[counter] = new int[]{i, dir[1]};
             counter += 1;
         }
 
         if (dir[1] < 0) {
             increment = -4;
+            init_val = 8;
         } else {
             increment = 4;
+            init_val = -8;
         }
 
 
-        for (int i = 0; i != dir[1]; i+= increment) {
+        for (int i = init_val; i != dir[1]; i+= increment) {
             dirs[counter] = new int[]{dir[0], i};
             counter += 1;
         }
 
-        dirs[4] = dir;
+        dirs[8] = dir;
         // print directions
         // rc.setIndicatorString("dirs: " + dirs[0][0] + " " + dirs[0][1] + " " + dirs[1][0] + " " + dirs[1][1] + " " + dirs[2][0] + " " + dirs[2][1] + " " + dirs[3][0] + " " + dirs[3][1] + " " + dirs[4][0] + " " + dirs[4][1] + " | " + (center.x - cur.x) + " " + (center.y - cur.y) + " | " + center.x + " " + center.y + " | " + cur.x + " " + cur.y);
 
