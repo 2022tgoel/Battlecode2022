@@ -4,32 +4,74 @@ import battlecode.common.*;
 import java.util.*;
 
 public class Miner extends Unit {
+
+    enum MODE {
+        EXPLORING,
+        MINE_DISCOVERED,
+        FLEEING;
+    }
+
     int[] exploratoryDir;
     double soldier_repulsion = 2.0;
     double archon_repulsion = 2.0;
     double miner_repulsion = 1.5;
+    MODE mode;
+    private MapLocation target;
+    private int[] fleeDirection;
     
 	public Miner(RobotController rc) throws GameActionException {
         super(rc);
-        exploratoryDir = getExploratoryDir();
+        exploratoryDir = getExploratoryDir(7);
     }
 
     @Override
     public void run() throws GameActionException {
-        //Direction d = fuzzyMove(new MapLocation(27, 15));
-       // rc.setIndicatorString(d.toString());
-       // rc.setIndicatorString("heehee 0");
-        if (!mining_detour()) {
-            // rc.setIndicatorString("heehee 1");
-            if (rc.getRoundNum() % 3 == 0)
+        if (rc.getRoundNum() % 50 == 0) {
+            exploratoryDir = getExploratoryDir(7);
+        }
+        mode = getMode();
+        switch (mode) {
+            case EXPLORING:
                 moveInDirection(exploratoryDir);
-            // rc.setIndicatorString("heehee 2");
+                break;
+            case MINE_DISCOVERED:
+                break;
+            case FLEEING:
+                moveInDirection(fleeDirection);
+                break;
         }
         if (adjacentToEdge()) {
-            exploratoryDir = getExploratoryDir();
+            exploratoryDir = getExploratoryDir(7);
         }
         // rc.setIndicatorString("exploratoryDir: " + exploratoryDir[0] + " " + exploratoryDir[1]);
         senseArchon();
+    }
+
+    public MODE getMode() throws GameActionException {
+        fleeDirection = enemiesDetected();
+        if (fleeDirection != null) {
+            return MODE.FLEEING;
+        }
+        else if (mining_detour()) {
+            return MODE.MINE_DISCOVERED;
+        }
+        else {
+            return MODE.EXPLORING;
+        }
+    }
+
+    // TODO: make this work
+    public void avoid_archons() throws GameActionException {
+        boolean archonDetected = detectArchon();
+        if (archonDetected) {
+            int data = rc.readSharedArray(archon_index);
+            int x = data / 64;
+            int y = data % 64;
+            MapLocation enemy_archon = new MapLocation(x, y);
+        }
+        else {
+            rc.setIndicatorString("archon not detected");
+        }
     }
 
     public boolean mining_detour() throws GameActionException {
@@ -39,17 +81,40 @@ public class Miner extends Unit {
             return false;
         }
         if (amountMined < 4){
-            MapLocation target = findMiningArea();
+            target = findMiningArea();
             if (target != null) {
                 if (!cur.equals(target)){
+                    fuzzyMove(target);
                     //sense if there is a lucrative nearby area and move there instead
-                    moveToLocation(target);
+                    // moveToLocation(target);
                     return true;
                 }
             }
             return false;
         }
         return true;
+    }
+
+    public int[] enemiesDetected() throws GameActionException {
+        RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        double cxs = 0;
+        double cys = 0;
+        double numSoldiers = 0;
+        for (RobotInfo enemy: enemies) {
+            if (enemy.type == RobotType.SOLDIER) {
+                cxs += enemy.location.x;
+                cys += enemy.location.y;
+                numSoldiers++;
+            }
+        }
+        if (numSoldiers > 0) {
+            cxs /= numSoldiers;
+            cys /= numSoldiers;
+            MapLocation enemy_center = new MapLocation((int)cxs, (int)cys);
+            Direction d = rc.getLocation().directionTo(enemy_center).opposite();
+            return new int[] {d.getDeltaX(), d.getDeltaY()};
+        }
+        return null; 
     }
 
     /**

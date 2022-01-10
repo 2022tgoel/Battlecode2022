@@ -24,7 +24,7 @@ public class Soldier extends Unit {
     int round_num = 0;
     int dRushChannel = -1;
     double s_attraction = 1.0;
-    double m_attraction = 3.0;
+    double m_attraction = 2.0;
     double m_e_attraction = 8.0;
     double s_repulsion = 1.0;
     double m_repulsion = 0.1;
@@ -38,7 +38,7 @@ public class Soldier extends Unit {
     MapLocation target;
     MapLocation[] threatenedArchons;
     RobotInfo[] nearbyAllies;
-    int[] exploratoryDir = getExploratoryDir();
+    int[] exploratoryDir = getExploratoryDir(5);
 
     public boolean SEARCH_FOR_CONVOY = false;
     private MapLocation convoyTarget;
@@ -119,7 +119,7 @@ public class Soldier extends Unit {
 
         if (adjacentToEdge()) {
             if (round_num - exploratoryDirUpdateRound > 2)
-                exploratoryDir = getExploratoryDir();
+                exploratoryDir = getExploratoryDir(5);
                 exploratoryDirUpdateRound = round_num;
         }
 
@@ -535,7 +535,7 @@ public class Soldier extends Unit {
         rc.setIndicatorString("d: " + dx + " " + dy + "exp: " + exploratoryDir[0] + " " + exploratoryDir[1]);
         // convert dx and dy to direction
         // normalize double vector
-        double dir_strength = 4.0;
+        double dir_strength = 2.0;
         if (Math.abs(dx) >= Math.abs(dy)) {
             if (dx > 0) return new int[]{(int) dir_strength, (int) (dir_strength * dy / dx)};
             else if (dx < 0) return new int[]{(int) -dir_strength, (int) (-dir_strength * dy / dx)};

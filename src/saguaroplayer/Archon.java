@@ -9,7 +9,7 @@ public class Archon extends Unit {
     int archonNumber = -1;
     int archons_dead = 0;
 
-    int[] build_order = chooseBuildOrder();
+    int[] build_order;
     int built_units = 0;
     int num_soldiers = 0;
     int num_miners = 0;
@@ -33,6 +33,7 @@ public class Archon extends Unit {
         archonNumber = getArchonNumber();
         num_archons_alive = rc.getArchonCount();
         num_archons_init = num_archons_alive;
+        build_order = chooseBuildOrder();
     }
     Direction[] dirs = sortedDirectionsNew();
     @Override
@@ -96,7 +97,7 @@ public class Archon extends Unit {
                     }
                 } */
 
-                if (num_miners < (sizeBracket*10)/num_archons_init){
+                if (num_miners < (sizeBracket*6)/num_archons_init){
                     if (rc.canBuildRobot(RobotType.MINER, dir)) {
                         rc.buildRobot(RobotType.MINER, dir);
                         num_miners++;
@@ -108,7 +109,7 @@ public class Archon extends Unit {
                 if (built_units < build_order[counter % 3]) {
                     switch (counter % 3) {
                         case 0:
-                            // rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + counter);
+                            rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + build_order[counter % 3]);
                             if (rc.canBuildRobot(RobotType.MINER, dir)) {
                                 rc.buildRobot(RobotType.MINER, dir);
                                 built_units++;
@@ -116,11 +117,11 @@ public class Archon extends Unit {
                             }
                             break;
                         case 1:
-                            //  rc.setIndicatorString("Trying to build a soldier");
+                            rc.setIndicatorString("Trying to build a soldier" + " built_units: " + built_units + " " + build_order[counter % 3]);
                             buildSoldier(dir);
                             break;
                         case 2:
-                            // rc.setIndicatorString("Trying to build a builder");
+                        rc.setIndicatorString("Trying to build a builder" + " built_units: " + built_units + " " + build_order[counter % 3]);
                             if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
                                 rc.buildRobot(RobotType.BUILDER, dir);
                                 built_units++;
@@ -263,21 +264,21 @@ public class Archon extends Unit {
             rc.buildRobot(RobotType.SOLDIER, dir);
             built_units++;
             num_soldiers++;
-            int s =0;
+            /* int s =0;
             // 2. choose defnesive or offensive
             for (RobotInfo r :rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam()) ){
                 if (r.type == RobotType.SOLDIER){
                     s++;
                 }
-            }
-            if (s <= 3 && archons_dead == 0) { //3 scouts 
+            } */
+            /* if (s <= 3 && archons_dead == 0) { //3 scouts 
                 postRank(RANK.DEFENDER);
                 rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
             }
             else if (s <= 10 && archons_dead > 2) {
                 postRank(RANK.DEFENDER);
                 rc.setIndicatorString("BUILDING A DEFENSIVE SOLDIER");
-            }
+            } */
         }
     }
 
@@ -366,7 +367,7 @@ public class Archon extends Unit {
     }
 
     public int getMapArea(){
-        return rc.getMapHeight() * rc.getMapHeight();
+        return rc.getMapHeight() * rc.getMapWidth();
     }
     public int[] chooseBuildOrder() {
         if (mapArea < 1400) {
@@ -376,7 +377,7 @@ public class Archon extends Unit {
             return new int[]{2, 2, 0}; // miners, soldiers, builders
         }
         else {
-            return new int[]{2, 2, 0}; // miners, soldiers, builders
+            return new int[]{1, 5, 0}; // miners, soldiers, builders
         }
     }
 
