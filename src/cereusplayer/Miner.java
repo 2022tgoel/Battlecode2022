@@ -36,10 +36,6 @@ public class Miner extends Unit {
                 break;
             case MINE_DISCOVERED:
                 break;
-            case FLEEING:
-                moveInDirection(fleeDirection);
-                // rc.setIndicatorString("fleeing: " + fleeDirection[0] + " " + fleeDirection[1]);
-                break;
         }
         if (adjacentToEdge()) {
             exploratoryDir = getExploratoryDir(7);
@@ -49,11 +45,7 @@ public class Miner extends Unit {
     }
 
     public MODE getMode() throws GameActionException {
-        fleeDirection = enemiesDetected();
-        if (fleeDirection != null) {
-            return MODE.FLEEING;
-        }
-        else if (mining_detour()) {
+        if (mining_detour()) {
             return MODE.MINE_DISCOVERED;
         }
         else {
