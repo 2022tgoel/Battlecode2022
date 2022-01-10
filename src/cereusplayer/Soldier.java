@@ -46,9 +46,8 @@ public class Soldier extends Unit {
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
-        attacked = attemptAttack(false);
-        mode = determineMode();
         attemptAttack(true);
+        mode = determineMode();
         switch (mode) {
             case EXPLORATORY:
                 int[] d = friendlyDir();
