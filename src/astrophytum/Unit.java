@@ -10,8 +10,9 @@ public class Unit{
     RANK[] rank_map = initializeRankMap();
     final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
-    int seed_increment = 5;
+    int seed_increment = 0;
     MapLocation homeArchon;
+    public MapLocation archon_target;
     /** Array containing all the possible movement directions. */
     static final Direction[] directions = {
         Direction.NORTH,
@@ -48,6 +49,9 @@ public class Unit{
             if (data != 0) {
                 rc.setIndicatorString("archon found UWU1 " + archon_index);
                 assert(archon_index != -1);
+                int x = data / 64;
+                int y = data % 64;
+                archon_target = new MapLocation(x, y);
                 return true;
             }
         }
@@ -57,6 +61,9 @@ public class Unit{
                 rc.setIndicatorString("archon found UWU2 " + archon_index);
                 archon_index = i;
                 assert(archon_index != -1);
+                int x = data / 64;
+                int y = data % 64;
+                archon_target = new MapLocation(x, y);
                 return true;
             }
         }
@@ -74,6 +81,7 @@ public class Unit{
             for (RobotInfo bot : nearbyBots) {
                 if (bot.type == RobotType.ARCHON) {
                     int ind = broadcastArchon(bot.location);
+                    archon_target = bot.location;
                     //store index of last archon sensed 
                     archon_index = ind;
                     found = true;

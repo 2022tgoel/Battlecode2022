@@ -81,7 +81,8 @@ public class Soldier extends Unit {
     public MODE determineMode() throws GameActionException {
         boolean archonDetected = detectArchon() || senseArchon();
         if (archonDetected) {
-            return MODE.ARCHON_RUSH;
+            if (rc.getLocation().distanceSquaredTo(archon_target) <= 900)
+                return MODE.ARCHON_RUSH;
         }
         else if (target != null) {
             return MODE.HUNTING;
