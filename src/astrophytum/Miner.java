@@ -5,6 +5,11 @@ import java.util.*;
 
 public class Miner extends Unit {
 
+    enum RANK {
+        EXPLORER, 
+        FARMER
+    }
+
     enum MODE {
         EXPLORING,
         MINE_DISCOVERED,

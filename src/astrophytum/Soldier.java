@@ -74,6 +74,7 @@ public class Soldier extends Unit {
         else {
             int[] dir = new int[]{target.x - cur.x, target.y - cur.y};
             moveInDirection(dir);
+            exploratoryDir = dir;
         }
     }
 
