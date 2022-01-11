@@ -10,6 +10,7 @@ public class Soldier extends Unit {
         EXPLORATORY,
         HUNTING,
         ARCHON_RUSH,
+        FLEE,
         LOW_HEALTH,
         DEFENSIVE_RUSH,
         WAITING,
@@ -34,6 +35,8 @@ public class Soldier extends Unit {
     MapLocation target;
 
     int[] exploratoryDir = getExploratoryDir(5);
+    private int[] fleeDirection = {Integer.MAX_VALUE, Integer.MAX_VALUE};
+    private int stopFleeingRound = 10000;
 
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
@@ -50,6 +53,7 @@ public class Soldier extends Unit {
                 break;
             case ARCHON_RUSH:
                 approachArchon();
+                target = null;
                 break;
             case HUNTING:
                 huntTarget();
@@ -57,6 +61,9 @@ public class Soldier extends Unit {
                 break;
             case DEFENSIVE_RUSH:
                 defensiveMove();
+            case FLEE:
+                moveInDirection(fleeDirection());
+                break;
             default:
                 break;
         }
@@ -65,6 +72,48 @@ public class Soldier extends Unit {
             exploratoryDir = getExploratoryDir(5);
         }
         rc.setIndicatorString("MODE: " + mode.toString());
+    }
+
+    public int[] fleeDirection() throws GameActionException{
+        MapLocation cur = rc.getLocation();
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1);
+        double cxsf = 0;
+        double cysf = 0;
+        double cxse = 0;
+        double cyse = 0;
+        int numEnemies = 0;
+        int numFriends = 0;
+        for (RobotInfo bot: nearbyBots) {
+            if (bot.team == rc.getTeam()) {
+                if (bot.type == RobotType.SOLDIER) {
+                    cxsf += bot.location.x;
+                    cysf += bot.location.y;
+                    numFriends++;
+                }
+            }
+            else if (bot.team == rc.getTeam().opponent())
+                if (bot.type == RobotType.SOLDIER) {
+                    cxse += bot.location.x;
+                    cyse += bot.location.y;
+                    numEnemies++;
+                }
+        }
+        if (numEnemies > 0) {
+            cxse /= numEnemies;
+            cyse /= numEnemies;
+        }
+        if (numFriends > 0) {
+            cxsf /= numFriends;
+            cysf /= numFriends;
+        }
+        if (numEnemies > numFriends) {
+            int dx = -(((int) cxse) - cur.x);
+            int dy = -(((int) cyse) - cur.y);
+            dx += (((int) cxsf) - cur.x);
+            dy += (((int) cysf) - cur.y);
+            return new int[]{dx, dy};
+        }
+        return new int[]{Integer.MAX_VALUE, Integer.MAX_VALUE}; 
     }
 
     public RANK findRankSoldier() throws GameActionException{
@@ -80,20 +129,37 @@ public class Soldier extends Unit {
     public void huntTarget() throws GameActionException {
         // if target is within 3 tiles, do not move closer, otherwise move closer
         MapLocation cur = rc.getLocation();
-        if (rc.getLocation().distanceSquaredTo(target) <= 9) {
-            int[] dir = new int[]{target.x - cur.x, target.y - cur.y};
-            exploratoryDir = dir;
-            return;
+        RobotInfo[] friendlySoldiers = rc.senseNearbyRobots(-1, rc.getTeam());
+        int[] dir = new int[2];
+        int dx = 0;
+        int dy = 0;
+        int num_soldiers = 0;
+        if (friendlySoldiers != null) {
+            for (RobotInfo robot: friendlySoldiers) {
+                if (robot.type == RobotType.SOLDIER) {
+                    dir[0] += (target.x - robot.location.x);
+                    dir[1] += (target.y - robot.location.y);
+                    num_soldiers++;
+                }
+            }
         }
-        else {
-            int[] dir = new int[]{target.x - cur.x, target.y - cur.y};
-            moveInDirection(dir);
+        dx += (target.x - cur.x);
+        dy += (target.y - cur.y);
+        dir[0] = (dir[0] + dx) / (num_soldiers + 1);
+        dir[1] = (dir[1] + dy) / (num_soldiers + 1);
+        if (dir[0] != 0 || dir[1] != 0) exploratoryDir = dir;
+        else  {
+            dir = new int[]{dx, dy};
             exploratoryDir = dir;
         }
+        if (rc.getLocation().distanceSquaredTo(target) <= 9) return;
+        else moveInDirection(dir);
     }
 
     public MODE determineMode() throws GameActionException {
         boolean archonDetected = detectArchon() || senseArchon();
+        int[] potFleeDir = fleeDirection();
+        boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
         threatenedArchons = findThreatenedArchons();
         if (threatenedArchons != null) {
             for (MapLocation archon: threatenedArchons) {
@@ -102,7 +168,15 @@ public class Soldier extends Unit {
                 }
             }
         }
-        if (archonDetected) {
+        if (validFlee || stopFleeingRound <= round_num) {
+            if (validFlee) fleeDirection = potFleeDir;
+            // keep fleeing for two moves (2 rounds per move)
+            if (stopFleeingRound <= round_num) {
+                stopFleeingRound = round_num + 4;
+            }
+            return MODE.FLEE;
+        }
+        else if (archonDetected) {
             if (rc.getLocation().distanceSquaredTo(archon_target) <= 900)
                 return MODE.ARCHON_RUSH;
         }

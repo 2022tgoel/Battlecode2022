@@ -10,7 +10,7 @@ public class Unit{
     RANK[] rank_map = initializeRankMap();
     final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
-    int seed_increment = 2;
+    int seed_increment = 0;
     MapLocation homeArchon;
     public MapLocation archon_target;
     /** Array containing all the possible movement directions. */
