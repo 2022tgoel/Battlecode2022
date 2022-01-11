@@ -107,11 +107,12 @@ public class Soldier extends Unit {
             cysf /= numFriends;
         }
         if (numEnemies > numFriends) {
-            int dx = -(((int) cxse) - cur.x);
-            int dy = -(((int) cyse) - cur.y);
-            dx += (((int) cxsf) - cur.x);
-            dy += (((int) cysf) - cur.y);
-            return new int[]{dx, dy};
+            double dx = -(cxse - cur.x);
+            double dy = -(cyse - cur.y);
+            // more attracted
+            dx = 0.7 * dx + 0.3 * (cxsf - cur.x);
+            dy = 0.7 * dx + 0.3 * (cysf - cur.y);
+            return new int[]{(int) dx, (int) dy};
         }
         return new int[]{Integer.MAX_VALUE, Integer.MAX_VALUE}; 
     }
@@ -157,17 +158,9 @@ public class Soldier extends Unit {
     }
 
     public MODE determineMode() throws GameActionException {
-        boolean archonDetected = detectArchon() || senseArchon();
+        // Priority 1 - Don't die.
         int[] potFleeDir = fleeDirection();
         boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
-        threatenedArchons = findThreatenedArchons();
-        if (threatenedArchons != null) {
-            for (MapLocation archon: threatenedArchons) {
-                if (rc.getLocation().distanceSquaredTo(archon) <= 400) {
-                    return MODE.DEFENSIVE_RUSH;
-                }
-            }
-        }
         if (validFlee || stopFleeingRound <= round_num) {
             if (validFlee) fleeDirection = potFleeDir;
             // keep fleeing for two moves (2 rounds per move)
@@ -176,10 +169,24 @@ public class Soldier extends Unit {
             }
             return MODE.FLEE;
         }
-        else if (archonDetected) {
+
+        // Priority 2 - Defend.
+        threatenedArchons = findThreatenedArchons();
+        if (threatenedArchons != null) {
+            for (MapLocation archon: threatenedArchons) {
+                if (rc.getLocation().distanceSquaredTo(archon) <= 400) {
+                    return MODE.DEFENSIVE_RUSH;
+                }
+            }
+        }
+
+        // Priority 3 - Kill Archons.
+        boolean archonDetected = detectArchon() || senseArchon();
+        if (archonDetected) {
             if (rc.getLocation().distanceSquaredTo(archon_target) <= 900)
                 return MODE.ARCHON_RUSH;
         }
+        // Priority 4 - Hunt enemies.
         else if (target != null) {
             return MODE.HUNTING;
         }
