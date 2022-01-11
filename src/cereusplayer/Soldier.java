@@ -20,18 +20,13 @@ public class Soldier extends Unit {
     boolean attacked = false;
     boolean convoy_found = false;
     int counter = 0;
-    int exploratoryDirUpdateRound = 0;
-    int threatDetectedRound = 10000;
     int round_num = 0;
-    int dRushChannel = -1;
     double s_attraction = 1.0;
     double m_attraction = 2.0;
     double m_e_attraction = 8.0;
     double s_repulsion = 1.0;
     double m_repulsion = 0.1;
     double exploration_weight = 2.0;
-
-    int convoyDeployRound = 10000;
 
     RANK rank;
     MODE mode = MODE.EXPLORATORY;
@@ -55,7 +50,11 @@ public class Soldier extends Unit {
                 moveInDirection(d);
                 break;
             case HUNTING:
-                moveInDirection(lastAttackDir);
+                boolean b = moveInDirection(lastAttackDir);
+                if (!b){
+                    //choose a flipped direction
+                    lastAttackDir = flip(lastAttackDir);
+                }
                 break;
             case DESTROY_ARCHON:
                 approachArchon();
@@ -65,7 +64,6 @@ public class Soldier extends Unit {
         }
         rc.setIndicatorString("MODE: " + mode.toString());
     }
-
     public MODE determineMode() throws GameActionException {
         /*
         boolean archonDetected = detectArchon() || senseArchon();
@@ -236,47 +234,6 @@ public class Soldier extends Unit {
         if (num_enemies ==0) fuzzyMove(homeArchon);
         else fuzzyMove(new MapLocation((int) (cx / num_enemies), (int) (cy / num_enemies)));
     }
-
-    public void detectArchonThreat() throws GameActionException {
-        RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        int threatLevel = 0;
-        int data;
-        for (RobotInfo enemy : enemies) {
-            if (enemy.type == RobotType.SOLDIER) {
-                threatLevel += 1;
-            }
-            else if (enemy.type == RobotType.SAGE) {
-                threatLevel += 4;
-            }
-        }
-        if (threatLevel >= 2) {
-            for (int i = 0; i < 4; i++) {
-                // rc.writeSharedArray(, value);
-                data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
-                // go through channels until you find an empty one to communicate with.
-                int x = data / 64;
-                int y = data % 64;
-                // channel already written too.
-                if (x == homeArchon.x && y == homeArchon.y) {
-                    dRushChannel = i;
-                    return;
-                }
-                if (data == 0) {
-                    dRushChannel = i;
-                    
-                }
-            }
-            rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + dRushChannel, locationToInt(homeArchon));
-            threatDetectedRound = round_num;
-        }
-        else {
-            // clear channel if threat is no longer active
-            if (dRushChannel != -1) {
-                data = rc.readSharedArray(dRushChannel);
-            }
-        }
-    }
-
     public boolean isLowHealth() throws GameActionException {
         if (rc.getHealth() < 20) {
             return true;
@@ -285,6 +242,28 @@ public class Soldier extends Unit {
             return false;
         }
     }
+
+    public int[] flip(int[] dir){//directional vector input
+        assert(dir.length == 2);
+        MapLocation loc = rc.getLocation();
+        int[] ret = new int[2];
+        ret[0] = dir[0];
+        ret[1] = dir[1];
+        if (loc.x == 0 && ret[0] <0){
+            ret[0] = -1*ret[0];
+        } 
+        if (loc.y == 0 && ret[1] <0){
+            ret[1] = -1*ret[1];
+        }
+        if (loc.x >= rc.getMapWidth()-1 && ret[0]>0){
+            ret[0] = -1*ret[0];
+        }
+        if (loc.y >= rc.getMapHeight()-1 && ret[1]>0){
+            ret[1] = -1*ret[1];
+        }
+        return ret;
+    }
+
     public int[] friendlyDir() throws GameActionException { 
         MapLocation loc = rc.getLocation();
         // average position of soldiers and miners

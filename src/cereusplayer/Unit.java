@@ -153,7 +153,7 @@ public class Unit{
         fuzzyMove(loc); // best pathfinding strat 
     }
 
-    public void moveInDirection(int[] toDest) throws GameActionException{ 
+    public boolean moveInDirection(int[] toDest) throws GameActionException{ 
         MapLocation loc = rc.getLocation();
         //scaling this directional vector so that it is on the map 
         double scaleFactor = 1;
@@ -171,15 +171,19 @@ public class Unit{
         }
         //if scale factor is really small then return this to conduct flipping???
         //fuzzy moving to this loc
+        if (scaleFactor == 0){
+            return false;
+        }
         MapLocation dest = new MapLocation(loc.x + (int) (scaleFactor * (double) toDest[0]), loc.y + (int) (scaleFactor * (double) toDest[1]) );
         try {
             assert(validCoords(dest.x, dest.y));
         }
         catch (AssertionError e){
             System.out.println(scaleFactor + " " + loc.x + " " + loc.y + " " + toDest[0] + " " + toDest[1]);
-            return;
+            return false;
         }
         fuzzyMove(dest);
+        return true;
         // rc.setIndicatorString("I JUST MOVED TO " + toDest[0] + " " + toDest[1]);
     }
     /**
