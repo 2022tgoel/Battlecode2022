@@ -434,36 +434,4 @@ public class Unit{
         }
         return RANK.DEFAULT;
     }
-
-    public void detectArchonThreat() throws GameActionException {
-        RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        int threatLevel = 0;
-        int dRushChannel = -1;
-        int data;
-        for (RobotInfo enemy : enemies) {
-            if (enemy.type == RobotType.SOLDIER) {
-                threatLevel += 1;
-            }
-            else if (enemy.type == RobotType.SAGE) {
-                threatLevel += 4;
-            }
-        }
-        if (threatLevel >= 2) {
-            for (int i = 0; i < 4; i++) {
-                // rc.writeSharedArray(, value);
-                data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
-                // go through channels until you find an empty one to communicate with.
-                int x = data / 64;
-                int y = data % 64;
-                // channel already written too.
-                if (x == homeArchon.x && y == homeArchon.y) {
-                    return;
-                }
-                if (data == 0) {
-                    dRushChannel = i;
-                }
-            }
-            if (dRushChannel != -1) rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + dRushChannel, locationToInt(homeArchon));
-        }
-    }
 }
