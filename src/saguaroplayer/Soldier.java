@@ -29,7 +29,6 @@ public class Soldier extends Unit {
     double s_repulsion = 1.0;
     double m_repulsion = 0.1;
     double exploration_weight = 2.0;
-
     int convoyDeployRound = 10000;
 
     RANK rank;

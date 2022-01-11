@@ -62,6 +62,9 @@ public class Soldier extends Unit {
             default:
                 break;
         }
+        if (adjacentToEdge()) {
+            exploratoryDir = getExploratoryDir(5);
+        }
         rc.setIndicatorString("MODE: " + mode.toString());
     }
     public MODE determineMode() throws GameActionException {
