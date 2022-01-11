@@ -4,6 +4,14 @@ import battlecode.common.*;
 import java.util.*;
 
 public class Archon extends Unit {
+
+    enum MODE {
+        DEFAULT,
+        THREATENED,
+        OTHER_THREATENED,
+        ;
+    }
+
     int round_num;
     int archonNumber = -1;
     int archons_dead = 0;
@@ -15,14 +23,12 @@ public class Archon extends Unit {
     int counter = 0;
     int num_soldiers = 0;
     int num_miners = 0;
-    int num_farmer_miners = 0;
-    int num_explorer_miners = 0;
     int num_builders = 0;
     int num_archons_init;
     int num_archons_alive;
     int mapArea = getMapArea();
 
-	public Archon(RobotController rc) throws GameActionException {
+    public Archon(RobotController rc) throws GameActionException {
         super(rc);
         System.out.println("here");
         archonNumber = getArchonNumber();
@@ -36,56 +42,144 @@ public class Archon extends Unit {
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
         
+        if (round_num == 250){
+          //  rc.resign();
+        }
         
         // handles all the logistics for when an archon dies
         checkDead();
+
         if (round_num % num_archons_alive != archonNumber) {
             rc.setIndicatorString("ARCHON NUM: " + archonNumber);
             return;
         }
 
-        for (Direction dir: dirs) {
-            int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
-
-            if (num_miners < (sizeBracket*6)/num_archons_init){
-                if (rc.canBuildRobot(RobotType.MINER, dir)) {
-                    rc.buildRobot(RobotType.MINER, dir);
-                    num_miners++;
-                    break;
-                }
-            }
-
-            switch (counter % 3) {
-                case 0:
-                    rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + build_order[counter % 3]);
-                    buildMiner(dir);
-                    break;
-                case 1:
-                    rc.setIndicatorString("Trying to build a soldier" + " built_units: " + built_units + " " + build_order[counter % 3]);
-                    buildSoldier(dir);
-                    break;
-                case 2:
-                    rc.setIndicatorString("Trying to build a builder" + " built_units: " + built_units + " " + build_order[counter % 3]);
-                    buildBuilder(dir);
-                    break;
-            }
-            if (built_units >= build_order[counter % 3]){
-                counter++;
-                built_units = 0;
-            }
-            
-        }
-        attemptHeal();
-        detectArchonThreat();
         clearDRush();
+        
+        MODE mode = determineMode();
+
+        switch (mode) {
+            case THREATENED:
+                sendThreatAlert();
+                for (Direction dir: dirs) {
+                    buildSoldier(dir);
+                }
+                break;
+            case OTHER_THREATENED:
+                /* TODO
+                if (rc.getTeamLeadAmount(rc.getTeam()) < 5000){
+                    break;
+                }*/
+            default:
+                for (Direction dir: dirs) {
+                    int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
+
+                    if (num_miners < (sizeBracket*6)/num_archons_init){
+                        if (rc.canBuildRobot(RobotType.MINER, dir)) {
+                            rc.buildRobot(RobotType.MINER, dir);
+                            num_miners++;
+                            break;
+                        }
+                        
+                    }
+
+                    switch (counter % 3) {
+                        case 0:
+                            rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + build_order[counter % 3]);
+                            buildMiner(dir);
+                            break;
+                        case 1:
+                            rc.setIndicatorString("Trying to build a soldier" + " built_units: " + built_units + " " + build_order[counter % 3]);
+                            buildSoldier(dir);
+                            break;
+                        case 2:
+                            rc.setIndicatorString("Trying to build a builder" + " built_units: " + built_units + " " + build_order[counter % 3]);
+                            buildBuilder(dir);
+                            break;
+                    }
+                    if (built_units >= build_order[counter % 3]){
+                        counter++;
+                        built_units = 0;
+                    }   
+                }
+                break;
+        }
+
+        
+        attemptHeal();
+        
+    }
+
+    public MODE determineMode() throws GameActionException {
+        if (underThreat()) {
+            return MODE.THREATENED;
+        }
+        if (otherUnderThreat()){
+            return MODE.OTHER_THREATENED;
+        }
+        return MODE.DEFAULT;
     }
 
     public void clearDRush() throws GameActionException{
-        if (round_num % 10 == 0) {
+        if (round_num % 50 == 0){
             for (int i = 0; i < 4; i++) {
                 rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i, 0);
             }
         }
+        
+    }
+
+    public boolean underThreat(){
+        RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        int threatLevel = 0;
+        int data;
+        for (RobotInfo enemy : enemies) {
+            if (enemy.type == RobotType.SOLDIER) {
+                threatLevel += 1;
+            }
+            else if (enemy.type == RobotType.SAGE) {
+                threatLevel += 4;
+            }
+        }
+        return (threatLevel >=3);
+    }
+
+    public void sendThreatAlert() throws GameActionException {
+        MapLocation my = rc.getLocation();
+        int dRushChannel = 0;
+        for (int i = 0; i < 4; i++) {
+            // rc.writeSharedArray(, value);
+            int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
+            // go through channels until you find an empty one to communicate with.
+            int x = data / 64;
+            int y = data % 64;
+            // already alerted.
+            if (x == my.x && y == my.y) {
+                return;
+            }
+            if (data == 0) {
+                dRushChannel = i;
+                
+            }
+        }
+        rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + dRushChannel, locationToInt(my));
+    }
+
+    public boolean otherUnderThreat() throws GameActionException{
+        int numThreatenedArchons = 0;
+        for (int i = 0; i < 4; i++) {
+            // rc.writeSharedArray(, value);
+            int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
+            // go through channels until you find an empty one to communicate with.
+            if (data != 0) {
+                int x = data / 64;
+                int y = data % 64;
+                if (validCoords(x, y)) {
+                    numThreatenedArchons++;
+                }
+            }
+        }
+        return (numThreatenedArchons > 0);
     }
 
     public void checkDead() throws GameActionException {
@@ -194,13 +288,6 @@ public class Archon extends Unit {
     public void buildMiner(Direction dir) throws GameActionException{
         if (rc.canBuildRobot(RobotType.MINER, dir)) {
             rc.buildRobot(RobotType.MINER, dir);
-            if (num_explorer_miners < 3 * num_farmer_miners) {
-                num_explorer_miners++;
-            }
-            else {
-                // postRank(RANK.FARMER); // turns miners into farmers :D
-                num_farmer_miners++;
-            }
             built_units++;
             num_miners++;
         }
@@ -281,10 +368,10 @@ public class Archon extends Unit {
     }
     public int[] chooseBuildOrder() {
         if (mapArea < 1400) {
-            return new int[]{1, 3, 0}; // miners, soldiers, builders
+            return new int[]{1, 2, 0}; // miners, soldiers, builders
         }
         else if (mapArea < 2200) {
-            return new int[]{1, 3, 0}; // miners, soldiers, builders
+            return new int[]{1, 2, 0}; // miners, soldiers, builders
         }
         else {
             return new int[]{1, 4, 0}; // miners, soldiers, builders
