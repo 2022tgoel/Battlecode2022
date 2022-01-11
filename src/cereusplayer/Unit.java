@@ -76,6 +76,7 @@ public class Unit{
                     int ind = broadcastArchon(bot.location);
                     //store index of last archon sensed 
                     archon_index = ind;
+                    assert(archon_index != -1);
                     found = true;
                 }  
             }
@@ -108,6 +109,7 @@ public class Unit{
      * @return false is the archon is not longer there, true otherwise
      **/
     public boolean approachArchon() throws GameActionException{
+        assert(archon_index != -1);
         int data = rc.readSharedArray(archon_index);
         if (data != 0) {
             int x = data / 64;
@@ -147,12 +149,36 @@ public class Unit{
      * @param loc is where to go
      **/
     public void moveToLocation(MapLocation loc) throws GameActionException{
+        assert(validCoords(loc.x, loc.y));
         fuzzyMove(loc); // best pathfinding strat 
     }
 
-    public void moveInDirection(int[] toDest) throws GameActionException{
+    public void moveInDirection(int[] toDest) throws GameActionException{ 
         MapLocation loc = rc.getLocation();
-        MapLocation dest = new MapLocation(loc.x + toDest[0], loc.y + toDest[1]);
+        //scaling this directional vector so that it is on the map 
+        double scaleFactor = 1;
+        if (loc.x + toDest[0] >= rc.getMapWidth()-1){
+            scaleFactor = Math.min(scaleFactor, ((double) (rc.getMapWidth() - 1 - loc.x))/((double) toDest[0]));
+        }
+        if (loc.y + toDest[1] >= rc.getMapHeight()-1){
+            scaleFactor = Math.min(scaleFactor, ((double) (rc.getMapHeight() - 1 - loc.y))/((double) toDest[1]));
+        }
+        if (loc.x + toDest[0] < 1){
+            scaleFactor = Math.min(scaleFactor, ((double) (loc.x))/((double) -1*toDest[0]));
+        }
+        if (loc.y + toDest[1] < 1){
+            scaleFactor = Math.min(scaleFactor, ((double) (loc.y))/((double) -1*toDest[1]));
+        }
+        //if scale factor is really small then return this to conduct flipping???
+        //fuzzy moving to this loc
+        MapLocation dest = new MapLocation(loc.x + (int) (scaleFactor * (double) toDest[0]), loc.y + (int) (scaleFactor * (double) toDest[1]) );
+        try {
+            assert(validCoords(dest.x, dest.y));
+        }
+        catch (AssertionError e){
+            System.out.println(scaleFactor + " " + loc.x + " " + loc.y + " " + toDest[0] + " " + toDest[1]);
+            return;
+        }
         fuzzyMove(dest);
         // rc.setIndicatorString("I JUST MOVED TO " + toDest[0] + " " + toDest[1]);
     }
@@ -183,6 +209,7 @@ public class Unit{
         }
         else{
             Direction optimalDir = getBestDirectionFuzzy(toDest, rubbleWeight);
+      //      rc.setIndicatorString("here");
             if (optimalDir != null) {
                 if (rc.canMove(optimalDir)){ //if you can move in the optimalDir, then you can move toDest - toDest is into a wall
                     rc.move(optimalDir);

@@ -34,6 +34,9 @@ public class Archon extends Unit {
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
         
+        if (round_num == 250){
+            rc.resign();
+        }
         
         // handles all the logistics for when an archon dies
         checkDead();

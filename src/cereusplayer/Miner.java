@@ -19,7 +19,7 @@ public class Miner extends Unit {
     private MapLocation target;
     private int[] fleeDirection;
     
-	public Miner(RobotController rc) throws GameActionException {
+    public Miner(RobotController rc) throws GameActionException {
         super(rc);
         exploratoryDir = getExploratoryDir(7);
     }
@@ -164,27 +164,21 @@ public class Miner extends Unit {
         MapLocation me = rc.getLocation();
         //prioritize gold
         int amountMined = 0;
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                MapLocation loc = new MapLocation(me.x + dx, me.y + dy);
-                // Notice that the Miner's action cooldown is very low.
-                // You can mine multiple times per turn!
-                while (rc.canMineGold(loc)) {
-                    rc.mineGold(loc);
-                    amountMined += goldToLeadConversionRate;
-                }
+        for (MapLocation loc : rc.senseNearbyLocationsWithGold()) {
+            // Notice that the Miner's action cooldown is very low.
+            // You can mine multiple times per turn!
+            while (rc.canMineGold(loc)) {
+                rc.mineGold(loc);
+                amountMined += goldToLeadConversionRate;
             }
         }
         //then go to lead
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                MapLocation loc = new MapLocation(me.x + dx, me.y + dy);
-                // Notice that the Miner's action cooldown is very low.
-                // You can mine multiple times per turn!
-                while (rc.canMineLead(loc) && rc.senseLead(loc) > 1) {
-                    rc.mineLead(loc);
-                    amountMined+=1;
-                }
+        for (MapLocation loc : rc.senseNearbyLocationsWithLead()) {
+            // Notice that the Miner's action cooldown is very low.
+            // You can mine multiple times per turn!
+            while (rc.canMineLead(loc) && rc.senseLead(loc) > 1) {
+                rc.mineLead(loc);
+                amountMined+=1;
             }
         }
         return amountMined;

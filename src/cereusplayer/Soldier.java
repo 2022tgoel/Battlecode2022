@@ -12,7 +12,8 @@ public class Soldier extends Unit {
         LOW_HEALTH,
         DEFENSIVE_RUSH,
         WAITING,
-        CONVOY
+        CONVOY,
+        DESTROY_ARCHON
         ;
     }
 
@@ -54,6 +55,9 @@ public class Soldier extends Unit {
                 moveInDirection(d);
                 break;
             case HUNTING:
+                moveInDirection(lastAttackDir);
+                break;
+            case DESTROY_ARCHON:
                 approachArchon();
                 break;
             default:
@@ -63,13 +67,19 @@ public class Soldier extends Unit {
     }
 
     public MODE determineMode() throws GameActionException {
+        /*
         boolean archonDetected = detectArchon() || senseArchon();
 
         rc.setIndicatorString("archonDetected: " + detectArchon() + " " + archon_index);
 
         if (archonDetected) {
-            return MODE.HUNTING;
+            return MODE.DESTROY_ARCHON;
+        }*/
+        
+        if (lastAttackRound!= -1){
+            return MODE.HUNTING; //getting closer to current and future enemies
         }
+
 
         return MODE.EXPLORATORY;
     }
@@ -375,6 +385,8 @@ public class Soldier extends Unit {
         return dirs[rng.nextInt(dirs.length)];
     }
 
+    int lastAttackRound = -1;
+    int[] lastAttackDir = new int[2]; //directional vector
     public boolean attemptAttack(boolean attackMiners) throws GameActionException {
         boolean enemy_soldiers = false;
         boolean enemy_miners = false;
@@ -383,26 +395,40 @@ public class Soldier extends Unit {
         if (nearbyBots.length > 0) {
             RobotInfo weakestBot = nearbyBots[0];
             for (RobotInfo bot : nearbyBots) {
-                if (bot.type == RobotType.SOLDIER)
+                if (bot.type == RobotType.SOLDIER) {
                     if (bot.health < weakestBot.health) {
                         weakestBot = bot;
                     }
                     enemy_soldiers = true;
+                }
             }
             if (enemy_soldiers) {
-                if (rc.canAttack(weakestBot.location)) rc.attack(weakestBot.location);
+                if (rc.canAttack(weakestBot.location)) {
+                    rc.attack(weakestBot.location);
+                    MapLocation myLocation = rc.getLocation();
+                    lastAttackRound = rc.getRoundNum();
+                    lastAttackDir[0] = (weakestBot.location.x - myLocation.x);
+                    lastAttackDir[1] = (weakestBot.location.y - myLocation.y);
+                }
             }
             else {
                 if (attackMiners) {
                     for (RobotInfo bot : nearbyBots) {
-                        if (bot.type == RobotType.MINER)
+                        if (bot.type == RobotType.MINER) {
                             if (bot.health < weakestBot.health) {
                                 weakestBot = bot;
                             }
                             enemy_miners = true;
+                        }
 
                     }
-                    if (rc.canAttack(weakestBot.location)) rc.attack(weakestBot.location);
+                    if (rc.canAttack(weakestBot.location)) {
+                        rc.attack(weakestBot.location);
+                        MapLocation myLocation = rc.getLocation();
+                        lastAttackRound = rc.getRoundNum();
+                        lastAttackDir[0] = (weakestBot.location.x - myLocation.x);
+                        lastAttackDir[1] = (weakestBot.location.y - myLocation.y);
+                    }
                 }
             }
         }
