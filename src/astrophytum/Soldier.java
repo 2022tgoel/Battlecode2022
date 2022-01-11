@@ -81,6 +81,8 @@ public class Soldier extends Unit {
         // if target is within 3 tiles, do not move closer, otherwise move closer
         MapLocation cur = rc.getLocation();
         if (rc.getLocation().distanceSquaredTo(target) <= 9) {
+            int[] dir = new int[]{target.x - cur.x, target.y - cur.y};
+            exploratoryDir = dir;
             return;
         }
         else {
