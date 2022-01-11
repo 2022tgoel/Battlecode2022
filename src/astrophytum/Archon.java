@@ -15,6 +15,8 @@ public class Archon extends Unit {
     int counter = 0;
     int num_soldiers = 0;
     int num_miners = 0;
+    int num_farmer_miners = 0;
+    int num_explorer_miners = 0;
     int num_builders = 0;
     int num_archons_init;
     int num_archons_alive;
@@ -51,7 +53,6 @@ public class Archon extends Unit {
                     num_miners++;
                     break;
                 }
-                
             }
 
             switch (counter % 3) {
@@ -75,6 +76,7 @@ public class Archon extends Unit {
             
         }
         attemptHeal();
+        detectArchonThreat();
         clearDRush();
     }
 
@@ -192,6 +194,13 @@ public class Archon extends Unit {
     public void buildMiner(Direction dir) throws GameActionException{
         if (rc.canBuildRobot(RobotType.MINER, dir)) {
             rc.buildRobot(RobotType.MINER, dir);
+            if (num_explorer_miners < 3 * num_farmer_miners) {
+                num_explorer_miners++;
+            }
+            else {
+                // postRank(RANK.FARMER); // turns miners into farmers :D
+                num_farmer_miners++;
+            }
             built_units++;
             num_miners++;
         }
@@ -272,10 +281,10 @@ public class Archon extends Unit {
     }
     public int[] chooseBuildOrder() {
         if (mapArea < 1400) {
-            return new int[]{2, 2, 0}; // miners, soldiers, builders
+            return new int[]{1, 3, 0}; // miners, soldiers, builders
         }
         else if (mapArea < 2200) {
-            return new int[]{2, 2, 0}; // miners, soldiers, builders
+            return new int[]{1, 3, 0}; // miners, soldiers, builders
         }
         else {
             return new int[]{1, 4, 0}; // miners, soldiers, builders

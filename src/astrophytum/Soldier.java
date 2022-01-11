@@ -37,7 +37,7 @@ public class Soldier extends Unit {
 
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
-        rank = findRank(true);
+        rank = findRankSoldier();
     }
     @Override
     public void run() throws GameActionException {
@@ -55,6 +55,8 @@ public class Soldier extends Unit {
                 huntTarget();
                 target = null;
                 break;
+            case DEFENSIVE_RUSH:
+                defensiveMove();
             default:
                 break;
         }
@@ -63,6 +65,16 @@ public class Soldier extends Unit {
             exploratoryDir = getExploratoryDir(5);
         }
         rc.setIndicatorString("MODE: " + mode.toString());
+    }
+
+    public RANK findRankSoldier() throws GameActionException{
+        RANK new_rank = findRank();
+        if (new_rank != RANK.DEFENDER && new_rank != RANK.DEFAULT) {
+            return RANK.DEFAULT;
+        }
+        else {
+            return new_rank;
+        }
     }
 
     public void huntTarget() throws GameActionException {
@@ -80,6 +92,14 @@ public class Soldier extends Unit {
 
     public MODE determineMode() throws GameActionException {
         boolean archonDetected = detectArchon() || senseArchon();
+        threatenedArchons = findThreatenedArchons();
+        if (threatenedArchons != null) {
+            for (MapLocation archon: threatenedArchons) {
+                if (rc.getLocation().distanceSquaredTo(archon) <= 400) {
+                    return MODE.DEFENSIVE_RUSH;
+                }
+            }
+        }
         if (archonDetected) {
             if (rc.getLocation().distanceSquaredTo(archon_target) <= 900)
                 return MODE.ARCHON_RUSH;
@@ -89,30 +109,6 @@ public class Soldier extends Unit {
         }
 
         return MODE.EXPLORATORY;
-    }
-
-    public RANK findRank(boolean assign) throws GameActionException {
-        rc.setIndicatorString("READY TO READ");
-        int data;
-        // check all channels to see if you've received a rank
-        for (int i = 0; i < 2; i++) {
-            if (i == 0) {
-                data = rc.readSharedArray(CHANNEL.SEND_RANKS1.getValue());
-            }
-            else {
-                data = rc.readSharedArray(CHANNEL.SEND_RANKS2.getValue());
-            }
-
-            int status = data / 4096;
-            int x = (data - (4096 * status)) / 64;
-            int y = (data - (4096 * status) - (x * 64));
-
-            // only set rank if instructed to.
-            if (homeArchon.equals(new MapLocation(x, y)) && assign) {
-                return getRank(status);
-            }
-        }
-        return RANK.DEFAULT;
     }
 
     public void defensiveMove() throws GameActionException{
@@ -242,46 +238,6 @@ public class Soldier extends Unit {
         }
         if (num_enemies ==0) fuzzyMove(homeArchon);
         else fuzzyMove(new MapLocation((int) (cx / num_enemies), (int) (cy / num_enemies)));
-    }
-
-    public void detectArchonThreat() throws GameActionException {
-        RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        int threatLevel = 0;
-        int data;
-        for (RobotInfo enemy : enemies) {
-            if (enemy.type == RobotType.SOLDIER) {
-                threatLevel += 1;
-            }
-            else if (enemy.type == RobotType.SAGE) {
-                threatLevel += 4;
-            }
-        }
-        if (threatLevel >= 2) {
-            for (int i = 0; i < 4; i++) {
-                // rc.writeSharedArray(, value);
-                data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
-                // go through channels until you find an empty one to communicate with.
-                int x = data / 64;
-                int y = data % 64;
-                // channel already written too.
-                if (x == homeArchon.x && y == homeArchon.y) {
-                    dRushChannel = i;
-                    return;
-                }
-                if (data == 0) {
-                    dRushChannel = i;
-                    
-                }
-            }
-            rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + dRushChannel, locationToInt(homeArchon));
-            threatDetectedRound = round_num;
-        }
-        else {
-            // clear channel if threat is no longer active
-            if (dRushChannel != -1) {
-                data = rc.readSharedArray(dRushChannel);
-            }
-        }
     }
 
     public boolean isLowHealth() throws GameActionException {

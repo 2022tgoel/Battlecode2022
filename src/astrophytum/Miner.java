@@ -4,12 +4,6 @@ import battlecode.common.*;
 import java.util.*;
 
 public class Miner extends Unit {
-
-    enum RANK {
-        EXPLORER, 
-        FARMER
-    }
-
     enum MODE {
         EXPLORING,
         MINE_DISCOVERED,
@@ -17,45 +11,93 @@ public class Miner extends Unit {
     }
 
     int[] exploratoryDir;
-    double soldier_repulsion = 2.0;
-    double archon_repulsion = 2.0;
-    double miner_repulsion = 1.5;
+    int round_num;
     MODE mode;
     private MapLocation target;
     private int[] fleeDirection;
+    RANK rank;
+    private int stopFleeingRound = 10000;
     
 	public Miner(RobotController rc) throws GameActionException {
         super(rc);
         exploratoryDir = getExploratoryDir(7);
+        rank = findRankMiner();
     }
 
     @Override
     public void run() throws GameActionException {
-        if (rc.getRoundNum() % 50 == 0) {
-            exploratoryDir = getExploratoryDir(7);
-        }
+        round_num = rc.getRoundNum();
         mode = getMode();
-        switch (mode) {
-            case EXPLORING:
-                moveInDirection(exploratoryDir);
+        switch (rank) {
+            case FARMER:
+                switch (mode) {
+                    case EXPLORING:
+                        if (rc.getLocation().distanceSquaredTo(homeArchon) <= 100)
+                            moveInDirection(exploratoryDir);
+                        else {
+                            exploratoryDir = getExploratoryDir(5, homeArchon);
+                        }
+                        break;
+                    case MINE_DISCOVERED:
+                        break;
+                    case FLEEING:
+                        moveInDirection(fleeDirection);
+                        break;
+                }
+                if (adjacentToEdge()) {
+                    exploratoryDir = getExploratoryDir(7);
+                }
+                // if home archon dies, become a regular miner.
+                if (rc.senseRobotAtLocation(homeArchon) == null) {
+                    rank = RANK.DEFAULT;
+                    exploratoryDir = getExploratoryDir(7);
+                }
                 break;
-            case MINE_DISCOVERED:
+            case DEFAULT:
+                switch (mode) {
+                    case EXPLORING:
+                        moveInDirection(exploratoryDir);
+                        break;
+                    case MINE_DISCOVERED:
+                        break;
+                    case FLEEING:
+                        moveInDirection(fleeDirection);
+                        break;
+                }
+                senseArchon();
+                if (adjacentToEdge()) {
+                    exploratoryDir = getExploratoryDir(7);
+                }
                 break;
-            case FLEEING:
-                moveInDirection(fleeDirection);
-                // rc.setIndicatorString("fleeing: " + fleeDirection[0] + " " + fleeDirection[1]);
+            default:
                 break;
-        }
-        if (adjacentToEdge()) {
-            exploratoryDir = getExploratoryDir(7);
         }
         // rc.setIndicatorString("exploratoryDir: " + exploratoryDir[0] + " " + exploratoryDir[1]);
-        senseArchon();
+    }
+
+    public RANK findRankMiner() throws GameActionException{
+        RANK new_rank = findRank();
+        if (new_rank != RANK.FARMER && new_rank != RANK.DEFAULT) {
+            return RANK.DEFAULT;
+        }
+        else {
+            return new_rank;
+        }
     }
 
     public MODE getMode() throws GameActionException {
-        fleeDirection = enemiesDetected();
-        if (fleeDirection != null) {
+        int[] potFleeDirection = enemiesDetected();
+        // if you just escaped an enemy, explore in a new direction
+        if (potFleeDirection == null && stopFleeingRound == round_num) exploratoryDir = getExploratoryDir(7);
+        
+        // if there are enemies nearby or there were recently, flee
+        if (potFleeDirection != null || stopFleeingRound <= round_num) {
+            // fleeDirection is official.
+            if (potFleeDirection != null) fleeDirection = potFleeDirection;
+            // keep fleeing for two moves (2 rounds per move)
+            if (stopFleeingRound <= round_num) {
+                stopFleeingRound = round_num + 4;
+            }
             return MODE.FLEEING;
         }
         else if (mining_detour()) {

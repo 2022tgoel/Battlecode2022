@@ -10,7 +10,7 @@ public class Unit{
     RANK[] rank_map = initializeRankMap();
     final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
-    int seed_increment = 0;
+    int seed_increment = 2;
     MapLocation homeArchon;
     public MapLocation archon_target;
     /** Array containing all the possible movement directions. */
@@ -305,22 +305,25 @@ public class Unit{
     }
 
     public int[] getExploratoryDir() {
-        return getExploratoryDir(5);
+        return getExploratoryDir(5, new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
     }
 
     public int[] getExploratoryDir(int span) {
+        return getExploratoryDir(span, new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
+    }
+
+    public int[] getExploratoryDir(int span, MapLocation loc) {
         // presumes span is odd.
         int[] dir;
         MapLocation cur = rc.getLocation();
-        MapLocation center = new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2);
-        if (center.x - cur.x > 0) {
-            if (center.y - cur.y > 0) {
+        if (loc.x - cur.x > 0) {
+            if (loc.y - cur.y > 0) {
                 dir = new int[]{8,8};
             } else {
                 dir = new int[]{8,-8};
             }
         } else {
-            if (center.y - cur.y > 0) {
+            if (loc.y - cur.y > 0) {
                 dir = new int[]{-8,8};
             } else {
                 dir = new int[]{-8,-8};
@@ -408,74 +411,59 @@ public class Unit{
         return rank_map[index];
     }
 
-    public double[] directionToVector(Direction dir) throws GameActionException {
-        switch (dir) {
-            case NORTH:
-                return new double[]{0, 1};
-            case NORTHEAST:
-                return new double[]{0.7, 0.7};
-            case EAST:
-                return new double[]{1, 0};
-            case SOUTHEAST:
-                return new double[]{0.7, -0.7};
-            case SOUTH:
-                return new double[]{0, -1};
-            case SOUTHWEST:
-                return new double[]{-0.7, -0.7};
-            case WEST:
-                return new double[]{-1, 0};
-            case NORTHWEST:
-                return new double[]{-0.7, 0.7};
-            default:
-                return new double[]{0, 0};
-        }
-
-    }
-
-    public double[] addVectors(double[] d1, double[] d2) {
-        double[] newDir = new double[2];
-        newDir[0] = d1[0] + d2[0];
-        newDir[1] = d1[1] + d2[1];
-        return newDir;
-    }
-
-    public Direction doubleToDirection(double dx, double dy) {
-        Direction d = Direction.CENTER;
-        // values are derived from tangent of 22.5 and 67.5
-        if (dy > 0) {
-            if (dy > 2.4 * Math.abs(dx)) {
-                d = Direction.NORTH;
-            }
-            else if (dy > 0.4 * Math.abs(dx)) {
-                if (dx > 0) {
-                    d = Direction.NORTHEAST;
-                }
-                else {
-                    d = Direction.NORTHWEST;
-                }
+    public RANK findRank() throws GameActionException {
+        rc.setIndicatorString("READY TO READ");
+        int data;
+        // check all channels to see if you've received a rank
+        for (int i = 0; i < 2; i++) {
+            if (i == 0) {
+                data = rc.readSharedArray(CHANNEL.SEND_RANKS1.getValue());
             }
             else {
-                if (dx > 0) {
-                    d = Direction.EAST;
-                }
-                else {
-                    d = Direction.WEST;
-                }
+                data = rc.readSharedArray(CHANNEL.SEND_RANKS2.getValue());
+            }
+
+            int status = data / 4096;
+            int x = (data - (4096 * status)) / 64;
+            int y = (data - (4096 * status) - (x * 64));
+
+            // only set rank if instructed to.
+            if (homeArchon.equals(new MapLocation(x, y))) {
+                return getRank(status);
             }
         }
-        else {
-            if (dy < -2.4 * Math.abs(dx)) {
-                d = Direction.SOUTH;
+        return RANK.DEFAULT;
+    }
+
+    public void detectArchonThreat() throws GameActionException {
+        RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        int threatLevel = 0;
+        int dRushChannel = -1;
+        int data;
+        for (RobotInfo enemy : enemies) {
+            if (enemy.type == RobotType.SOLDIER) {
+                threatLevel += 1;
             }
-            else if (dy < -0.4 * Math.abs(dx)) {
-                if (dx > 0) {
-                    d = Direction.SOUTHEAST;
-                }
-                else {
-                    d = Direction.SOUTHWEST;
-                }
+            else if (enemy.type == RobotType.SAGE) {
+                threatLevel += 4;
             }
         }
-        return d;
+        if (threatLevel >= 2) {
+            for (int i = 0; i < 4; i++) {
+                // rc.writeSharedArray(, value);
+                data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
+                // go through channels until you find an empty one to communicate with.
+                int x = data / 64;
+                int y = data % 64;
+                // channel already written too.
+                if (x == homeArchon.x && y == homeArchon.y) {
+                    return;
+                }
+                if (data == 0) {
+                    dRushChannel = i;
+                }
+            }
+            if (dRushChannel != -1) rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + dRushChannel, locationToInt(homeArchon));
+        }
     }
 }
