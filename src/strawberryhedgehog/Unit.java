@@ -10,9 +10,10 @@ public class Unit{
     RANK[] rank_map = initializeRankMap();
     final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
-    int seed_increment = 1;
+    int seed_increment = 4;
     MapLocation homeArchon;
     public MapLocation archon_target;
+    public int mapArea;
     /** Array containing all the possible movement directions. */
     static final Direction[] directions = {
         Direction.NORTH,
@@ -30,6 +31,7 @@ public class Unit{
         rng.setSeed((long) rc.getID() + seed_increment);
         homeArchon = findHomeArchon();
         initializeRankMap();
+        mapArea = getMapArea();
     }
 
     /**
@@ -433,5 +435,9 @@ public class Unit{
             }
         }
         return RANK.DEFAULT;
+    }
+
+    public int getMapArea() {
+        return rc.getMapHeight() * rc.getMapWidth();
     }
 }

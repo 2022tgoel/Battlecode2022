@@ -29,7 +29,7 @@ public class Archon extends Unit {
     int num_archons_init;
     int num_archons_alive;
 
-    int mapArea = getMapArea();
+    // int mapArea = getMapArea();
 
     int threatChannel = -1;
 	public Archon(RobotController rc) throws GameActionException {

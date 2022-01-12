@@ -37,10 +37,13 @@ public class Soldier extends Unit {
     int[] exploratoryDir = getExploratoryDir(5);
     private int[] fleeDirection = {Integer.MAX_VALUE, Integer.MAX_VALUE};
     private int stopFleeingRound = 10000;
+    private int DRUSH_RSQR = 400;
+    private int ARUSH_RSQR = 900;
 
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
         rank = findRankSoldier();
+        initialize();
     }
     @Override
     public void run() throws GameActionException {
@@ -164,7 +167,7 @@ public class Soldier extends Unit {
         threatenedArchons = findThreatenedArchons();
         if (threatenedArchons != null) {
             for (MapLocation archon: threatenedArchons) {
-                if (rc.getLocation().distanceSquaredTo(archon) <= 400) {
+                if (rc.getLocation().distanceSquaredTo(archon) <= DRUSH_RSQR) {
                     return MODE.DEFENSIVE_RUSH;
                 }
             }
@@ -187,7 +190,7 @@ public class Soldier extends Unit {
         // Priority 3 - Kill Archons.
         boolean archonDetected = detectArchon() || senseArchon();
         if (archonDetected) {
-            if (rc.getLocation().distanceSquaredTo(archon_target) <= 900)
+            if (rc.getLocation().distanceSquaredTo(archon_target) <= ARUSH_RSQR)
                 return MODE.ARCHON_RUSH;
         }
         // Priority 4 - Hunt enemies.
@@ -395,6 +398,21 @@ public class Soldier extends Unit {
         }
         else {
             return true;
+        }
+    }
+
+    public void initialize() {
+        if (mapArea < 1400) {
+           DRUSH_RSQR = 100;
+           ARUSH_RSQR = 100;
+        }
+        else if (mapArea < 2200) {
+            DRUSH_RSQR = 225;
+            ARUSH_RSQR = 400;
+        }
+        else {
+            DRUSH_RSQR = 400;
+            ARUSH_RSQR = 900;
         }
     }
 }
