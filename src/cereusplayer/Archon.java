@@ -72,7 +72,13 @@ public class Archon extends Unit {
                 return;
             }
       //      rc.setIndicatorString("here " + rc.getActionCooldownTurns());
-            for (Direction dir: getEnemyDirs()) {
+            Direction[] enemyDirs = getEnemyDirs();
+            if (rc.getHealth() < RobotType.ARCHON.health && !builderInRange()){
+                for (int i = enemyDirs.length -1; i>=0; i--){ //reverse
+                    buildBuilder(enemyDirs[i]);
+                }
+            }
+            for (Direction dir: enemyDirs) {
                 buildSoldier(dir);
             }
             return;
@@ -336,6 +342,16 @@ public class Archon extends Unit {
                 num_builders++;
             }
         }
+    }
+
+    public boolean builderInRange() throws GameActionException{
+        RobotInfo[] allies = rc.senseNearbyRobots(RobotType.BUILDER.actionRadiusSquared, rc.getTeam());
+        for (RobotInfo r : allies) {
+            if (r.type == RobotType.BUILDER){
+                return true;
+            }
+        }
+        return false;
     }
 
     public MapLocation getAvgEnemyLocation() throws GameActionException {

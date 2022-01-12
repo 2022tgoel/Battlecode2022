@@ -12,9 +12,17 @@ public class Builder extends Unit {
 
     @Override
     public void run() throws GameActionException {
-        /* builds watchtowers in surrounding regoin */
-        forTheGreaterGood();
+        RobotInfo h = rc.senseRobotAtLocation(homeArchon);
+        if (h.type == RobotType.ARCHON && h.health < RobotType.ARCHON.health) { //healing mode
+            if (rc.canRepair(homeArchon)) rc.repair(homeArchon);
+        
+        }
+        else {
+            forTheGreaterGood();
+        }
     }
+
+
 
     public void forTheGreaterGood() throws GameActionException {
         MapLocation cur = rc.getLocation();
