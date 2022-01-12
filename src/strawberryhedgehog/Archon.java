@@ -46,7 +46,6 @@ public class Archon extends Unit {
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
-        
         if (round_num == 250){
           // rc.resign();
         }
@@ -58,26 +57,20 @@ public class Archon extends Unit {
         MODE mode = determineMode();
         rc.setIndicatorString(mode.toString() + " " + totalUnderThreat());
 
-        if (mode == MODE.THREATENED){
-            //TODO:
-            // multiple threatened at the same time??
-            // high cooldown location, won't work 
-            // build watchtowers
-            //have a builder to repairs
-            sendThreatAlert();
-            int tot= totalUnderThreat();
-            rc.setIndicatorString(threatChannel + " " + tot);
-            
-            if (round_num % tot !=threatChannel){ //alternate between those under threat
-                return;
-            }
-      //      rc.setIndicatorString("here " + rc.getActionCooldownTurns());
-            for (Direction dir: getEnemyDirs()) {
-                buildSoldier(dir);
-            }
-            return;
-        }
         switch (mode) {
+            case THREATENED:
+                sendThreatAlert();
+                int tot = totalUnderThreat();
+                rc.setIndicatorString(threatChannel + " " + tot);
+                
+                if (round_num % tot != threatChannel){ //alternate between those under threat
+                    return;
+                }
+                //rc.setIndicatorString("here " + rc.getActionCooldownTurns());
+                for (Direction dir: getEnemyDirs()) {
+                    buildSoldier(dir);
+                }
+                return;
             case INITIAL:
                 if (round_num % num_archons_alive != archonNumber) {
                     return;
@@ -85,11 +78,11 @@ public class Archon extends Unit {
                 build(chooseInitialBuildOrder());
                 break;
             case OTHER_THREATENED: 
-                if (rc.getTeamLeadAmount(rc.getTeam()) < 5000){
+                if (rc.getTeamLeadAmount(rc.getTeam()) < 600){
                     break; //save for attacked archon
                 }
             case DEFAULT:
-                if (round_num % num_archons_alive != archonNumber) {
+                if ((round_num % num_archons_alive != archonNumber) && (rc.getTeamLeadAmount(rc.getTeam()) < 150)) {
                     return;
                 }
                 build(defaultBuildOrder);
@@ -397,26 +390,26 @@ public class Archon extends Unit {
     }
     public int[] chooseBuildOrder() {
         if (mapArea < 1400) {
-            return new int[]{1, 4, 0}; // miners, soldiers, builders
+            return new int[]{1, 4, 1}; // miners, soldiers, builders
         }
         else if (mapArea < 2200) {
-            return new int[]{1, 4, 0}; // miners, soldiers, builders
+            return new int[]{1, 4, 1}; // miners, soldiers, builders
         }
         else {
-            return new int[]{1, 4, 0}; // miners, soldiers, builders
+            return new int[]{1, 4, 1}; // miners, soldiers, builders
         }
     }
 
     public int[] chooseInitialBuildOrder() throws GameActionException{
         int l = leadSpotsAvailable();
-        System.out.println(l);
-        if (l > 50) {
-            return new int[]{1, 0, 1}; // miners, soldiers, builders
+        //System.out.println(l);
+        if (l > 150) {
+            return new int[]{6, 0, 3}; // miners, soldiers, builders
         }
-        else if (l > 10) {
-            return new int[]{2, 0, 1}; // miners, soldiers, builders
+        else if (l > 50) {
+            return new int[]{6, 0, 3}; // miners, soldiers, builders
         }
-        else return new int[]{2, 1, 0}; // miners, soldiers, builders
+        else return new int[]{6, 0, 3}; // miners, soldiers, builders
     }
 
     public int leadSpotsAvailable() throws GameActionException{ 

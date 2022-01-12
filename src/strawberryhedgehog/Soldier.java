@@ -62,7 +62,7 @@ public class Soldier extends Unit {
             case DEFENSIVE_RUSH:
                 defensiveMove();
             case FLEE:
-                moveInDirection(fleeDirection());
+                moveInDirection(fleeDirection);
                 break;
             default:
                 break;
@@ -161,11 +161,14 @@ public class Soldier extends Unit {
         // Priority 1 - Don't die.
         int[] potFleeDir = fleeDirection();
         boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
+        if (!validFlee && stopFleeingRound == round_num) {
+            exploratoryDir = getExploratoryDir(5);
+        }
         if (validFlee || stopFleeingRound <= round_num) {
             if (validFlee) fleeDirection = potFleeDir;
             // keep fleeing for two moves (2 rounds per move)
             if (stopFleeingRound <= round_num) {
-                stopFleeingRound = round_num + 4;
+                stopFleeingRound = round_num + 10;
             }
             return MODE.FLEE;
         }
