@@ -60,14 +60,20 @@ public class Archon extends Unit {
         switch (mode) {
             case THREATENED:
                 sendThreatAlert();
-                int tot = totalUnderThreat();
+                int tot= totalUnderThreat();
                 rc.setIndicatorString(threatChannel + " " + tot);
                 
-                if (round_num % tot != threatChannel){ //alternate between those under threat
+                if (round_num % tot !=threatChannel){ //alternate between those under threat
                     return;
                 }
-                //rc.setIndicatorString("here " + rc.getActionCooldownTurns());
-                for (Direction dir: getEnemyDirs()) {
+          //      rc.setIndicatorString("here " + rc.getActionCooldownTurns());
+                Direction[] enemyDirs = getEnemyDirs();
+                if (rc.getHealth() < RobotType.ARCHON.health && !builderInRange()){
+                    for (int i = enemyDirs.length -1; i>=0; i--){ //reverse
+                        buildBuilder(enemyDirs[i]);
+                    }
+                }
+                for (Direction dir: enemyDirs) {
                     buildSoldier(dir);
                 }
                 return;
@@ -135,21 +141,8 @@ public class Archon extends Unit {
     }
 
     public boolean underThreat(){
-        int num_enemies = 0;
-        int num_friends = 0;
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        for (RobotInfo enemy: enemies){
-            if (enemy.type == RobotType.SOLDIER || enemy.type == RobotType.SAGE){
-                num_enemies += 1;
-            }
-        }
-        RobotInfo[] friends = rc.senseNearbyRobots(-1, rc.getTeam());
-        for (RobotInfo friend: friends){
-            if (friend.type == RobotType.SOLDIER || friend.type == RobotType.SAGE){
-                num_friends += 1;
-            }
-        }
-        return (num_enemies > (num_friends + 3));
+        return (enemies.length >=1);
     }
 
     public void sendThreatAlert() throws GameActionException {
@@ -344,6 +337,16 @@ public class Archon extends Unit {
         }
     }
 
+    public boolean builderInRange() throws GameActionException{
+        RobotInfo[] allies = rc.senseNearbyRobots(RobotType.BUILDER.actionRadiusSquared, rc.getTeam());
+        for (RobotInfo r : allies) {
+            if (r.type == RobotType.BUILDER){
+                return true;
+            }
+        }
+        return false;
+    }
+
     public MapLocation getAvgEnemyLocation() throws GameActionException {
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         int num_enemies = 0;
@@ -403,26 +406,26 @@ public class Archon extends Unit {
     }
     public int[] chooseBuildOrder() {
         if (mapArea < 1400) {
-            return new int[]{1, 4, 1}; // miners, soldiers, builders
+            return new int[]{1, 2, 0}; // miners, soldiers, builders
         }
         else if (mapArea < 2200) {
-            return new int[]{1, 4, 1}; // miners, soldiers, builders
+            return new int[]{1, 2, 0}; // miners, soldiers, builders
         }
         else {
-            return new int[]{1, 4, 1}; // miners, soldiers, builders
+            return new int[]{1, 4, 0}; // miners, soldiers, builders
         }
     }
 
     public int[] chooseInitialBuildOrder() throws GameActionException{
         int l = leadSpotsAvailable();
-        //System.out.println(l);
-        if (l > 150) {
-            return new int[]{6, 0, 1}; // miners, soldiers, builders
+        System.out.println(l);
+        if (l > 50) {
+            return new int[]{1, 0, 1}; // miners, soldiers, builders
         }
-        else if (l > 50) {
-            return new int[]{6, 0, 2}; // miners, soldiers, builders
+        else if (l > 10) {
+            return new int[]{2, 0, 1}; // miners, soldiers, builders
         }
-        else return new int[]{6, 0, 2}; // miners, soldiers, builders
+        else return new int[]{2, 1, 0}; // miners, soldiers, builders
     }
 
     public int leadSpotsAvailable() throws GameActionException{ 
