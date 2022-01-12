@@ -10,7 +10,6 @@ public class Archon extends Unit {
         DEFAULT,
         THREATENED,
         OTHER_THREATENED,
-
         ;
     }
 
@@ -29,6 +28,7 @@ public class Archon extends Unit {
     int num_archons_init;
     int num_archons_alive;
 
+    int[] defaultBuildOrder;
     // int mapArea = getMapArea();
 
     int threatChannel = -1;
@@ -39,9 +39,8 @@ public class Archon extends Unit {
         num_archons_alive = rc.getArchonCount();
         num_archons_init = num_archons_alive;
         dirs = sortedDirections();
+        defaultBuildOrder = chooseBuildOrder();
     }
-    
-    int[] defaultBuildOrder = chooseBuildOrder();
 
     @Override
     public void run() throws GameActionException {
