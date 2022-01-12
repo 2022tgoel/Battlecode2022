@@ -106,12 +106,13 @@ public class Soldier extends Unit {
             cxsf /= numFriends;
             cysf /= numFriends;
         }
-        if (numEnemies > numFriends) {
+        // count yourself
+        if (numEnemies > (numFriends + 1)) {
             double dx = -(cxse - cur.x);
             double dy = -(cyse - cur.y);
             // more attracted
-            dx = 0.7 * dx + 0.3 * (cxsf - cur.x);
-            dy = 0.7 * dx + 0.3 * (cysf - cur.y);
+            // dx = 0.7 * dx + 0.3 * (cxsf - cur.x);
+            // dy = 0.7 * dx + 0.3 * (cysf - cur.y);
             return new int[]{(int) dx, (int) dy};
         }
         return new int[]{Integer.MAX_VALUE, Integer.MAX_VALUE}; 
@@ -168,7 +169,7 @@ public class Soldier extends Unit {
             if (validFlee) fleeDirection = potFleeDir;
             // keep fleeing for two moves (2 rounds per move)
             if (stopFleeingRound <= round_num) {
-                stopFleeingRound = round_num + 10;
+                stopFleeingRound = round_num + 4;
             }
             return MODE.FLEE;
         }
