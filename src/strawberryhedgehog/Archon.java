@@ -135,8 +135,21 @@ public class Archon extends Unit {
     }
 
     public boolean underThreat(){
+        int num_enemies = 0;
+        int num_friends = 0;
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        return (enemies.length >=1);
+        for (RobotInfo enemy: enemies){
+            if (enemy.type == RobotType.SOLDIER || enemy.type == RobotType.SAGE){
+                num_enemies += 1;
+            }
+        }
+        RobotInfo[] friends = rc.senseNearbyRobots(-1, rc.getTeam());
+        for (RobotInfo friend: friends){
+            if (friend.type == RobotType.SOLDIER || friend.type == RobotType.SAGE){
+                num_friends += 1;
+            }
+        }
+        return (num_enemies > (num_friends + 3));
     }
 
     public void sendThreatAlert() throws GameActionException {
@@ -404,12 +417,12 @@ public class Archon extends Unit {
         int l = leadSpotsAvailable();
         //System.out.println(l);
         if (l > 150) {
-            return new int[]{6, 0, 3}; // miners, soldiers, builders
+            return new int[]{6, 0, 1}; // miners, soldiers, builders
         }
         else if (l > 50) {
-            return new int[]{6, 0, 3}; // miners, soldiers, builders
+            return new int[]{6, 0, 2}; // miners, soldiers, builders
         }
-        else return new int[]{6, 0, 3}; // miners, soldiers, builders
+        else return new int[]{6, 0, 2}; // miners, soldiers, builders
     }
 
     public int leadSpotsAvailable() throws GameActionException{ 
