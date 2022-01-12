@@ -406,10 +406,10 @@ public class Archon extends Unit {
     }
     public int[] chooseBuildOrder() {
         if (mapArea < 1400) {
-            return new int[]{1, 2, 0}; // miners, soldiers, builders
+            return new int[]{1, 4, 0}; // miners, soldiers, builders
         }
         else if (mapArea < 2200) {
-            return new int[]{1, 2, 0}; // miners, soldiers, builders
+            return new int[]{1, 4, 0}; // miners, soldiers, builders
         }
         else {
             return new int[]{1, 4, 0}; // miners, soldiers, builders
@@ -417,19 +417,7 @@ public class Archon extends Unit {
     }
 
     public int[] chooseInitialBuildOrder() throws GameActionException{
-        int l = leadSpotsAvailable();
-        System.out.println(l);
-        if (l > 50) {
-            return new int[]{1, 0, 1}; // miners, soldiers, builders
-        }
-        else if (l > 10) {
-            return new int[]{2, 0, 1}; // miners, soldiers, builders
-        }
-        else return new int[]{2, 1, 0}; // miners, soldiers, builders
-    }
-
-    public int leadSpotsAvailable() throws GameActionException{ 
-        return (rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), rc.getType().visionRadiusSquared).length - rc.senseNearbyLocationsWithLead().length);
+        return new int[]{1, 0, 0};
     }
 
     public void attemptHeal() throws GameActionException {

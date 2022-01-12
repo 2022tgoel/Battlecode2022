@@ -18,45 +18,8 @@ public class Builder extends Unit {
         
         }
         else {
-            forTheGreaterGood();
         }
     }
 
 
-
-    public void forTheGreaterGood() throws GameActionException {
-        MapLocation cur = rc.getLocation();
-        MapLocation target = null;
-        if (rc.senseLead(cur) == 0) {
-            rc.disintegrate();
-        }
-        // robot finds closest spot to archon without lead on it, then destroys itself.
-        int distSquared;
-        int minDistSquared = 10000;
-        for (int dx = -4; dx <= 4; dx++) {
-            for (int dy = -4; dy <= 4; dy++) {
-                if (dx == 0 && dy == 0) continue;
-                if (validCoords(cur.x + dx, cur.y + dy)) {
-                    MapLocation loc = new MapLocation(cur.x + dx, cur.y + dy);
-                    if (loc.equals(homeArchon)) continue;
-                    if (rc.canSenseLocation(loc)) {
-                        int numLead = rc.senseLead(loc);
-                        if (numLead == 0) {
-                            distSquared = cur.distanceSquaredTo(loc);
-                            if (distSquared < minDistSquared) {
-                                minDistSquared = distSquared;
-                                target = loc;
-                            }
-                        }
-
-                    }
-                }
-            }
-        }
-        if (target != null) {
-            fuzzyMove(target);
-            rc.setIndicatorString("target: " + target.x + " " + target.y);
-        }
-        else moveInDirection(exploratoryDir);
-    }
 }

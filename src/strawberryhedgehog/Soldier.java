@@ -159,6 +159,17 @@ public class Soldier extends Unit {
     }
 
     public MODE determineMode() throws GameActionException {
+
+        // Priority 2 - Defend.
+        threatenedArchons = findThreatenedArchons();
+        if (threatenedArchons != null) {
+            for (MapLocation archon: threatenedArchons) {
+                if (rc.getLocation().distanceSquaredTo(archon) <= 400) {
+                    return MODE.DEFENSIVE_RUSH;
+                }
+            }
+        }
+
         // Priority 1 - Don't die.
         int[] potFleeDir = fleeDirection();
         boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
@@ -173,17 +184,6 @@ public class Soldier extends Unit {
             }
             return MODE.FLEE;
         }
-
-        // Priority 2 - Defend.
-        threatenedArchons = findThreatenedArchons();
-        if (threatenedArchons != null) {
-            for (MapLocation archon: threatenedArchons) {
-                if (rc.getLocation().distanceSquaredTo(archon) <= 400) {
-                    return MODE.DEFENSIVE_RUSH;
-                }
-            }
-        }
-
         // Priority 3 - Kill Archons.
         boolean archonDetected = detectArchon() || senseArchon();
         if (archonDetected) {
