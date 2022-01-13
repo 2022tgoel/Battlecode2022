@@ -72,6 +72,13 @@ def executeGame():
 
 def parseGameResult():
     if (platform.system() == 'Windows'):
+        with open("test/data.txt", "r") as f:
+            f_iter = iter(f)
+            for line in f_iter:
+                if ('(A)' in line):
+                    return (1, 0)
+                elif ('(B)' in line):
+                    return (0, 1)
     else:
         with open("test/data.txt", "r") as f:
             f_iter = iter(f)
