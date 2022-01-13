@@ -1,31 +1,53 @@
-> Task :compileJava UP-TO-DATE
-> Task :compileScala UP-TO-DATE
+
+> Task :compileJava
+
+> Task :compileScala
 > Task :processResources NO-SOURCE
-> Task :classes UP-TO-DATE
-> Task :jar UP-TO-DATE
-> Task :assemble UP-TO-DATE
-> Task :compileTestJava UP-TO-DATE
-> Task :compileTestScala UP-TO-DATE
+> Task :classes
+> Task :jar
+> Task :assemble
+> Task :compileTestJava
+> Task :compileTestScala
 > Task :processTestResources NO-SOURCE
-> Task :testClasses UP-TO-DATE
-> Task :test UP-TO-DATE
-> Task :check UP-TO-DATE
+> Task :testClasses
+> Task :test
+> Task :check
 > Task :checkForUpdate
 > Task :unpackClient UP-TO-DATE
-> Task :unpackClient32 SKIPPED
-> Task :build UP-TO-DATE
+> Task :unpackClient32 UP-TO-DATE
+> Task :build
 
 > Task :run
 [server:debug] Awaiting match
-[server:debug] Running: examplefuncsplayer (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs astrophytum (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [valley]
+[server:debug] Running: astrophytum (C:\Users\tishi\Documents\CS\Battlecode2022\build\classes)  vs strawberryhedgehog (C:\Users\tishi\Documents\CS\Battlecode2022\build\classes)  on [colosseum]
 [server] -------------------- Match Starting --------------------
-[server] examplefuncsplayer vs. astrophytum on valley
-[server]                  astrophytum (B) wins (round 565)
+[server] astrophytum vs. strawberryhedgehog on colosseum
+[server:warning] MISSING Couldn't load player class: strawberryhedgehog.RobotPlayer
+[server:warning] Error instrumenting strawberryhedgehog.RobotPlayer:
+[server:warning] Make sure you're not trying to escape the sandbox.
+[server:warning] Make sure the team name is spelled correctly.
+[server:warning] Make sure the bc.game.team-a.url and bc.game.team-b.url are configured correctly.
+[server:warning] MISSING Couldn't load player class: strawberryhedgehog.RobotPlayer
+[server:warning] Error instrumenting strawberryhedgehog.RobotPlayer:
+[server:warning] Make sure you're not trying to escape the sandbox.
+[server:warning] Make sure the team name is spelled correctly.
+[server:warning] Make sure the bc.game.team-a.url and bc.game.team-b.url are configured correctly.
+[server:warning] MISSING Couldn't load player class: strawberryhedgehog.RobotPlayer
+[server:warning] Error instrumenting strawberryhedgehog.RobotPlayer:
+[server:warning] Make sure you're not trying to escape the sandbox.
+[server:warning] Make sure the team name is spelled correctly.
+[server:warning] Make sure the bc.game.team-a.url and bc.game.team-b.url are configured correctly.
+[server]                  astrophytum (A) wins (round 1)
 [server] Reason: The winning team won by annihilating the enemy team's Archons.
 [server] -------------------- Match Finished --------------------
-[server:debug] match completed in 3.544 seconds
+[server:debug] match completed in 2.431 seconds
 [server:debug] Awaiting match
 [server:debug] Shutting down server
+Closed: /0:0:0:0:0:0:0:1:60006 for null
 
-BUILD SUCCESSFUL in 5s
-9 actionable tasks: 2 executed, 7 up-to-date
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 7.0.
+Use '--warning-mode all' to show the individual deprecation warnings.
+See https://docs.gradle.org/6.0.1/userguide/command_line_interface.html#sec:command_line_warnings
+
+BUILD SUCCESSFUL in 43s
+10 actionable tasks: 8 executed, 2 up-to-date

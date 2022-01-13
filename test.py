@@ -1,10 +1,12 @@
 import os
 import sys
+import platform
+
 
 def main():
     print("Starting Tests!")
     playerA = "astrophytum"
-    playerB = "examplefuncsplayer"
+    playerB = "strawberryhedgehog"
     playAllMaps(playerA, playerB)
 
 def playAllMaps(playerA: str, playerB: str):
@@ -33,7 +35,10 @@ def runMatch(playerA: str, playerB: str, map: str):
     return (updateA1 + updateA2, updateB1 + updateB2)
 
 def listMaps():
-    os.system("./gradlew listMaps > test/maps.txt")
+    if (platform.system() == 'Windows'):
+        os.system("gradlew listMaps > test/maps.txt")
+    else:
+        os.system("./gradlew listMaps > test/maps.txt")
 
 def getMaps():
     maps = []
@@ -60,26 +65,31 @@ def changeGame(player1: str, player2: str, map: str):
         f.write(f"outputVerbose=false")
 
 def executeGame():
-    os.system("./gradlew run > test/data.txt")
+    if (platform.system() == 'Windows'):
+        os.system("gradlew run > test/data.txt")
+    else:
+        os.system("./gradlew run > test/data.txt")
 
 def parseGameResult():
-    with open("test/data.txt", "r") as f:
-        f_iter = iter(f)
-        for line in f_iter:
-            if (line.rstrip() == "[server] -------------------- Match Starting --------------------"):
-                next(f_iter, None)
-                test_line = next(f_iter, "")
-                data = test_line.split()
-                if (data[3] == "wins"):
-                    if (data[2] == "(A)"):
-                        return (1, 0)
-                    elif (data[2] == "(B)"):
-                        return (0, 1)
-                elif (data[3] == "loses"):
-                    if (data[2] == "(A)"):
-                        return (0, 1)
-                    elif (data[2] == "(B)"):
-                        return (1, 0)
+    if (platform.system() == 'Windows'):
+    else:
+        with open("test/data.txt", "r") as f:
+            f_iter = iter(f)
+            for line in f_iter:
+                if (line.rstrip() == "[server] -------------------- Match Starting --------------------"):
+                    next(f_iter, None)
+                    test_line = next(f_iter, "")
+                    data = test_line.split()
+                    if (data[3] == "wins"):
+                        if (data[2] == "(A)"):
+                            return (1, 0)
+                        elif (data[2] == "(B)"):
+                            return (0, 1)
+                    elif (data[3] == "loses"):
+                        if (data[2] == "(A)"):
+                            return (0, 1)
+                        elif (data[2] == "(B)"):
+                            return (1, 0)
 
 def printData(playerA, playerB, data):
     for datum in data:
