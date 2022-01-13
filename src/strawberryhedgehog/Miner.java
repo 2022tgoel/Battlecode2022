@@ -29,30 +29,6 @@ public class Miner extends Unit {
         round_num = rc.getRoundNum();
         mode = getMode();
         switch (rank) {
-            case FARMER:
-                switch (mode) {
-                    case EXPLORING:
-                        if (rc.getLocation().distanceSquaredTo(homeArchon) <= 100)
-                            moveInDirection(exploratoryDir);
-                        else {
-                            exploratoryDir = getExploratoryDir(5, homeArchon);
-                        }
-                        break;
-                    case MINE_DISCOVERED:
-                        break;
-                    case FLEEING:
-                        moveInDirection(fleeDirection);
-                        break;
-                }
-                if (adjacentToEdge()) {
-                    exploratoryDir = getExploratoryDir(7);
-                }
-                // if home archon dies, become a regular miner.
-                if (rc.senseRobotAtLocation(homeArchon) == null) {
-                    rank = RANK.DEFAULT;
-                    exploratoryDir = getExploratoryDir(7);
-                }
-                break;
             case DEFAULT:
                 switch (mode) {
                     case EXPLORING:
@@ -76,13 +52,7 @@ public class Miner extends Unit {
     }
 
     public RANK findRankMiner() throws GameActionException{
-        RANK new_rank = findRank();
-        if (new_rank != RANK.FARMER && new_rank != RANK.DEFAULT) {
-            return RANK.DEFAULT;
-        }
-        else {
-            return new_rank;
-        }
+        return RANK.DEFAULT;
     }
 
     public MODE getMode() throws GameActionException {

@@ -126,7 +126,7 @@ public class Archon extends Unit {
         int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
         if (underThreat()) return MODE.THREATENED;
         else if (totalUnderThreat() > 0) return MODE.OTHER_THREATENED;
-        else if (num_miners < (sizeBracket*6)/num_archons_init) return MODE.INITIAL; 
+        else if (num_miners < (sizeBracket*3)/num_archons_init) return MODE.INITIAL; 
         else return  MODE.DEFAULT;
     }
 
@@ -405,13 +405,13 @@ public class Archon extends Unit {
     }
     public int[] chooseBuildOrder() {
         if (mapArea < 1400) {
-            return new int[]{1, 4, 0}; // miners, soldiers, builders
+            return new int[]{1, 6, 0}; // miners, soldiers, builders
         }
         else if (mapArea < 2200) {
-            return new int[]{1, 4, 0}; // miners, soldiers, builders
+            return new int[]{1, 6, 0}; // miners, soldiers, builders
         }
         else {
-            return new int[]{1, 4, 0}; // miners, soldiers, builders
+            return new int[]{1, 6, 0}; // miners, soldiers, builders
         }
     }
 

@@ -1,0 +1,31 @@
+> Task :compileJava UP-TO-DATE
+> Task :compileScala UP-TO-DATE
+> Task :processResources NO-SOURCE
+> Task :classes UP-TO-DATE
+> Task :jar UP-TO-DATE
+> Task :assemble UP-TO-DATE
+> Task :compileTestJava UP-TO-DATE
+> Task :compileTestScala UP-TO-DATE
+> Task :processTestResources NO-SOURCE
+> Task :testClasses UP-TO-DATE
+> Task :test UP-TO-DATE
+> Task :check UP-TO-DATE
+> Task :checkForUpdate
+> Task :unpackClient UP-TO-DATE
+> Task :unpackClient32 SKIPPED
+> Task :build UP-TO-DATE
+
+> Task :run
+[server:debug] Awaiting match
+[server:debug] Running: examplefuncsplayer (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs astrophytum (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [valley]
+[server] -------------------- Match Starting --------------------
+[server] examplefuncsplayer vs. astrophytum on valley
+[server]                  astrophytum (B) wins (round 565)
+[server] Reason: The winning team won by annihilating the enemy team's Archons.
+[server] -------------------- Match Finished --------------------
+[server:debug] match completed in 3.544 seconds
+[server:debug] Awaiting match
+[server:debug] Shutting down server
+
+BUILD SUCCESSFUL in 5s
+9 actionable tasks: 2 executed, 7 up-to-date
