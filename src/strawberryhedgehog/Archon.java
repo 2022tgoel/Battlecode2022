@@ -29,8 +29,7 @@ public class Archon extends Unit {
     int num_archons_alive;
 
     int[] defaultBuildOrder;
-    // int mapArea = getMapArea();
-
+    int mapArea;
     int threatChannel = -1;
 	public Archon(RobotController rc) throws GameActionException {
         super(rc);
@@ -40,6 +39,7 @@ public class Archon extends Unit {
         num_archons_init = num_archons_alive;
         dirs = sortedDirections();
         defaultBuildOrder = chooseBuildOrder();
+        mapArea = getMapArea();
     }
 
     @Override
