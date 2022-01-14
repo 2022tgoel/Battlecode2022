@@ -4,41 +4,43 @@ import battlecode.common.*;
 
 public class Comms {
     RobotController rc;
+    private int round_num;
     public Comms(RobotController robotController) throws GameActionException{
         rc = robotController;
+    }
+
+    public void update() {
+        round_num = rc.getRoundNum();
     }
 
     public int getMiners() throws GameActionException{
         return rc.readSharedArray(CHANNEL.MINERS_ALIVE.getValue());
     }
 
-    public void setMiners() throws GameActionException{
-        rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), 1);
+    public void setMiners(int value) throws GameActionException{
+        rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), value);
     }
 
     public int getSoldiers() throws GameActionException{
         return rc.readSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue());
     }
 
-    public void setSoldiers() throws GameActionException{
-        rc.writeSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue(), 1);
+    public void setSoldiers(int value) throws GameActionException{
+        rc.writeSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue(), value);
     }
 
     public int getBuilders() throws GameActionException{
         return rc.readSharedArray(CHANNEL.BUILDERS_ALIVE.getValue());
     }
 
-    public void setBuilders() throws GameActionException{
-        rc.writeSharedArray(CHANNEL.BUILDERS_ALIVE.getValue(), 1);
+    public void setBuilders(int value) throws GameActionException{
+        rc.writeSharedArray(CHANNEL.BUILDERS_ALIVE.getValue(), value);
     }
 
-    public void clearCounts(int archonNumber) throws GameActionException {
-        // clear only if it's your turn
-        if (rc.getRoundNum() % rc.getArchonCount() == archonNumber){
-            rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), 0);
-            rc.writeSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue(), 0);
-            rc.writeSharedArray(CHANNEL.BUILDERS_ALIVE.getValue(), 0);
-        }
+    public void clearCounts() throws GameActionException {
+        rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), 0);
+        rc.writeSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue(), 0);
+        rc.writeSharedArray(CHANNEL.BUILDERS_ALIVE.getValue(), 0);
     }
 
     public void postBuild(BOT b) throws GameActionException {
@@ -64,7 +66,6 @@ public class Comms {
 
     public BOT getPreviousBuild() throws GameActionException {
         int data = rc.readSharedArray(CHANNEL.UNIT_BUILT.getValue());
-        System.out.println("Roundnum: " + round_num + " data: " + data);
         switch (data) {
             case 0:
                 return BOT.NONE;
@@ -81,61 +82,9 @@ public class Comms {
         }
     }
 
-    public void incrementTotals() throws GameActionException {
-        // don't read increment you just posted
-        if (round_num % num_archons_alive == ((archonNumber + 1) % num_archons_alive)) {
-            return;
-        }
-        BOT b = getPreviousBuild();
-        switch (b) {
-            case MINER:
-                total_miner_count += 1;
-            case SOLDIER:
-                total_soldier_count += 1;
-                break;
-            case BUILDER:
-                total_builder_count += 1;
-                break;
-            case SAGE:
-                total_sage_count += 1;
-                break;
-            case NONE:
-                break;
-            default:
-                break;
-        }
-    }
+    public void clearBuilds() throws GameActionException {}
 
-    public void clearTotals() throws GameActionException {
-        // don't read increment you just posted
-        if (round_num % num_archons_alive == ((archonNumber + 1) % num_archons_alive)) {
-            return;
-        }
-        BOT b = getPreviousBuild();
-        switch (b) {
-            case MINER:
-                total_miner_count += 1;
-            case SOLDIER:
-                total_soldier_count += 1;
-                break;
-            case BUILDER:
-                total_builder_count += 1;
-                break;
-            case SAGE:
-                total_sage_count += 1;
-                break;
-            case NONE:
-                break;
-            default:
-                break;
-        }
-    }
-
-    public void getClearRound() throws GameActionException {
-        if (round_num % num_archons_alive == archonNumber) {
-            clear_round = round_num + 1;
-        }
-    }
+    public void getClearRound(int archonNumber) throws GameActionException {}
 
     public void clearThreat() throws GameActionException{
         if (round_num % 15 == 0){
@@ -143,12 +92,11 @@ public class Comms {
                 rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i, 0);
             }
         }
-        
     }
 
-    public void sendThreatAlert() throws GameActionException {
+    public int sendThreatAlert() throws GameActionException {
         MapLocation my = rc.getLocation();
-        threatChannel = -1;
+        int threatChannel = -1;
         for (int i = 0; i < 4; i++) {
             // rc.writeSharedArray(, value);
             int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
@@ -158,14 +106,14 @@ public class Comms {
             // already alerted.
             if (x == my.x && y == my.y) {
                 threatChannel = i;
-                return;
+                return threatChannel;
             }
             if (data == 0 && threatChannel==-1) {
                 threatChannel = i;
-                
             }
         }
-        rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + threatChannel, locationToInt(my));
+        if (threatChannel != -1) rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + threatChannel, locationToInt(my));
+        return threatChannel;
     }
 
     public int totalUnderThreat() throws GameActionException{
@@ -173,26 +121,18 @@ public class Comms {
         for (int i = 0; i < 4; i++) {
             // rc.writeSharedArray(, value);
             int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
-            if (data != 0) {
-                int x = data / 64;
-                int y = data % 64;
-                if (validCoords(x, y)) {
-                    numThreatenedArchons++;
-                }
-            }
+            if (data != 0) numThreatenedArchons++;
         }
         return numThreatenedArchons;
     }
 
-    public void checkDead() throws GameActionException {
+    public int getArchonNum(int num_archons_init, int num_archons_alive, int archonNumber) throws GameActionException {
         // none dead
         int archonCount = rc.getArchonCount();
         if (archonCount >= num_archons_alive) {
-            return;
+            return archonNumber;
         }
         else {
-            num_archons_alive = rc.getArchonCount();
-            archons_dead += 1;
             int cur_data = rc.readSharedArray(CHANNEL.ARCHON_ALIVE.getValue());
             int binary_sum = 0;
             int tempData = cur_data;
@@ -212,7 +152,7 @@ public class Comms {
                 rc.writeSharedArray(CHANNEL.ARCHON_ALIVE.getValue(), cur_data + data);
             }
             // if 4 archons alive, binary sum is 3, if 3 archons alive, binary sum is 2...
-            archonNumber = binary_sum;
+            return binary_sum;
         }
     }
 
@@ -225,7 +165,7 @@ public class Comms {
         }
     }
 
-    public int getArchonNumber() throws GameActionException {
+    public int getArchonNumInit() throws GameActionException {
         int data;
         for (int i = 0; i < 4; i++) {
             data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + i);
@@ -240,22 +180,6 @@ public class Comms {
         return -1;
     }
 
-    public void postOrder(RANK order) throws GameActionException {
-        rc.setIndicatorString("ORDERING A " + order.toString() + " ON CHANNEL " + CHANNEL.ORDERS.getValue());
-        rc.writeSharedArray(CHANNEL.ORDERS.getValue(), order.getValue());
-    }
-
-    public RANK getOrder() throws GameActionException {
-        // rc.setIndicatorString("READING ORDERS FROM CHANNEL " + CHANNEL.ORDERS.getValue());
-        int data = rc.readSharedArray(CHANNEL.ORDERS.getValue());
-        // rc.setIndicatorString("DATA RECIEVED ");
-        return RANK.DEFAULT;
-    }
-
-    public void clearOrder() throws GameActionException {
-        rc.writeSharedArray(CHANNEL.ORDERS.getValue(), 0);
-    }
-
     public void postRank(RANK rank) throws GameActionException {
         MapLocation loc = rc.getLocation();
         int loc_int;
@@ -265,7 +189,7 @@ public class Comms {
         else {
             // all locations are within 60, so can be compressed to 6 bits.
             loc_int = rank.getValue() * 4096 + locationToInt(loc);
-            if (round_num % 2 == 0) {
+            if (rc.getRoundNum() % 2 == 0) {
                 rc.writeSharedArray(CHANNEL.SEND_RANKS1.getValue(), loc_int);
             }
             else {
@@ -275,11 +199,15 @@ public class Comms {
     }
 
     public void clearRanks() throws GameActionException {
-        if (round_num % 2 == 0) {
+        if (rc.getRoundNum() % 2 == 0) {
             rc.writeSharedArray(CHANNEL.SEND_RANKS1.getValue(), 0);
         }
         else {
             rc.writeSharedArray(CHANNEL.SEND_RANKS2.getValue(), 0);
         }
+    }
+
+    public int locationToInt(MapLocation loc) {
+        return 64 * loc.x + loc.y;
     }
 }
