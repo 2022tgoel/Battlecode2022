@@ -11,9 +11,13 @@ public enum CHANNEL {
     fARCHON_STATUS4(7),
     ARCHON_ALIVE(8),
     UNIT_BUILT(9),
+    MINERS_ALIVE(10),
+    SOLDIERS_ALIVE(11),
+    BUILDERS_ALIVE(12),
     ORDERS(61),
     SEND_RANKS1(62),
-    SEND_RANKS2(63);
+    SEND_RANKS2(63), 
+    ;
 
     private final int id;
     CHANNEL(int id) { this.id = id; }

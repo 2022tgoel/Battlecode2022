@@ -20,13 +20,12 @@
 [server:debug] Running: strawberryhedgehog (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs pathfindingplayer_OLD_v3 (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [valley]
 [server] -------------------- Match Starting --------------------
 [server] strawberryhedgehog vs. pathfindingplayer_OLD_v3 on valley
-[server]               strawberryhedgehog (A) wins (round 1042)
+[server]            pathfindingplayer_OLD_v3 (B) wins (round 1283)
 [server] Reason: The winning team won by annihilating the enemy team's Archons.
 [server] -------------------- Match Finished --------------------
-[server:debug] match completed in 5.971 seconds
+[server:debug] match completed in 10.00 seconds
 [server:debug] Awaiting match
 [server:debug] Shutting down server
-Closed: /0:0:0:0:0:0:0:1:54668 for null
 
-BUILD SUCCESSFUL in 7s
+BUILD SUCCESSFUL in 12s
 9 actionable tasks: 2 executed, 7 up-to-date

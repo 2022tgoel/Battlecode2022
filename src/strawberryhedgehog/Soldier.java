@@ -48,6 +48,7 @@ public class Soldier extends Unit {
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
+        updateCount();
         attacked = attemptAttack(false);
         mode = determineMode();
         switch (mode) {
@@ -371,43 +372,51 @@ public class Soldier extends Unit {
     }
 
     public boolean attemptAttack(boolean attackMiners) throws GameActionException {
-        boolean enemy_soldiers = false;
-        boolean enemy_miners = false;
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
+        int weakestSoldierHealth = 100000;
+        int weakestMinerHealth = 100000;
+        RobotInfo weakestSoldier = null;
+        RobotInfo weakestMiner = null;
+        RobotInfo archon = null;
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
-            RobotInfo weakestBot = nearbyBots[0];
             for (RobotInfo bot : nearbyBots) {
-                if (bot.type == RobotType.SOLDIER)
-                    if (bot.health < weakestBot.health) {
-                        weakestBot = bot;
+                if (bot.type == RobotType.SOLDIER) {
+                    if (bot.health < weakestSoldierHealth) {
+                        weakestSoldier = bot;
+                        weakestSoldierHealth = bot.health;
                     }
-                    enemy_soldiers = true;
-            }
-            if (enemy_soldiers) {
-                if (rc.canAttack(weakestBot.location)) rc.attack(weakestBot.location);
-            }
-            else {
-                if (attackMiners) {
-                    for (RobotInfo bot : nearbyBots) {
-                        if (bot.type == RobotType.MINER)
-                            if (bot.health < weakestBot.health) {
-                                weakestBot = bot;
-                            }
-                            enemy_miners = true;
-
+                }
+                if (bot.type == RobotType.MINER) {
+                    if (bot.health < weakestMinerHealth) {
+                        weakestMiner = bot;
+                        weakestMinerHealth = bot.health;
                     }
-                    if (rc.canAttack(weakestBot.location)) rc.attack(weakestBot.location);
+                }
+                if (bot.type == RobotType.ARCHON) {
+                    archon = bot;
                 }
             }
-            target = weakestBot.location;
+            if (weakestSoldier != null) {
+                if (rc.canAttack(weakestSoldier.location)) {
+                    rc.attack(weakestSoldier.location);
+                    return true;
+                }
+            }
+            else if (weakestMiner != null && attackMiners) {
+                if (rc.canAttack(weakestMiner.location)) {
+                    rc.attack(weakestMiner.location);
+                    return true;
+                }
+            }
+            else if (archon != null) {
+                if (rc.canAttack(archon.location)) {
+                    rc.attack(archon.location);
+                    return true;
+                }
+            }
         }
-        if ((!enemy_miners || !attackMiners)  && !enemy_soldiers) {
-            return false;
-        }
-        else {
-            return true;
-        }
+        return false;
     }
 
     public void initialize() {

@@ -31,7 +31,11 @@ public class Archon extends Unit {
     int[] defaultBuildOrder;
     // int mapArea;
     int threatChannel = -1;
-    private int num_miners_total;
+    private int total_sage_count = 0;
+    private int total_builder_count = 0;
+    private int total_soldier_count= 0;
+    private int total_miner_count = 0;
+
 	public Archon(RobotController rc) throws GameActionException {
         super(rc);
         System.out.println("here");
@@ -46,18 +50,14 @@ public class Archon extends Unit {
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
-        if (round_num == 250){
-          // rc.resign();
-        }
-        
         clearThreat();
-        // handles all the logistics for when an archon dies
         checkDead();
-        /* num_miners_total = getMiners();
-        clearMiners(); */
+        total_miner_count = getMiners();
+        total_builder_count = getBuilders();
+        total_soldier_count = getSoldiers();
+        clearCounts();
 
         MODE mode = determineMode();
-        rc.setIndicatorString(mode.toString() + " " + totalUnderThreat());
 
         switch (mode) {
             case THREATENED:
@@ -66,10 +66,8 @@ public class Archon extends Unit {
                 rc.setIndicatorString(threatChannel + " " + tot);
                 
                 if (round_num % tot !=threatChannel){ //alternate between those under threat
-                    // rc.setIndicatorString("Number of miners: " + num_miners_total);
                     return;
                 }
-          //      rc.setIndicatorString("here " + rc.getActionCooldownTurns());
                 Direction[] enemyDirs = getEnemyDirs();
                 // builders aren't functional yet, and will just get sniped by the enemy, better to have soldiers
                 /* if (rc.getHealth() < RobotType.ARCHON.health && !builderInRange()){
@@ -83,7 +81,6 @@ public class Archon extends Unit {
                 return;
             case INITIAL:
                 if (round_num % num_archons_alive != archonNumber) {
-                    // rc.setIndicatorString("Number of miners: " + num_miners_total);
                     return;
                 }
                 build(chooseInitialBuildOrder());
@@ -94,16 +91,12 @@ public class Archon extends Unit {
                 }
             case DEFAULT:
                 if ((round_num % num_archons_alive != archonNumber) && (rc.getTeamLeadAmount(rc.getTeam()) < 150)) {
-                    // rc.setIndicatorString("Number of miners: " + num_miners_total);
                     return;
                 }
                 build(defaultBuildOrder);
                 break;
         }
-
-      //  rc.setIndicatorString(mode.toString());
-      //  attemptHeal();
-      // rc.setIndicatorString("Number of miners: " + num_miners_total);
+      rc.setIndicatorString("Number of miners: " + total_miner_count);
     }
 
     public void build(int[] build_order) throws GameActionException{
@@ -113,41 +106,66 @@ public class Archon extends Unit {
                 case 0:
                     rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + build_order[counter % 3]);
                     unit_built = buildMiner(dir);
-                    if (unit_built) postBuild(RobotType.MINER);
+                    System.out.println("MINER BUILT: " + unit_built + " Roundnum: " + rc.getRoundNum());
+                    if (unit_built) incrementMiners();
                     break;
                 case 1:
                     rc.setIndicatorString("Trying to build a soldier" + " built_units: " + built_units + " " + build_order[counter % 3]);
                     unit_built = buildSoldier(dir);
-                    if (unit_built) postBuild(RobotType.SOLDIER);
+                    System.out.println("SOLDIER BUILT: " + unit_built);
+                    if (unit_built) incrementSoldiers();;
                     break;
                 case 2:
-                    System.out.println("BUILDING BUILDER");
                     rc.setIndicatorString("Trying to build a builder" + " built_units: " + built_units + " " + build_order[counter % 3]);
                     unit_built = buildBuilder(dir);
-                    if (unit_built) postBuild(RobotType.BUILDER);
+                    System.out.println("BUILDER BUILT: " + unit_built);
+                    if (unit_built) incrementBuilders();
                     break;
             }
             if (built_units >= build_order[counter % 3]){
                 counter++;
                 built_units = 0;
-            }  
-            // if (!unit_built) postBuild(null);
+            }
+            if (unit_built) return;
+        }
+        postBuild(BOT.NONE);
+    }
+
+    public int getMiners() throws GameActionException{
+        return rc.readSharedArray(CHANNEL.MINERS_ALIVE.getValue());
+    }
+
+    public void incrementMiners() throws GameActionException{
+        rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), 1);
+    }
+
+    public int getSoldiers() throws GameActionException{
+        return rc.readSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue());
+    }
+
+    public void incrementSoldiers() throws GameActionException{
+        rc.writeSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue(), 1);
+    }
+
+    public int getBuilders() throws GameActionException{
+        return rc.readSharedArray(CHANNEL.BUILDERS_ALIVE.getValue());
+    }
+
+    public void incrementBuilders() throws GameActionException{
+        rc.writeSharedArray(CHANNEL.BUILDERS_ALIVE.getValue(), 1);
+    }
+
+    public void clearCounts() throws GameActionException {
+        // clear only if it's your turn
+        if (round_num % num_archons_alive == archonNumber){
+            rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), 0);
+            rc.writeSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue(), 0);
+            rc.writeSharedArray(CHANNEL.BUILDERS_ALIVE.getValue(), 0);
         }
     }
 
-    /* public int getMiners() throws GameActionException{
-        return rc.readSharedArray(CHANNEL.MINERS_ALIVE.getValue());
-    } */
-
-    /* public void clearMiners() throws GameActionException {
-        if (archonNumber == num_archons_alive - 1) {
-            rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), 0);
-            rc.setIndicatorString("Cleared miners");
-        }
-    } */
-
-    public void postBuild(RobotType r) throws GameActionException {
-        switch (r) {
+    public void postBuild(BOT b) throws GameActionException {
+        switch (b) {
             case MINER:
                 rc.writeSharedArray(CHANNEL.UNIT_BUILT.getValue(), BOT.MINER.getValue());
                 break;
@@ -160,20 +178,63 @@ public class Archon extends Unit {
             case SAGE:
                 rc.writeSharedArray(CHANNEL.UNIT_BUILT.getValue(), BOT.SAGE.getValue());
                 break;
+            case NONE:
+                rc.writeSharedArray(CHANNEL.UNIT_BUILT.getValue(), BOT.NONE.getValue());
             default:
-                rc.writeSharedArray(CHANNEL.UNIT_BUILT.getValue(), BOT.NONE.getValue());;
+                break;
         }
     }
 
-    /* public RobotType getPreviousBuild() throws GameActionException {
-        // rc.readSharedArray()
+    /* public BOT getPreviousBuild() throws GameActionException {
+        int data = rc.readSharedArray(CHANNEL.UNIT_BUILT.getValue());
+        System.out.println("Roundnum: " + round_num + " data: " + data);
+        switch (data) {
+            case 0:
+                return BOT.NONE;
+            case 1:
+                return BOT.MINER;
+            case 2:
+                return BOT.SOLDIER;
+            case 3:
+                return BOT.BUILDER;
+            case 4:
+                return BOT.SAGE;
+            default:
+                return BOT.NONE;
+        }
+    } */
+
+    /* public void incrementTotals() throws GameActionException {
+        // don't read increment you just posted
+        if (round_num % num_archons_alive == ((archonNumber + 1) % num_archons_alive)) {
+            return;
+        }
+        BOT b = getPreviousBuild();
+        switch (b) {
+            case MINER:
+                total_miner_count += 1;
+            case SOLDIER:
+                total_soldier_count += 1;
+                break;
+            case BUILDER:
+                total_builder_count += 1;
+                break;
+            case SAGE:
+                total_sage_count += 1;
+                break;
+            case NONE:
+                break;
+            default:
+                break;
+        }
     } */
 
     public MODE determineMode() throws GameActionException {
         int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
         if (underThreat()) return MODE.THREATENED;
         else if (totalUnderThreat() > 0) return MODE.OTHER_THREATENED;
-        else if (num_miners < (sizeBracket*3)/num_archons_init) return MODE.INITIAL; 
+        // if total number of miners is less then desired, and the number of miners this archon has produced is less then desired, make more.
+        else if (num_miners < ((sizeBracket*3)/num_archons_init + 1) && total_miner_count < (sizeBracket * 3)) return MODE.INITIAL; 
         else return  MODE.DEFAULT;
     }
 
@@ -337,6 +398,7 @@ public class Archon extends Unit {
             rc.buildRobot(RobotType.MINER, dir);
             built_units++;
             num_miners++;
+            total_miner_count++;
             return true;
         }
         return false;
@@ -347,6 +409,7 @@ public class Archon extends Unit {
             rc.buildRobot(RobotType.SOLDIER, dir);
             built_units++;
             num_soldiers++;
+            total_soldier_count++;
             return true;
         }
         return false;
@@ -358,6 +421,7 @@ public class Archon extends Unit {
             rc.buildRobot(RobotType.BUILDER, dir);
             built_units++;
             num_builders++;
+            total_builder_count++;
             return true;
         }
         return false;

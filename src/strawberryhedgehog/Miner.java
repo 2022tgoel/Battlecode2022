@@ -27,8 +27,7 @@ public class Miner extends Unit {
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
-        System.out.println("TEST");
-        /* updateMiners(); */
+        updateCount();
         mode = getMode();
         switch (rank) {
             case DEFAULT:
@@ -51,12 +50,6 @@ public class Miner extends Unit {
                 break;
         }
     }
-
-    /* public void updateMiners() throws GameActionException {
-        int num_miners = rc.readSharedArray(CHANNEL.MINERS_ALIVE.getValue());
-        rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), num_miners + 1);
-        System.out.println("ROUND: " + round_num + " UPDATE: " + num_miners + " -> " + (num_miners + 1));
-    } */
 
     public RANK findRankMiner() throws GameActionException{
         return RANK.DEFAULT;
