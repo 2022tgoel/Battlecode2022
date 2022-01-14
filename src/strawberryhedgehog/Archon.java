@@ -53,8 +53,8 @@ public class Archon extends Unit {
         clearThreat();
         // handles all the logistics for when an archon dies
         checkDead();
-        num_miners_total = getMiners();
-        clearMiners();
+        /* num_miners_total = getMiners();
+        clearMiners(); */
 
         MODE mode = determineMode();
         rc.setIndicatorString(mode.toString() + " " + totalUnderThreat());
@@ -71,11 +71,12 @@ public class Archon extends Unit {
                 }
           //      rc.setIndicatorString("here " + rc.getActionCooldownTurns());
                 Direction[] enemyDirs = getEnemyDirs();
-                if (rc.getHealth() < RobotType.ARCHON.health && !builderInRange()){
+                // builders aren't functional yet, and will just get sniped by the enemy, better to have soldiers
+                /* if (rc.getHealth() < RobotType.ARCHON.health && !builderInRange()){
                     for (int i = enemyDirs.length -1; i>=0; i--){ //reverse
                         buildBuilder(enemyDirs[i]);
                     }
-                }
+                } */
                 for (Direction dir: enemyDirs) {
                     buildSoldier(dir);
                 }
@@ -106,38 +107,66 @@ public class Archon extends Unit {
     }
 
     public void build(int[] build_order) throws GameActionException{
+        boolean unit_built = false;
         for (Direction dir: dirs) {
             switch (counter % 3) {
                 case 0:
                     rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + build_order[counter % 3]);
-                    buildMiner(dir);
+                    unit_built = buildMiner(dir);
+                    if (unit_built) postBuild(RobotType.MINER);
                     break;
                 case 1:
                     rc.setIndicatorString("Trying to build a soldier" + " built_units: " + built_units + " " + build_order[counter % 3]);
-                    buildSoldier(dir);
+                    unit_built = buildSoldier(dir);
+                    if (unit_built) postBuild(RobotType.SOLDIER);
                     break;
                 case 2:
                     rc.setIndicatorString("Trying to build a builder" + " built_units: " + built_units + " " + build_order[counter % 3]);
-                    buildBuilder(dir);
+                    unit_built = buildBuilder(dir);
+                    if (unit_built) postBuild(RobotType.BUILDER);
                     break;
             }
             if (built_units >= build_order[counter % 3]){
                 counter++;
                 built_units = 0;
-            }   
+            }  
+            if (!unit_built) postBuild(null);
         }
     }
 
-    public int getMiners() throws GameActionException{
+    /* public int getMiners() throws GameActionException{
         return rc.readSharedArray(CHANNEL.MINERS_ALIVE.getValue());
-    }
+    } */
 
-    public void clearMiners() throws GameActionException {
+    /* public void clearMiners() throws GameActionException {
         if (archonNumber == num_archons_alive - 1) {
             rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), 0);
             rc.setIndicatorString("Cleared miners");
         }
+    } */
+
+    public void postBuild(RobotType r) throws GameActionException {
+        switch (r) {
+            case MINER:
+                rc.writeSharedArray(CHANNEL.UNIT_BUILT.getValue(), BOT.MINER.getValue());
+                break;
+            case SOLDIER:
+                rc.writeSharedArray(CHANNEL.UNIT_BUILT.getValue(), BOT.SOLDIER.getValue());
+                break;
+            case BUILDER:
+                rc.writeSharedArray(CHANNEL.UNIT_BUILT.getValue(), BOT.BUILDER.getValue());
+                break;
+            case SAGE:
+                rc.writeSharedArray(CHANNEL.UNIT_BUILT.getValue(), BOT.SAGE.getValue());
+                break;
+            default:
+                rc.writeSharedArray(CHANNEL.UNIT_BUILT.getValue(), BOT.NONE.getValue());;
+        }
     }
+
+    /* public RobotType getPreviousBuild() throws GameActionException {
+        // rc.readSharedArray()
+    } */
 
     public MODE determineMode() throws GameActionException {
         int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
@@ -302,29 +331,35 @@ public class Archon extends Unit {
         }
     }
     ////////////////////////////////////////////////
-    public void buildMiner(Direction dir) throws GameActionException{
+    public boolean buildMiner(Direction dir) throws GameActionException{
         if (rc.canBuildRobot(RobotType.MINER, dir)) {
             rc.buildRobot(RobotType.MINER, dir);
             built_units++;
             num_miners++;
+            return true;
         }
+        return false;
     }
 
-    public void buildSoldier(Direction dir) throws GameActionException{ 
+    public boolean buildSoldier(Direction dir) throws GameActionException{ 
         if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
             rc.buildRobot(RobotType.SOLDIER, dir);
             built_units++;
             num_soldiers++;
+            return true;
         }
+        return false;
     }
 
-    public void buildBuilder(Direction dir) throws GameActionException {
+    public boolean buildBuilder(Direction dir) throws GameActionException {
         rc.setIndicatorString("here " + rc.canBuildRobot(RobotType.BUILDER, dir));
         if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
             rc.buildRobot(RobotType.BUILDER, dir);
             built_units++;
             num_builders++;
+            return true;
         }
+        return false;
     }
     /**
      * enemySoldiersInRange() checks if a soldier that might want to attack in nearby

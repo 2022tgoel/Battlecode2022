@@ -28,7 +28,7 @@ public class Miner extends Unit {
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
         System.out.println("TEST");
-        updateMiners();
+        /* updateMiners(); */
         mode = getMode();
         switch (rank) {
             case DEFAULT:
@@ -52,11 +52,11 @@ public class Miner extends Unit {
         }
     }
 
-    public void updateMiners() throws GameActionException {
+    /* public void updateMiners() throws GameActionException {
         int num_miners = rc.readSharedArray(CHANNEL.MINERS_ALIVE.getValue());
         rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), num_miners + 1);
         System.out.println("ROUND: " + round_num + " UPDATE: " + num_miners + " -> " + (num_miners + 1));
-    }
+    } */
 
     public RANK findRankMiner() throws GameActionException{
         return RANK.DEFAULT;
@@ -147,28 +147,26 @@ public class Miner extends Unit {
      * Returns the location of the most lucrative mining area outside of mining radius
      **/
     public MapLocation findMiningArea() throws GameActionException{
-        MapLocation cur = rc.getLocation();
         // if square only has 1 lead don't go for it.
         int maxRes = 1;
+        int res;
+        MapLocation[] goldLocs = rc.senseNearbyLocationsWithGold();
+        MapLocation[] leadLocs = rc.senseNearbyLocationsWithLead();
         MapLocation bestLocation = null;
-        for (int dx = -4; dx <= 4; dx++) {
-            for (int dy = -4; dy <= 4; dy++) {
-                int x_coord = cur.x + dx;
-                int y_coord = cur.y + dy;
-                MapLocation loc;
-                if (validCoords(x_coord, y_coord)) {
-                    loc = new MapLocation(x_coord, y_coord);
-                }
-                else {
-                    continue;
-                }
-                if (rc.canSenseLocation(loc)) {
-                    int res = rc.senseGold(loc) * goldToLeadConversionRate + rc.senseLead(loc);
-                    if (res > maxRes) {
-                        maxRes = res;
-                        bestLocation = loc;
-                    }
-                }
+        
+        for (MapLocation loc: goldLocs) {
+            res = rc.senseGold(loc) * goldToLeadConversionRate + rc.senseLead(loc);
+            if (res > maxRes) {
+                maxRes = res;
+                bestLocation = loc;
+            }
+        }
+
+        for (MapLocation loc: leadLocs) {
+            res = rc.senseGold(loc) * goldToLeadConversionRate + rc.senseLead(loc);
+            if (res > maxRes) {
+                maxRes = res;
+                bestLocation = loc;
             }
         }
 
