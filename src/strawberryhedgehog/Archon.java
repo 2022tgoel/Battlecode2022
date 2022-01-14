@@ -233,8 +233,7 @@ public class Archon extends Unit {
         int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
         if (underThreat()) return MODE.THREATENED;
         else if (totalUnderThreat() > 0) return MODE.OTHER_THREATENED;
-        // if total number of miners is less then desired, and the number of miners this archon has produced is less then desired, make more.
-        else if (num_miners < ((sizeBracket*3)/num_archons_init + 1) && total_miner_count < (sizeBracket * 3)) return MODE.INITIAL; 
+        else if (num_miners < (sizeBracket*3)/num_archons_init) return MODE.INITIAL; 
         else return  MODE.DEFAULT;
     }
 
