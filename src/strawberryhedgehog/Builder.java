@@ -54,7 +54,7 @@ public class Builder extends Unit {
     }
 
     public MODE getMode() {
-        return MODE.BUILDING;
+        return MODE.HEALING;
     }
 
     public int distToWall(Direction d) {
