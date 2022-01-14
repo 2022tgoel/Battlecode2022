@@ -78,20 +78,6 @@ public class Miner extends Unit {
         }
     }
 
-    // TODO: make this work
-    public void avoid_archons() throws GameActionException {
-        boolean archonDetected = detectArchon();
-        if (archonDetected) {
-            int data = rc.readSharedArray(archon_index);
-            int x = data / 64;
-            int y = data % 64;
-            MapLocation enemy_archon = new MapLocation(x, y);
-        }
-        else {
-            rc.setIndicatorString("archon not detected");
-        }
-    }
-
     public boolean mining_detour() throws GameActionException {
         MapLocation cur = rc.getLocation();
         int amountMined = mine();
@@ -184,7 +170,6 @@ public class Miner extends Unit {
      * @return int representing total value of what was mined
      **/
     public int mine() throws GameActionException{
-        MapLocation me = rc.getLocation();
         //prioritize gold
         int amountMined = 0;
         for (MapLocation loc : rc.senseNearbyLocationsWithGold()) {
