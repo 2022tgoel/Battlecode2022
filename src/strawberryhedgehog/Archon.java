@@ -66,7 +66,7 @@ public class Archon extends Unit {
                 rc.setIndicatorString(threatChannel + " " + tot);
                 
                 if (round_num % tot !=threatChannel){ //alternate between those under threat
-                    rc.setIndicatorString("Number of miners: " + num_miners_total);
+                    // rc.setIndicatorString("Number of miners: " + num_miners_total);
                     return;
                 }
           //      rc.setIndicatorString("here " + rc.getActionCooldownTurns());
@@ -83,7 +83,7 @@ public class Archon extends Unit {
                 return;
             case INITIAL:
                 if (round_num % num_archons_alive != archonNumber) {
-                    rc.setIndicatorString("Number of miners: " + num_miners_total);
+                    // rc.setIndicatorString("Number of miners: " + num_miners_total);
                     return;
                 }
                 build(chooseInitialBuildOrder());
@@ -94,7 +94,7 @@ public class Archon extends Unit {
                 }
             case DEFAULT:
                 if ((round_num % num_archons_alive != archonNumber) && (rc.getTeamLeadAmount(rc.getTeam()) < 150)) {
-                    rc.setIndicatorString("Number of miners: " + num_miners_total);
+                    // rc.setIndicatorString("Number of miners: " + num_miners_total);
                     return;
                 }
                 build(defaultBuildOrder);
@@ -103,7 +103,7 @@ public class Archon extends Unit {
 
       //  rc.setIndicatorString(mode.toString());
       //  attemptHeal();
-      rc.setIndicatorString("Number of miners: " + num_miners_total);
+      // rc.setIndicatorString("Number of miners: " + num_miners_total);
     }
 
     public void build(int[] build_order) throws GameActionException{
@@ -121,6 +121,7 @@ public class Archon extends Unit {
                     if (unit_built) postBuild(RobotType.SOLDIER);
                     break;
                 case 2:
+                    System.out.println("BUILDING BUILDER");
                     rc.setIndicatorString("Trying to build a builder" + " built_units: " + built_units + " " + build_order[counter % 3]);
                     unit_built = buildBuilder(dir);
                     if (unit_built) postBuild(RobotType.BUILDER);
@@ -130,7 +131,7 @@ public class Archon extends Unit {
                 counter++;
                 built_units = 0;
             }  
-            if (!unit_built) postBuild(null);
+            // if (!unit_built) postBuild(null);
         }
     }
 
