@@ -31,6 +31,7 @@ public class Archon extends Unit {
     int[] defaultBuildOrder;
     // int mapArea;
     int threatChannel = -1;
+    private int num_miners_total;
 	public Archon(RobotController rc) throws GameActionException {
         super(rc);
         System.out.println("here");
@@ -52,6 +53,8 @@ public class Archon extends Unit {
         clearThreat();
         // handles all the logistics for when an archon dies
         checkDead();
+        num_miners_total = getMiners();
+        clearMiners();
 
         MODE mode = determineMode();
         rc.setIndicatorString(mode.toString() + " " + totalUnderThreat());
@@ -63,6 +66,7 @@ public class Archon extends Unit {
                 rc.setIndicatorString(threatChannel + " " + tot);
                 
                 if (round_num % tot !=threatChannel){ //alternate between those under threat
+                    rc.setIndicatorString("Number of miners: " + num_miners_total);
                     return;
                 }
           //      rc.setIndicatorString("here " + rc.getActionCooldownTurns());
@@ -78,6 +82,7 @@ public class Archon extends Unit {
                 return;
             case INITIAL:
                 if (round_num % num_archons_alive != archonNumber) {
+                    rc.setIndicatorString("Number of miners: " + num_miners_total);
                     return;
                 }
                 build(chooseInitialBuildOrder());
@@ -88,6 +93,7 @@ public class Archon extends Unit {
                 }
             case DEFAULT:
                 if ((round_num % num_archons_alive != archonNumber) && (rc.getTeamLeadAmount(rc.getTeam()) < 150)) {
+                    rc.setIndicatorString("Number of miners: " + num_miners_total);
                     return;
                 }
                 build(defaultBuildOrder);
@@ -96,7 +102,7 @@ public class Archon extends Unit {
 
       //  rc.setIndicatorString(mode.toString());
       //  attemptHeal();
-        
+      rc.setIndicatorString("Number of miners: " + num_miners_total);
     }
 
     public void build(int[] build_order) throws GameActionException{
@@ -119,6 +125,17 @@ public class Archon extends Unit {
                 counter++;
                 built_units = 0;
             }   
+        }
+    }
+
+    public int getMiners() throws GameActionException{
+        return rc.readSharedArray(CHANNEL.MINERS_ALIVE.getValue());
+    }
+
+    public void clearMiners() throws GameActionException {
+        if (archonNumber == num_archons_alive - 1) {
+            rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), 0);
+            rc.setIndicatorString("Cleared miners");
         }
     }
 
@@ -191,7 +208,7 @@ public class Archon extends Unit {
         else {
             num_archons_alive = rc.getArchonCount();
             archons_dead += 1;
-            int cur_data = rc.readSharedArray(CHANNEL.ALIVE.getValue());
+            int cur_data = rc.readSharedArray(CHANNEL.ARCHON_ALIVE.getValue());
             int binary_sum = 0;
             int tempData = cur_data;
             for (int i = num_archons_init - 1; i >= 0; i--) {
@@ -203,11 +220,11 @@ public class Archon extends Unit {
 
             // if you're the last one, clear the data
             if (binary_sum == num_archons_alive - 1) {
-                rc.writeSharedArray(CHANNEL.ALIVE.getValue(), 0);
+                rc.writeSharedArray(CHANNEL.ARCHON_ALIVE.getValue(), 0);
             }
             else {
                 int data = (int) (Math.pow(2.0, ((double) archonNumber)));
-                rc.writeSharedArray(CHANNEL.ALIVE.getValue(), cur_data + data);
+                rc.writeSharedArray(CHANNEL.ARCHON_ALIVE.getValue(), cur_data + data);
             }
             // if 4 archons alive, binary sum is 3, if 3 archons alive, binary sum is 2...
             archonNumber = binary_sum;

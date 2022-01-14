@@ -85,6 +85,7 @@ public class Soldier extends Unit {
         double cxse = 0;
         double cyse = 0;
         int numEnemies = 0;
+        int maxHealthEnemy = 0;
         int numFriends = 0;
         for (RobotInfo bot: nearbyBots) {
             if (bot.team == rc.getTeam()) {
@@ -98,6 +99,7 @@ public class Soldier extends Unit {
                 if (bot.type == RobotType.SOLDIER) {
                     cxse += bot.location.x;
                     cyse += bot.location.y;
+                    maxHealthEnemy = Math.max(maxHealthEnemy, bot.health);
                     numEnemies++;
                 }
         }
@@ -109,8 +111,15 @@ public class Soldier extends Unit {
             cxsf /= numFriends;
             cysf /= numFriends;
         }
+        // for example, if soldier has 7,8, or 9 health this expression spits out 3, as the soldier can only survive 3 hits.
+        int soldierHitsLeft = (rc.getHealth() + 2) / 3;
+        int enemyHitsLeft = (maxHealthEnemy + 2) / 3;
+        boolean winsInteraction = false;
+        // soldier strikes second, so must have more hits remaining
+        if (attacked) winsInteraction = (soldierHitsLeft > enemyHitsLeft);
+        else winsInteraction = (soldierHitsLeft >= enemyHitsLeft);
         // count yourself
-        if (numEnemies > (numFriends + 1)) {
+        if (numEnemies > (numFriends + 1) || (numEnemies == 1 && !winsInteraction)) {
             double dx = -(cxse - cur.x);
             double dy = -(cyse - cur.y);
             // more attracted
@@ -402,17 +411,7 @@ public class Soldier extends Unit {
     }
 
     public void initialize() {
-        if (mapArea < 1400) {
-           DRUSH_RSQR = 100;
-           ARUSH_RSQR = 100;
-        }
-        else if (mapArea < 2200) {
-            DRUSH_RSQR = 225;
-            ARUSH_RSQR = 400;
-        }
-        else {
-            DRUSH_RSQR = 400;
-            ARUSH_RSQR = 900;
-        }
+        DRUSH_RSQR = (int) ((double) mapArea / 9.0);
+        ARUSH_RSQR = (int) ((double) mapArea / 4.0);
     }
 }

@@ -5,7 +5,7 @@ import platform
 
 def main():
     print("Starting Tests!")
-    playerA = "astrophytum"
+    playerA = "pathfindingplayer_OLD_v3"
     playerB = "strawberryhedgehog"
     playAllMaps(playerA, playerB)
 

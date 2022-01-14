@@ -12,11 +12,21 @@
 > Task :check UP-TO-DATE
 > Task :checkForUpdate
 > Task :unpackClient UP-TO-DATE
-> Task :unpackClient32 UP-TO-DATE
+> Task :unpackClient32 SKIPPED
 > Task :build UP-TO-DATE
 
 > Task :run
 [server:debug] Awaiting match
-[server:debug] Running: strawberryhedgehog (C:\Users\tishi\Documents\CS\Battlecode2022\build\classes)  vs astrophytum (C:\Users\tishi\Documents\CS\Battlecode2022\build\classes)  on [eckleburg]
+[server:debug] Running: strawberryhedgehog (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs pathfindingplayer_OLD_v3 (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [valley]
 [server] -------------------- Match Starting --------------------
-[server] strawberryhedgehog vs. astrophytum on eckleburg
+[server] strawberryhedgehog vs. pathfindingplayer_OLD_v3 on valley
+[server]               strawberryhedgehog (A) wins (round 1042)
+[server] Reason: The winning team won by annihilating the enemy team's Archons.
+[server] -------------------- Match Finished --------------------
+[server:debug] match completed in 5.971 seconds
+[server:debug] Awaiting match
+[server:debug] Shutting down server
+Closed: /0:0:0:0:0:0:0:1:54668 for null
+
+BUILD SUCCESSFUL in 7s
+9 actionable tasks: 2 executed, 7 up-to-date
