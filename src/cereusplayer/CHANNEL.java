@@ -12,6 +12,7 @@ public enum CHANNEL {
     UNIT_BUILT(8),
     ALIVE(9),
     CONVOY(10),
+    MINER_DIR(15),
     ORDERS(61),
     SEND_RANKS1(62),
     SEND_RANKS2(63);

@@ -246,27 +246,6 @@ public class Soldier extends Unit {
         }
     }
 
-    public int[] flip(int[] dir){//directional vector input
-        assert(dir.length == 2);
-        MapLocation loc = rc.getLocation();
-        int[] ret = new int[2];
-        ret[0] = dir[0];
-        ret[1] = dir[1];
-        if (loc.x == 0 && ret[0] <0){
-            ret[0] = -1*ret[0];
-        } 
-        if (loc.y == 0 && ret[1] <0){
-            ret[1] = -1*ret[1];
-        }
-        if (loc.x >= rc.getMapWidth()-1 && ret[0]>0){
-            ret[0] = -1*ret[0];
-        }
-        if (loc.y >= rc.getMapHeight()-1 && ret[1]>0){
-            ret[1] = -1*ret[1];
-        }
-        return ret;
-    }
-
     public int[] friendlyDir() throws GameActionException { 
         MapLocation loc = rc.getLocation();
         // average position of soldiers and miners

@@ -21,7 +21,8 @@ public class Miner extends Unit {
     
     public Miner(RobotController rc) throws GameActionException {
         super(rc);
-        exploratoryDir = getExploratoryDir(7);
+        exploratoryDir = chooseDir();
+        rc.setIndicatorString(exploratoryDir[0] + " " + exploratoryDir[1]);
     }
 
     @Override
@@ -32,7 +33,11 @@ public class Miner extends Unit {
         mode = getMode();
         switch (mode) {
             case EXPLORING:
-                moveInDirection(exploratoryDir);
+                boolean b = moveInDirection(exploratoryDir);
+                if (!b){
+                    //choose a flipped direction
+                    exploratoryDir = flip(exploratoryDir);
+                }
                 break;
             case MINE_DISCOVERED:
                 break;
@@ -51,6 +56,21 @@ public class Miner extends Unit {
         else {
             return MODE.EXPLORING;
         }
+    }
+
+    public int[] chooseDir() throws GameActionException{
+        int data = rc.readSharedArray(CHANNEL.MINER_DIR.getValue());
+        assert(exploreDirs.length <=16); 
+        for (int i = 0; i < exploreDirs.length; i++){
+            if ((data&(1<<i)) == 0){
+                data = data|(1<<i);
+                rc.writeSharedArray(CHANNEL.MINER_DIR.getValue(), data);
+                return exploreDirs[i];
+            }
+        }
+        //if you reach here, need to clear
+        rc.writeSharedArray(CHANNEL.MINER_DIR.getValue(), 1);
+        return exploreDirs[0];
     }
 
     // TODO: make this work

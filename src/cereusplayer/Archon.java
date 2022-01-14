@@ -29,7 +29,7 @@ public class Archon extends Unit {
     int num_archons_init;
     int num_archons_alive;
 
-    int mapArea = getMapArea();
+    int mapArea;
 
     int threatChannel = -1;
 	public Archon(RobotController rc) throws GameActionException {
@@ -39,6 +39,7 @@ public class Archon extends Unit {
         num_archons_alive = rc.getArchonCount();
         num_archons_init = num_archons_alive;
         dirs = sortedDirections();
+
     }
     
     int[] defaultBuildOrder = chooseBuildOrder();
@@ -407,10 +408,6 @@ public class Archon extends Unit {
             return 0;
         }
     }
-
-    public int getMapArea() {
-        return rc.getMapHeight() * rc.getMapWidth();
-    }
     public int[] chooseBuildOrder() {
         if (mapArea < 1400) {
             return new int[]{1, 2, 0}; // miners, soldiers, builders
@@ -427,10 +424,10 @@ public class Archon extends Unit {
         int l = leadSpotsAvailable();
         System.out.println(l);
         if (l > 50) {
-            return new int[]{1, 0, 1}; // miners, soldiers, builders
+            return new int[]{1, 0, 0}; // miners, soldiers, builders
         }
         else if (l > 10) {
-            return new int[]{2, 0, 1}; // miners, soldiers, builders
+            return new int[]{2, 0, 0}; // miners, soldiers, builders
         }
         else return new int[]{2, 1, 0}; // miners, soldiers, builders
     }

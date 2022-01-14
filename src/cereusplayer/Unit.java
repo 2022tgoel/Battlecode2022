@@ -23,12 +23,14 @@ public class Unit{
         Direction.WEST,
         Direction.NORTHWEST,
     };
-
+    int mapArea;
     public Unit(RobotController robotController) throws GameActionException {
         rc = robotController;
         rng.setSeed((long) rc.getID() + seed_increment);
         homeArchon = findHomeArchon();
         initializeRankMap();
+        mapArea =  rc.getMapHeight() * rc.getMapWidth();;
+        calcExploreDirs(8);
     }
 
     /**
@@ -327,6 +329,74 @@ public class Unit{
         return (int) Math.floor((1+rc.senseRubble(loc)/10.0)*rc.getType().movementCooldown);
     }
 
+    public int[] flip(int[] dir){//directional vector input
+        assert(dir.length == 2);
+        MapLocation loc = rc.getLocation();
+        int[] ret = new int[2];
+        ret[0] = dir[0];
+        ret[1] = dir[1];
+        if (loc.x == 0 && ret[0] <0){
+            ret[0] = -1*ret[0];
+        } 
+        if (loc.y == 0 && ret[1] <0){
+            ret[1] = -1*ret[1];
+        }
+        if (loc.x >= rc.getMapWidth()-1 && ret[0]>0){
+            ret[0] = -1*ret[0];
+        }
+        if (loc.y >= rc.getMapHeight()-1 && ret[1]>0){
+            ret[1] = -1*ret[1];
+        }
+        return ret;
+    }
+
+    int[][] exploreDirs;
+    public void calcExploreDirs(int N){ //number of directions
+        int w = rc.getMapWidth(); int h = rc.getMapHeight();
+        double regionArea = ((double) mapArea / (double) N);
+        int[] numRegions = {(int) Math.ceil((0.5 * (double) w * (double) homeArchon.y) / regionArea), //bottom
+                            (int) Math.ceil((0.5 * (double) w * (double) (h - homeArchon.y)) / regionArea), //top
+                            (int) Math.ceil((0.5 * (double) h * (double) homeArchon.x) / regionArea), //left edge
+                            (int) Math.ceil((0.5 * (double) h * (double) (w - homeArchon.x)) / regionArea)}; //right
+        int[] regionSizes = {w/numRegions[0], w/numRegions[1], h/numRegions[2], h/numRegions[3]};
+        int tot = 0;
+        for (int i = 0; i < 4; i++){
+          //  System.out.println("yohoo " + numRegions[i] + " " + regionSizes[i]);
+            tot+=numRegions[i];
+        }
+        exploreDirs = new int[tot][2];
+        int cur = 0;
+        for (int i= 1; i <=numRegions[0]; i++){
+            exploreDirs[cur] = locationToDir(regionSizes[0]*i - regionSizes[0]/2, 0);
+            cur++;
+            
+        }
+        for (int i= 1; i <= numRegions[1]; i++){
+            exploreDirs[cur] = locationToDir(regionSizes[1]*i - regionSizes[1]/2, h-1);
+            cur++;
+        }
+        for (int i= 1; i <= numRegions[2]; i++){
+            exploreDirs[cur] = locationToDir(0, regionSizes[2]*i - regionSizes[2]/2);
+            cur++;
+        }
+        for (int i= 1; i <= numRegions[3]; i++){
+            exploreDirs[cur] = locationToDir(w-1, regionSizes[3]*i - regionSizes[3]/2);
+            cur++;
+        }
+        /*
+        for (int i= 0; i < tot; i++){
+            System.out.println(exploreDirs[i][0] + " " + exploreDirs[i][1]);
+        }*/
+    }
+
+    public int[] locationToDir(int x, int y){
+        double desiredLength = 12; //length of vector
+        MapLocation my = rc.getLocation();
+        double curLength = Math.sqrt(Math.pow(x-my.x, 2)+Math.pow(y-my.y, 2));
+        return new int[]{(int) (((double)x-(double)my.x)*(desiredLength/curLength)),
+                        (int) (((double)y-(double)my.y)*(desiredLength/curLength))};
+    }
+
     public int[] getExploratoryDir() {
         return getExploratoryDir(5);
     }
@@ -402,7 +472,7 @@ public class Unit{
         if (rc.getType() == RobotType.ARCHON) {
             return rc.getLocation();
         }
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam());
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(1, rc.getTeam());
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
             for (RobotInfo bot : nearbyBots) {
