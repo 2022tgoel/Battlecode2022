@@ -152,7 +152,7 @@ public class Miner extends Unit {
                 int x = (data >> 4) & 15;
                 int y = data & 15;
                 MapLocation dest = new MapLocation(Math.min(x*4, rc.getMapWidth() - 1), Math.min(y*4, rc.getMapHeight() - 1));
-                int res = 75*demand;
+                int res = minerToLeadRate*demand;
                 if (rc.getLocation().distanceSquaredTo(dest) < 200 && res > maxRes && demand > 0) { //within range //TODO: add not fulfilled
                     maxRes = res;
                     bestLocation = dest; 

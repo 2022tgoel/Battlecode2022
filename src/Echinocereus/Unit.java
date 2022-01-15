@@ -10,6 +10,7 @@ public class Unit{
     RANK[] rank_map = initializeRankMap();
     final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
+    static final int minerToLeadRate = 75;
     int seed_increment = 4;
     MapLocation homeArchon;
     public MapLocation archon_target;
@@ -168,7 +169,7 @@ public class Unit{
         }
         if (value >=25){
             MapLocation dest = new MapLocation(cx/value, cy/value);
-            int demand = (int)Math.round((double)value/75.0) - numFriendlyMiners();
+            int demand = (int)Math.round((double)value/(double)minerToLeadRate) - numFriendlyMiners();
          //   System.out.println(dest);
             if (demand > 0) {
                 broadcastMiningArea(dest, Math.min(demand, 7)); // seven is current cap for demand
