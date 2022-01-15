@@ -61,7 +61,7 @@ public class Miner extends Unit {
     }
 
     public MODE getMode(int amountMined) throws GameActionException {
-        int[] potFleeDirection = enemiesDetected();
+        /* int[] potFleeDirection = enemiesDetected();
         // if you just escaped an enemy, explore in a new direction
         if (potFleeDirection == null && stopFleeingRound == round_num) exploratoryDir = getExploratoryDir(7);
         
@@ -74,7 +74,7 @@ public class Miner extends Unit {
                 stopFleeingRound = round_num + 4;
             }
             return MODE.FLEEING;
-        }
+        } */
         //if you're getting lead here, stay put
         if (amountMined >=4){
             return MODE.MINING;

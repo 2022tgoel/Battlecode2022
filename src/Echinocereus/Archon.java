@@ -35,6 +35,7 @@ public class Archon extends Unit {
     private int total_miner_count = 0;
 
     Comms radio;
+    private int desiredNumMiners = 0;
 
 	public Archon(RobotController rc) throws GameActionException {
         super(rc);
@@ -45,6 +46,8 @@ public class Archon extends Unit {
         defaultBuildOrder = chooseBuildOrder();
         radio = new Comms(rc);
         archonNumber = radio.getArchonNumInit();
+        radio.initalizeArchonLoc(archonNumber, rc.getLocation());
+        addLeadEstimate();
     }
 
     @Override
@@ -59,6 +62,12 @@ public class Archon extends Unit {
         total_miner_count = radio.getMiners();
         total_builder_count = radio.getBuilders();
         total_soldier_count = radio.getSoldiers();
+
+        if (round_num == 2) {
+            int leadEstimate = radio.getLeadEstimate();
+            desiredNumMiners = determineMinerNum(leadEstimate);
+        }
+
         if (round_num % num_archons_alive == archonNumber) {
             radio.clearCounts();
         }
@@ -77,7 +86,8 @@ public class Archon extends Unit {
                 }
                 return;
             case INITIAL:
-                if (round_num % num_archons_alive != archonNumber) {
+                // if it's not your turn, and there's isn't a surplus, don't build anything
+                if (round_num % num_archons_alive != archonNumber) { // && rc.getTeamLeadAmount(rc.getTeam()) < num_archons_alive * RobotType.MINER.buildCostLead) {
                     return;
                 }
                 /*
@@ -107,6 +117,7 @@ public class Archon extends Unit {
         }
         rc.setIndicatorString("Number of miners: " + total_miner_count);
         rc.setIndicatorString("mode: " + mode.toString() + " " +radio.totalUnderThreat());
+        System.out.println("desiredNumMiners: " + desiredNumMiners);
     }
 
     public void build(int[] build_order) throws GameActionException{
@@ -153,6 +164,10 @@ public class Archon extends Unit {
         else if (radio.totalUnderThreat() > 0) return MODE.OTHER_THREATENED;
         else if (num_miners < (sizeBracket*3)/num_archons_init) return MODE.INITIAL; 
         else return  MODE.DEFAULT;
+    }
+
+    public int determineMinerNum(int leadEstimate) throws GameActionException {
+        return leadEstimate;
     }
 
     public boolean underThreat(){
@@ -292,5 +307,60 @@ public class Archon extends Unit {
                 }
             }
         }
+    }
+
+
+
+    public void addLeadEstimate() throws GameActionException {
+        MapLocation[] leadLocs = rc.senseNearbyLocationsWithLead();
+        MapLocation[] friendlyArchonLocs = radio.getFriendlyArchons(num_archons_alive);
+        int total_value = 0;
+        if (archonNumber != 0) {
+            MapLocation[] prevArchons = firstN(friendlyArchonLocs, archonNumber - 1);
+            MapLocation[] leadLocsUncounted = leadLocsNotCounted(leadLocs, prevArchons);
+            for (MapLocation loc : leadLocsUncounted) {
+                total_value += rc.senseLead(loc);
+            }
+        }
+        else {
+            for (MapLocation loc : leadLocs) {
+                total_value += rc.senseLead(loc);
+            }
+        }
+        if (total_value > 0) {
+            radio.incrementLeadEsimate(total_value);
+        }
+    }
+
+    public MapLocation[] leadLocsNotCounted(MapLocation[] leadLocs, MapLocation[] archons) throws GameActionException {
+        MapLocation[] locs = new MapLocation[leadLocs.length];
+        int uncounted = 0;
+        for (int i = 0; i < leadLocs.length; i++) {
+            boolean counted = false;
+            // check if lead is visible by any of the archons
+            for (int j = 0; j < archons.length; j++) {
+                if (leadLocs[i].distanceSquaredTo(archons[j]) <= RobotType.ARCHON.visionRadiusSquared) {
+                    counted = true;
+                }
+            }
+            // if not visible, add to list
+            if (!counted) {
+                locs[uncounted] = leadLocs[i];
+                uncounted++;
+            }
+        }
+        MapLocation[] leadLocsUncounted = new MapLocation[uncounted];
+        for (int i = 0; i < uncounted; i++) {
+            leadLocsUncounted[i] = locs[i];
+        }
+        return leadLocsUncounted;
+    }
+
+    public MapLocation[] firstN(MapLocation[] locs, int n) throws GameActionException{
+        MapLocation[] newLocs = new MapLocation[n];
+        for (int i = 0; i < n; i++) {
+            newLocs[i] = locs[i];
+        }
+        return newLocs;
     }
 }
