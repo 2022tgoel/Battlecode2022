@@ -151,7 +151,9 @@ public class Miner extends Unit {
                 int demand = (data >> 8) & 7;
                 int x = (data >> 4) & 15;
                 int y = data & 15;
+                
                 MapLocation dest = new MapLocation(Math.min(x*4, rc.getMapWidth() - 1), Math.min(y*4, rc.getMapHeight() - 1));
+             //   System.out.println("Recieved miner request: " + x*4 + " " + y*4 + " " + demand);
                 int res = minerToLeadRate*demand;
                 if (rc.getLocation().distanceSquaredTo(dest) < 200 && res > maxRes && demand > 0) { //within range //TODO: add not fulfilled
                     maxRes = res;
@@ -187,6 +189,7 @@ public class Miner extends Unit {
                 int demand = ((data >> 8) & 7) - 1;
                 int x = (data >> 4) & 15;
                 int y = data & 15;
+              //  System.out.println("Taking miner request: " + x*4 + " " + y*4 + " " + demand);
                 rc.writeSharedArray(CHANNEL.MINING1.getValue()+channel,(demand << 8) + (x << 4) + y);
             }
             return bestLocation;

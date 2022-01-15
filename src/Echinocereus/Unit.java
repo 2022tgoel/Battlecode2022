@@ -169,7 +169,7 @@ public class Unit{
         }
         if (value >=25){
             MapLocation dest = new MapLocation(cx/value, cy/value);
-            int demand = (int)Math.round((double)value/(double)minerToLeadRate) - numFriendlyMiners();
+            int demand = value/minerToLeadRate - numFriendlyMiners();
          //   System.out.println(dest);
             if (demand > 0) {
                 broadcastMiningArea(dest, Math.min(demand, 7)); // seven is current cap for demand
@@ -190,13 +190,14 @@ public class Unit{
             int x = (data >> 4) & 15;
             int y = data & 15;
             if (x_loc == x && y_loc == y) {
-                break;
+                return;
             }
             if (data == 0){
                 indToPut = i;
             }
         }
         int value = (demand << 8) + (x_loc << 4) + y_loc; 
+       // System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 + " " + demand + " " + rc.getRoundNum());
         rc.writeSharedArray(CHANNEL.MINING1.getValue() +indToPut, value);
     }
     /**
