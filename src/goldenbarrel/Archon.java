@@ -35,7 +35,7 @@ public class Archon extends Unit {
     private int total_miner_count = 0;
 
     Comms radio;
-    private int desiredNumMiners = 0;
+    private int desiredNumMiners = 1000;
     private boolean initial = true;
 
 	public Archon(RobotController rc) throws GameActionException {
