@@ -6,7 +6,7 @@ import platform
 def main():
     print("Starting Tests!")
     playerA = "pathfindingplayer_OLD_v3"
-    playerB = "goldenbarrel"
+    playerB = "barbaryfig"
     playAllMaps(playerA, playerB)
 
 def playAllMaps(playerA: str, playerB: str):
