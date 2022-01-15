@@ -94,6 +94,14 @@ public class Comms {
         }
     }
 
+    public void clearMiningAreas() throws GameActionException {
+        if (round_num % 3 == 0){
+            for (int i = 0; i < 5; i++) {
+                rc.writeSharedArray(CHANNEL.MINING1.getValue() + i, 0);
+            }
+        }
+    }
+
     public int sendThreatAlert() throws GameActionException {
         MapLocation my = rc.getLocation();
         int threatChannel = -1;
@@ -112,7 +120,8 @@ public class Comms {
                 threatChannel = i;
             }
         }
-        if (threatChannel != -1) rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + threatChannel, locationToInt(my));
+        if (threatChannel == -1) threatChannel = 4; //override
+        rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + threatChannel, locationToInt(my));
         return threatChannel;
     }
 

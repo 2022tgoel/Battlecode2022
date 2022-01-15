@@ -111,7 +111,7 @@ public class Builder extends Unit {
 
     public void heal() throws GameActionException {
         RobotInfo h = rc.senseRobotAtLocation(homeArchon);
-        if (h.type == RobotType.ARCHON && h.health < RobotType.ARCHON.health) { //healing mode
+        if (h!=null && h.type == RobotType.ARCHON && h.health < RobotType.ARCHON.health) { //healing mode
             if (rc.canRepair(homeArchon)) rc.repair(homeArchon);
         }
     }
