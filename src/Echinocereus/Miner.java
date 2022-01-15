@@ -16,6 +16,7 @@ public class Miner extends Unit {
     private MapLocation target;
     private int[] fleeDirection;
     RANK rank;
+    int minedAmount = 0;
     private int stopFleeingRound = 10000;
     
 	public Miner(RobotController rc) throws GameActionException {
@@ -29,6 +30,7 @@ public class Miner extends Unit {
         round_num = rc.getRoundNum();
         updateCount();
         mode = getMode();
+        mine();
         switch (rank) {
             case DEFAULT:
                 switch (mode) {
@@ -49,6 +51,7 @@ public class Miner extends Unit {
             default:
                 break;
         }
+        if (minedAmount == 0) mine();
     }
 
     public RANK findRankMiner() throws GameActionException{
@@ -80,11 +83,10 @@ public class Miner extends Unit {
 
     public boolean mining_detour() throws GameActionException {
         MapLocation cur = rc.getLocation();
-        int amountMined = mine();
-        if (minersAdjacentToLocation(cur)) {
+        /* if (minersAdjacentToLocation(cur)) {
             return false;
-        }
-        if (amountMined < 4){
+        } */
+        if (minedAmount < 4){
             target = findMiningArea();
             if (target != null) {
                 if (!cur.equals(target)){

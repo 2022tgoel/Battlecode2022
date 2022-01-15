@@ -108,22 +108,28 @@ public class Archon extends Unit {
         for (Direction dir: dirs) {
             switch (counter % 3) {
                 case 0:
-                    rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + build_order[counter % 3]);
-                    unit_built = buildMiner(dir);
-                    // System.out.println("MINER BUILT: " + unit_built + " Roundnum: " + rc.getRoundNum());
-                    if (unit_built) radio.setMiners(1);
+                    if (built_units < build_order[counter % 3]) {
+                        rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + build_order[counter % 3]);
+                        unit_built = buildMiner(dir);
+                        // System.out.println("MINER BUILT: " + unit_built + " Roundnum: " + rc.getRoundNum());
+                        if (unit_built) radio.setMiners(1);
+                    }
                     break;
                 case 1:
+                    if (built_units < build_order[counter % 3]) {
                     rc.setIndicatorString("Trying to build a soldier" + " built_units: " + built_units + " " + build_order[counter % 3]);
                     unit_built = buildSoldier(dir);
                     // System.out.println("SOLDIER BUILT: " + unit_built);
                     if (unit_built) radio.setSoldiers(1);
+                    }
                     break;
                 case 2:
-                    rc.setIndicatorString("Trying to build a builder" + " built_units: " + built_units + " " + build_order[counter % 3]);
-                    unit_built = buildBuilder(dir);
-                    // System.out.println("BUILDER BUILT: " + unit_built);
-                    if (unit_built) radio.setBuilders(1);
+                    if (built_units < build_order[counter % 3]) {
+                        rc.setIndicatorString("Trying to build a builder" + " built_units: " + built_units + " " + build_order[counter % 3]);
+                        unit_built = buildBuilder(dir);
+                        // System.out.println("BUILDER BUILT: " + unit_built);
+                        if (unit_built) radio.setBuilders(1);
+                    }
                     break;
             }
             if (built_units >= build_order[counter % 3]){

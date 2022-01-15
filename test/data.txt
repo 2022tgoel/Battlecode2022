@@ -17,15 +17,16 @@
 
 > Task :run
 [server:debug] Awaiting match
-[server:debug] Running: strawberryhedgehog (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs pathfindingplayer_OLD_v3 (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [valley]
+[server:debug] Running: echinocereus (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs pathfindingplayer_OLD_v3 (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [explore]
 [server] -------------------- Match Starting --------------------
-[server] strawberryhedgehog vs. pathfindingplayer_OLD_v3 on valley
-[server]            pathfindingplayer_OLD_v3 (B) wins (round 1283)
+[server] echinocereus vs. pathfindingplayer_OLD_v3 on explore
+[server]            pathfindingplayer_OLD_v3 (B) wins (round 254)
 [server] Reason: The winning team won by annihilating the enemy team's Archons.
 [server] -------------------- Match Finished --------------------
-[server:debug] match completed in 10.00 seconds
+[server:debug] match completed in 2.414 seconds
 [server:debug] Awaiting match
 [server:debug] Shutting down server
+Closed: /0:0:0:0:0:0:0:1:61972 for null
 
-BUILD SUCCESSFUL in 12s
+BUILD SUCCESSFUL in 4s
 9 actionable tasks: 2 executed, 7 up-to-date
