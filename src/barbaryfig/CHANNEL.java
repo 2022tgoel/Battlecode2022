@@ -1,4 +1,4 @@
-package triangle;
+package barbaryfig;
 
 public enum CHANNEL {
     ARCHON_LOC_1(0),

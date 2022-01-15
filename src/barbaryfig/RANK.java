@@ -1,4 +1,4 @@
-package triangle;
+package barbaryfig;
 
 public enum RANK { 
     DEFAULT(0),

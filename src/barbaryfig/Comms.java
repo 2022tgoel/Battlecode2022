@@ -1,4 +1,4 @@
-package triangle;
+package barbaryfig;
 
 import battlecode.common.*;
 
