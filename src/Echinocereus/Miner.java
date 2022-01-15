@@ -30,7 +30,7 @@ public class Miner extends Unit {
         round_num = rc.getRoundNum();
         updateCount();
         mode = getMode();
-        mine();
+        minedAmount = mine();
         switch (rank) {
             case DEFAULT:
                 switch (mode) {
