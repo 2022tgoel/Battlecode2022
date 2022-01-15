@@ -321,7 +321,7 @@ public class Unit{
         }
     }
     public void dialMove(MapLocation target) throws GameActionException{
-        MapLocation my = rc.getLocation();
+        /* MapLocation my = rc.getLocation();
 
         if (my.equals(target)){
             return; 
@@ -364,7 +364,7 @@ public class Unit{
         rc.setIndicatorString(next.toString());
         //System.out.println("The chosen spot is: " + next.toString());
         //go to next.loc
-        goToAdjacentLocation(next);
+        goToAdjacentLocation(next); */
 
     }
 }
