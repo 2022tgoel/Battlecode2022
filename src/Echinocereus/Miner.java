@@ -84,7 +84,7 @@ public class Miner extends Unit {
             if (rc.canSenseLocation(target) && getValue(target) <= 1){
                 target =null;
             } 
-            else if (!rc.canSenseLocation(target) && !isMiningArea(target)){
+            else if (!rc.canSenseLocation(target) && !isBroadcastedMiningArea(target)){
                 target=null;
             }
             else return MODE.MINE_DISCOVERED; // continue going to it
@@ -98,27 +98,6 @@ public class Miner extends Unit {
         //
         return MODE.EXPLORING;
     }
-    /*
-    public boolean mining_detour() throws GameActionException {
-        MapLocation cur = rc.getLocation();
-        if (minersAdjacentToLocation(cur)) {
-            return false;
-        } 
-        if (minedAmount < 4){
-            target = findMiningArea();
-            if (target != null) {
-                if (!cur.equals(target)){
-                    fuzzyMove(target);
-                    //sense if there is a lucrative nearby area and move there instead
-                    // moveToLocation(target);
-                    return true;
-                }
-            }
-            return false;
-        }
-        return true;
-    }
-        */
     public int[] enemiesDetected() throws GameActionException {
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         double cxs = 0;
@@ -145,14 +124,14 @@ public class Miner extends Unit {
         return rc.senseGold(loc) * goldToLeadConversionRate + rc.senseLead(loc);
     }
 
-    public boolean isMiningArea(MapLocation loc) throws GameActionException{
+    public boolean isBroadcastedMiningArea(MapLocation loc) throws GameActionException{
         for (int i = 0; i < 5; i++){
             int data = rc.readSharedArray(CHANNEL.MINING1.getValue()+i);
             if (data != 0) {
-                int x = data / 64;
-                int y = data % 64;
-                MapLocation dest = new MapLocation(x, y);
-                if (dest.equals(loc)) return true; //within range
+                int x = (data >> 4) & 15;
+                int y = data & 15;
+                MapLocation dest = new MapLocation(Math.min(x*4, rc.getMapWidth() - 1), Math.min(y*4, rc.getMapHeight() - 1));
+                if (dest.equals(loc)) return true;
             }
         }
         return false;
@@ -162,21 +141,28 @@ public class Miner extends Unit {
      * Returns the location of the most lucrative mining area outside of mining radius
      **/
     public MapLocation findMiningArea() throws GameActionException{
+        int maxRes = 1;
+        MapLocation bestLocation = null;
+        int channel = -1;
         //look at the channels
         for (int i = 0; i < 5; i++){
             int data = rc.readSharedArray(CHANNEL.MINING1.getValue()+i);
             if (data != 0) {
-                int x = data / 64;
-                int y = data % 64;
-                MapLocation dest = new MapLocation(x, y);
-                if (rc.getLocation().distanceSquaredTo(dest) < 200) return dest; //within range
+                int demand = (data >> 8) & 7;
+                int x = (data >> 4) & 15;
+                int y = data & 15;
+                MapLocation dest = new MapLocation(Math.min(x*4, rc.getMapWidth() - 1), Math.min(y*4, rc.getMapHeight() - 1));
+                int res = 75*demand;
+                if (rc.getLocation().distanceSquaredTo(dest) < 200 && res > maxRes && demand > 0) { //within range //TODO: add not fulfilled
+                    maxRes = res;
+                    bestLocation = dest; 
+                    channel = i;
+                }
             }
         }
-        // if square only has 1 lead don't go for it.
-        int maxRes = 1;
+
         MapLocation[] goldLocs = rc.senseNearbyLocationsWithGold();
         MapLocation[] leadLocs = rc.senseNearbyLocationsWithLead();
-        MapLocation bestLocation = null;
         
         for (MapLocation loc: goldLocs) {
             int res = getValue(loc);
@@ -194,23 +180,18 @@ public class Miner extends Unit {
             }
         }
 
-        // if our best location is outside of the mining range, return it
         if (maxRes >=1 && bestLocation != null) {
+            if (channel!=-1){
+                //reduce demand
+                int data = rc.readSharedArray(CHANNEL.MINING1.getValue()+channel);
+                int demand = ((data >> 8) & 7) - 1;
+                int x = (data >> 4) & 15;
+                int y = data & 15;
+                rc.writeSharedArray(CHANNEL.MINING1.getValue()+channel,(demand << 8) + (x << 4) + y);
+            }
             return bestLocation;
         }
-
-        
         return null;
-    }
-
-    public boolean minersAdjacentToLocation(MapLocation loc) throws GameActionException {
-        RobotInfo[] robots = rc.senseNearbyRobots(loc, 2, rc.getTeam());
-        for (RobotInfo robot : robots) {
-            if (robot.type == RobotType.MINER) {
-                return true;
-            }
-        }
-        return false;
     }
     /**
      * mine() mines the surrounding area
