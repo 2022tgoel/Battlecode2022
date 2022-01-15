@@ -84,6 +84,9 @@ public class Miner extends Unit {
             if (rc.canSenseLocation(target) && getValue(target) <= 1){
                 target =null;
             } 
+            else if (!rc.canSenseLocation(target) && !isMiningArea(target)){
+                target=null;
+            }
             else return MODE.MINE_DISCOVERED; // continue going to it
         }
         //found another, go there
@@ -140,6 +143,19 @@ public class Miner extends Unit {
 
     public int getValue(MapLocation loc) throws GameActionException{
         return rc.senseGold(loc) * goldToLeadConversionRate + rc.senseLead(loc);
+    }
+
+    public boolean isMiningArea(MapLocation loc) throws GameActionException{
+        for (int i = 0; i < 5; i++){
+            int data = rc.readSharedArray(CHANNEL.MINING1.getValue()+i);
+            if (data != 0) {
+                int x = data / 64;
+                int y = data % 64;
+                MapLocation dest = new MapLocation(x, y);
+                if (dest.equals(loc)) return true; //within range
+            }
+        }
+        return false;
     }
     /**
      * findMiningArea()
