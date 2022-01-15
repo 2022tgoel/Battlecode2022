@@ -294,6 +294,7 @@ public class Soldier extends Unit {
 
     }
 
+    // now has a boolean flag to tell it to go to the archon
     public MapLocation[] findThreatenedArchons() throws GameActionException {
         int data;
         MapLocation[] archons = new MapLocation[4];
@@ -301,9 +302,10 @@ public class Soldier extends Unit {
         for (int i = 0; i < 4; i++) {
             // rc.writeSharedArray(, value);
             data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
+            int w = data / 4096;
             // go through channels until you find an empty one to communicate with.
-            if (data != 0) {
-                int x = data / 64;
+            if (w != 0) {
+                int x = (data - w * 4096) / 64;
                 int y = data % 64;
                 if (validCoords(x, y)) {
                     archons[numThreatenedArchons] = new MapLocation(x, y);
