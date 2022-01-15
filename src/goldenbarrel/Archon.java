@@ -1,4 +1,4 @@
-package echinocereus;
+package goldenbarrel;
 
 import battlecode.common.*;
 import java.util.*;
@@ -36,6 +36,7 @@ public class Archon extends Unit {
 
     Comms radio;
     private int desiredNumMiners = 0;
+    private boolean initial = true;
 
 	public Archon(RobotController rc) throws GameActionException {
         super(rc);
@@ -159,15 +160,32 @@ public class Archon extends Unit {
     }
 
     public MODE determineMode() throws GameActionException {
-        int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
+        // int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
         if (underThreat()) return MODE.THREATENED;
         else if (radio.totalUnderThreat() > 0) return MODE.OTHER_THREATENED;
-        else if (num_miners < (sizeBracket*3)/num_archons_init) return MODE.INITIAL; 
-        else return  MODE.DEFAULT;
+        else if (total_miner_count < desiredNumMiners && initial == true) return MODE.INITIAL; 
+        else {
+            initial = false;
+            return  MODE.DEFAULT;
+        }
     }
 
     public int determineMinerNum(int leadEstimate) throws GameActionException {
-        return leadEstimate;
+        if (leadEstimate > 2000) {
+            return 12;
+        }
+        else if (leadEstimate > 1000) {
+            return 10;
+        }
+        else if (leadEstimate > 500) {
+            return 8;
+        }
+        else if (leadEstimate > 100) {
+            return 6;
+        }
+        else {
+            return 4;
+        }
     }
 
     public boolean underThreat(){

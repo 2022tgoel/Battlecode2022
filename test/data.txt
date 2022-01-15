@@ -1,32 +1,22 @@
-> Task :compileJava UP-TO-DATE
-> Task :compileScala UP-TO-DATE
+> Task :compileJava
+> Task :compileScala
 > Task :processResources NO-SOURCE
-> Task :classes UP-TO-DATE
-> Task :jar UP-TO-DATE
-> Task :assemble UP-TO-DATE
+> Task :classes
+> Task :jar
+> Task :assemble
 > Task :compileTestJava UP-TO-DATE
-> Task :compileTestScala UP-TO-DATE
+> Task :compileTestScala
 > Task :processTestResources NO-SOURCE
-> Task :testClasses UP-TO-DATE
-> Task :test UP-TO-DATE
-> Task :check UP-TO-DATE
+> Task :testClasses
+> Task :test
+> Task :check
 > Task :checkForUpdate
 > Task :unpackClient UP-TO-DATE
 > Task :unpackClient32 SKIPPED
-> Task :build UP-TO-DATE
+> Task :build
 
 > Task :run
 [server:debug] Awaiting match
-[server:debug] Running: echinocereus (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs pathfindingplayer_OLD_v3 (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [explore]
+[server:debug] Running: pathfindingplayer_OLD_v3 (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs goldenbarrel (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [progress]
 [server] -------------------- Match Starting --------------------
-[server] echinocereus vs. pathfindingplayer_OLD_v3 on explore
-[server]                  echinocereus (A) wins (round 142)
-[server] Reason: The winning team won by annihilating the enemy team's Archons.
-[server] -------------------- Match Finished --------------------
-[server:debug] match completed in 2.626 seconds
-[server:debug] Awaiting match
-[server:debug] Shutting down server
-Closed: /0:0:0:0:0:0:0:1:52192 for null
-
-BUILD SUCCESSFUL in 5s
-9 actionable tasks: 2 executed, 7 up-to-date
+[server] pathfindingplayer_OLD_v3 vs. goldenbarrel on progress

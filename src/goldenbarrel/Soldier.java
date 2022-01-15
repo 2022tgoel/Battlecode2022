@@ -1,4 +1,4 @@
-package echinocereus;
+package goldenbarrel;
 
 import battlecode.common.*;
 

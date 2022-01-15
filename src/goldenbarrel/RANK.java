@@ -1,4 +1,4 @@
-package echinocereus;
+package goldenbarrel;
 
 public enum RANK { 
     DEFAULT(0),
