@@ -52,12 +52,7 @@ public class Archon extends Unit {
         round_num = rc.getRoundNum();
         radio.update();
         radio.clearThreat();
-        //clear mining
-        if (round_num % 3 == 0){
-            for (int i = 0; i < 5; i++) {
-                rc.writeSharedArray(CHANNEL.MINING1.getValue() + i, 0);
-            }
-        }
+        radio.clearMiningAreas();
 
         archonNumber = radio.getArchonNum(num_archons_init, num_archons_alive, archonNumber);
         num_archons_alive = rc.getArchonCount();
@@ -68,22 +63,15 @@ public class Archon extends Unit {
             radio.clearCounts();
         }
         MODE mode = determineMode();
-        rc.setIndicatorString("mode: " + mode.toString());
         switch (mode) {
             case THREATENED:
-                radio.sendThreatAlert();
+                threatChannel = radio.sendThreatAlert();
                 int tot = radio.totalUnderThreat();
                 
                 if (round_num % tot !=threatChannel){ //alternate between those under threat
                     return;
                 }
                 Direction[] enemyDirs = getEnemyDirs();
-                // builders aren't functional yet, and will just get sniped by the enemy, better to have soldiers
-                /* if (rc.getHealth() < RobotType.ARCHON.health && !builderInRange()){
-                    for (int i = enemyDirs.length -1; i>=0; i--){ //reverse
-                        buildBuilder(enemyDirs[i]);
-                    }
-                } */
                 for (Direction dir: enemyDirs) {
                     buildSoldier(dir);
                 }
@@ -92,6 +80,12 @@ public class Archon extends Unit {
                 if (round_num % num_archons_alive != archonNumber) {
                     return;
                 }
+                /*
+                if (rc.getHealth() < RobotType.ARCHON.health && !builderInRange()){
+                    for (int i = dirs.length -1; i>=0; i--){ //reverse
+                        buildBuilder(dirs[i]);
+                    }
+                }*/
                 build(chooseInitialBuildOrder());
                 break;
             case OTHER_THREATENED: 
@@ -99,13 +93,20 @@ public class Archon extends Unit {
                     break; //save for attacked archon
                 }
             case DEFAULT:
-                if ((round_num % num_archons_alive != archonNumber) && (rc.getTeamLeadAmount(rc.getTeam()) < 150)) {
+                if (round_num % num_archons_alive != archonNumber) {
                     return;
                 }
+                /*
+                if (rc.getHealth() < RobotType.ARCHON.health && !builderInRange()){
+                    for (int i = dirs.length -1; i>=0; i--){ //reverse
+                        buildBuilder(dirs[i]);
+                    }
+                }*/
                 build(defaultBuildOrder);
                 break;
         }
-      rc.setIndicatorString("Number of miners: " + total_miner_count);
+        rc.setIndicatorString("Number of miners: " + total_miner_count);
+        rc.setIndicatorString("mode: " + mode.toString() + " " +radio.totalUnderThreat());
     }
 
     public void build(int[] build_order) throws GameActionException{
@@ -159,7 +160,7 @@ public class Archon extends Unit {
         return (enemies.length >=1);
     }
     
-    ////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
     public boolean buildMiner(Direction dir) throws GameActionException{
         if (rc.canBuildRobot(RobotType.MINER, dir)) {
             rc.buildRobot(RobotType.MINER, dir);
@@ -203,7 +204,7 @@ public class Archon extends Unit {
         }
         return false;
     }
-
+    //////////////////////////////////////////////////////////////////////
     public MapLocation getAvgEnemyLocation() throws GameActionException {
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         int num_enemies = 0;
@@ -232,11 +233,8 @@ public class Archon extends Unit {
     public int distToWall(Direction d) {
         MapLocation my = rc.getLocation();
         MapLocation n = my.add(d);
-        int min = 61;
-        min = Math.min(min, n.x);
-        min = Math.min(min, n.y);
-        min = Math.min(min, rc.getMapWidth() - n.x);
-        min = Math.min(min, rc.getMapHeight() - n.y);
+        int min = Math.min(rc.getMapWidth() - 1 - n.x, n.x) + Math.min(n.y, rc.getMapHeight() - 1 - n.y);
+        assert(min<=60);
         return min;
     }
 
@@ -245,17 +243,6 @@ public class Archon extends Unit {
         Direction[] dirs = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
         Arrays.sort(dirs, (a,b) -> distToWall(b) - distToWall(a));
         return dirs;
-    }
-
-    public int getRubble(Direction d) {
-        try {
-            MapLocation loc = rc.getLocation();
-            return rc.senseRubble(loc.add(d));
-        } catch (GameActionException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            return 0;
-        }
     }
 
     public int[] chooseBuildOrder() {
