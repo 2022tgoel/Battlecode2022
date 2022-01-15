@@ -141,7 +141,51 @@ public class Unit{
         }
     }
 
+
+    public boolean senseMiningArea() throws GameActionException {
+        int value = 0;
+        int cx = 0;
+        int cy = 0;
+        for (MapLocation loc : rc.senseNearbyLocationsWithGold()) {
+            int margin = rc.senseGold(loc)*goldToLeadConversionRate;
+            value+=margin;
+            cx+=margin*loc.x;
+            cy+=margin*loc.y;
+        }
+        for (MapLocation loc : rc.senseNearbyLocationsWithLead()) {
+            int margin = rc.senseLead(loc)-1;
+            value+=margin;
+            cx+=margin*loc.x;
+            cy+=margin*loc.y;
+        }
+        if (value >=75){ 
+            MapLocation dest = new MapLocation(cx/value, cy/value);
+         //   System.out.println(dest);
+            broadcastMiningArea(dest);
+            return true;
+        }
+        return false;
+    }
     
+    public void broadcastMiningArea(MapLocation loc) throws GameActionException{
+        //check that the loc is not already broadcasted
+        int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
+        for (int i= 0; i < 5; i++){
+            int data = rc.readSharedArray(CHANNEL.MINING1.getValue() + i);
+            int x = data / 64;
+            int y = data % 64;
+            if (loc.x == x && loc.y == y) {
+                return;
+            }
+            if (data == 0){
+                indToPut = i;
+            }
+        }
+        MapLocation dest = new MapLocation(Math.min((int)Math.round((double)loc.x/7.0)*7, rc.getMapWidth()-1),
+                                          Math.min((int)Math.round((double)loc.y/7.0)*7, rc.getMapHeight()-1));//rounding each value to multiples of seven - it's a fuzzy location!
+        int loc_int = locationToInt(dest); 
+        rc.writeSharedArray(CHANNEL.MINING1.getValue() +indToPut, loc_int);
+    }
     /**
      * validCoords() check if the x and y are on the map
      * @return bool, true if on the map

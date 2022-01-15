@@ -12,6 +12,7 @@ public class Miner extends Unit {
     }
 
     int[] exploratoryDir;
+    MapLocation exploratoryLoc;
     double soldier_repulsion = 2.0;
     double archon_repulsion = 2.0;
     double miner_repulsion = 1.5;
@@ -21,8 +22,8 @@ public class Miner extends Unit {
     
     public Miner(RobotController rc) throws GameActionException {
         super(rc);
-        exploratoryDir = chooseDir();
-        rc.setIndicatorString(exploratoryDir[0] + " " + exploratoryDir[1]);
+        exploratoryLoc = chooseLoc();
+        rc.setIndicatorString(" " + exploratoryLoc);
     }
 
     @Override
@@ -33,11 +34,7 @@ public class Miner extends Unit {
         mode = getMode();
         switch (mode) {
             case EXPLORING:
-                boolean b = moveInDirection(exploratoryDir);
-                if (!b){
-                    //choose a flipped direction
-                    exploratoryDir = flip(exploratoryDir);
-                }
+                fuzzyMove(exploratoryLoc);
                 break;
             case MINE_DISCOVERED:
                 break;
@@ -58,19 +55,19 @@ public class Miner extends Unit {
         }
     }
 
-    public int[] chooseDir() throws GameActionException{
+    public MapLocation chooseLoc() throws GameActionException{
         int data = rc.readSharedArray(CHANNEL.MINER_DIR.getValue());
-        assert(exploreDirs.length <=16); 
-        for (int i = 0; i < exploreDirs.length; i++){
+        assert(exploreLocs.length <=16); 
+        for (int i = 0; i < exploreLocs.length; i++){
             if ((data&(1<<i)) == 0){
                 data = data|(1<<i);
                 rc.writeSharedArray(CHANNEL.MINER_DIR.getValue(), data);
-                return exploreDirs[i];
+                return new MapLocation(exploreLocs[i][0], exploreLocs[i][1]);
             }
         }
         //if you reach here, need to clear
         rc.writeSharedArray(CHANNEL.MINER_DIR.getValue(), 1);
-        return exploreDirs[0];
+        return new MapLocation(exploreLocs[0][0], exploreLocs[0][1]);
     }
 
     // TODO: make this work

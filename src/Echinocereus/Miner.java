@@ -7,6 +7,7 @@ public class Miner extends Unit {
     enum MODE {
         EXPLORING,
         MINE_DISCOVERED,
+        MINING,
         FLEEING;
     }
 
@@ -16,7 +17,6 @@ public class Miner extends Unit {
     private MapLocation target;
     private int[] fleeDirection;
     RANK rank;
-    int minedAmount = 0;
     private int stopFleeingRound = 10000;
     
 	public Miner(RobotController rc) throws GameActionException {
@@ -24,13 +24,12 @@ public class Miner extends Unit {
         exploratoryDir = getExploratoryDir(7);
         rank = findRankMiner();
     }
-
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
         updateCount();
-        mode = getMode();
-        minedAmount = mine();
+        int amountMined = mine();
+        mode = getMode(amountMined);
         switch (rank) {
             case DEFAULT:
                 switch (mode) {
@@ -38,6 +37,7 @@ public class Miner extends Unit {
                         moveInDirection(exploratoryDir);
                         break;
                     case MINE_DISCOVERED:
+                        fuzzyMove(target);
                         break;
                     case FLEEING:
                         moveInDirection(fleeDirection);
@@ -51,14 +51,16 @@ public class Miner extends Unit {
             default:
                 break;
         }
-        if (minedAmount < 5) mine();
+        amountMined+=mine();
+        senseMiningArea();
+        rc.setIndicatorString(" " + mode + " " + amountMined + " " + target);
     }
 
     public RANK findRankMiner() throws GameActionException{
         return RANK.DEFAULT;
     }
 
-    public MODE getMode() throws GameActionException {
+    public MODE getMode(int amountMined) throws GameActionException {
         int[] potFleeDirection = enemiesDetected();
         // if you just escaped an enemy, explore in a new direction
         if (potFleeDirection == null && stopFleeingRound == round_num) exploratoryDir = getExploratoryDir(7);
@@ -73,19 +75,32 @@ public class Miner extends Unit {
             }
             return MODE.FLEEING;
         }
-        else if (mining_detour()) {
-            return MODE.MINE_DISCOVERED;
+        //if you're getting lead here, stay put
+        if (amountMined >=4){
+            return MODE.MINING;
         }
-        else {
-            return MODE.EXPLORING;
-        }
-    }
 
+        if (target!=null) {
+            if (rc.canSenseLocation(target) && getValue(target) <= 1){
+                target =null;
+            } 
+            else return MODE.MINE_DISCOVERED; // continue going to it
+        }
+        //found another, go there
+        MapLocation loc = findMiningArea();
+        if (loc!=null){
+            target = loc;
+            return MODE.MINE_DISCOVERED; 
+        }
+        //
+        return MODE.EXPLORING;
+    }
+    /*
     public boolean mining_detour() throws GameActionException {
         MapLocation cur = rc.getLocation();
-        /* if (minersAdjacentToLocation(cur)) {
+        if (minersAdjacentToLocation(cur)) {
             return false;
-        } */
+        } 
         if (minedAmount < 4){
             target = findMiningArea();
             if (target != null) {
@@ -100,7 +115,7 @@ public class Miner extends Unit {
         }
         return true;
     }
-
+        */
     public int[] enemiesDetected() throws GameActionException {
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         double cxs = 0;
@@ -123,20 +138,32 @@ public class Miner extends Unit {
         return null; 
     }
 
+    public int getValue(MapLocation loc) throws GameActionException{
+        return rc.senseGold(loc) * goldToLeadConversionRate + rc.senseLead(loc);
+    }
     /**
      * findMiningArea()
      * Returns the location of the most lucrative mining area outside of mining radius
      **/
     public MapLocation findMiningArea() throws GameActionException{
+        //look at the channels
+        for (int i = 0; i < 5; i++){
+            int data = rc.readSharedArray(CHANNEL.MINING1.getValue()+i);
+            if (data != 0) {
+                int x = data / 64;
+                int y = data % 64;
+                MapLocation dest = new MapLocation(x, y);
+                if (rc.getLocation().distanceSquaredTo(dest) < 200) return dest; //within range
+            }
+        }
         // if square only has 1 lead don't go for it.
         int maxRes = 1;
-        int res;
         MapLocation[] goldLocs = rc.senseNearbyLocationsWithGold();
         MapLocation[] leadLocs = rc.senseNearbyLocationsWithLead();
         MapLocation bestLocation = null;
         
         for (MapLocation loc: goldLocs) {
-            res = rc.senseGold(loc) * goldToLeadConversionRate + rc.senseLead(loc);
+            int res = getValue(loc);
             if (res > maxRes) {
                 maxRes = res;
                 bestLocation = loc;
@@ -144,7 +171,7 @@ public class Miner extends Unit {
         }
 
         for (MapLocation loc: leadLocs) {
-            res = rc.senseGold(loc) * goldToLeadConversionRate + rc.senseLead(loc);
+            int res = getValue(loc);
             if (res > maxRes) {
                 maxRes = res;
                 bestLocation = loc;
@@ -152,10 +179,12 @@ public class Miner extends Unit {
         }
 
         // if our best location is outside of the mining range, return it
-        if (maxRes > 1 && bestLocation != null) {
+        if (maxRes >=1 && bestLocation != null) {
             return bestLocation;
         }
-        else return null;
+
+        
+        return null;
     }
 
     public boolean minersAdjacentToLocation(MapLocation loc) throws GameActionException {

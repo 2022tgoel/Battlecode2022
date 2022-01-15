@@ -75,6 +75,7 @@ public class Soldier extends Unit {
         if (adjacentToEdge()) {
             exploratoryDir = getExploratoryDir(5);
         }
+        senseMiningArea();
         rc.setIndicatorString("MODE: " + mode.toString());
     }
 

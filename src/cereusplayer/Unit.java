@@ -30,7 +30,7 @@ public class Unit{
         homeArchon = findHomeArchon();
         initializeRankMap();
         mapArea =  rc.getMapHeight() * rc.getMapWidth();;
-        calcExploreDirs(8);
+        calcExploreDirs(5);
     }
 
     /**
@@ -350,7 +350,7 @@ public class Unit{
         return ret;
     }
 
-    int[][] exploreDirs;
+    int[][] exploreLocs;
     public void calcExploreDirs(int N){ //number of directions
         int w = rc.getMapWidth(); int h = rc.getMapHeight();
         double regionArea = ((double) mapArea / (double) N);
@@ -364,23 +364,23 @@ public class Unit{
           //  System.out.println("yohoo " + numRegions[i] + " " + regionSizes[i]);
             tot+=numRegions[i];
         }
-        exploreDirs = new int[tot][2];
+        exploreLocs = new int[tot][2];
         int cur = 0;
         for (int i= 1; i <=numRegions[0]; i++){
-            exploreDirs[cur] = locationToDir(regionSizes[0]*i - regionSizes[0]/2, 0);
+            exploreLocs[cur] = new int[]{regionSizes[0]*i - regionSizes[0]/2, 0};
             cur++;
             
         }
         for (int i= 1; i <= numRegions[1]; i++){
-            exploreDirs[cur] = locationToDir(regionSizes[1]*i - regionSizes[1]/2, h-1);
+            exploreLocs[cur] = new int[]{regionSizes[1]*i - regionSizes[1]/2, h-1};
             cur++;
         }
         for (int i= 1; i <= numRegions[2]; i++){
-            exploreDirs[cur] = locationToDir(0, regionSizes[2]*i - regionSizes[2]/2);
+            exploreLocs[cur] = new int[]{0, regionSizes[2]*i - regionSizes[2]/2};
             cur++;
         }
         for (int i= 1; i <= numRegions[3]; i++){
-            exploreDirs[cur] = locationToDir(w-1, regionSizes[3]*i - regionSizes[3]/2);
+            exploreLocs[cur] = new int[]{w-1, regionSizes[3]*i - regionSizes[3]/2};
             cur++;
         }
         /*

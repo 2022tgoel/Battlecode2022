@@ -52,6 +52,13 @@ public class Archon extends Unit {
         round_num = rc.getRoundNum();
         radio.update();
         radio.clearThreat();
+        //clear mining
+        if (round_num % 3 == 0){
+            for (int i = 0; i < 5; i++) {
+                rc.writeSharedArray(CHANNEL.MINING1.getValue() + i, 0);
+            }
+        }
+
         archonNumber = radio.getArchonNum(num_archons_init, num_archons_alive, archonNumber);
         num_archons_alive = rc.getArchonCount();
         total_miner_count = radio.getMiners();
@@ -60,8 +67,6 @@ public class Archon extends Unit {
         if (round_num % num_archons_alive == archonNumber) {
             radio.clearCounts();
         }
-
-        System.out.println("Archon " + archonNumber + ": " + num_archons_alive + " archons alive");
         MODE mode = determineMode();
         rc.setIndicatorString("mode: " + mode.toString());
         switch (mode) {
