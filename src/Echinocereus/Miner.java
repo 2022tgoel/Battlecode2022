@@ -51,7 +51,7 @@ public class Miner extends Unit {
             default:
                 break;
         }
-        if (minedAmount == 0) mine();
+        if (minedAmount < 5) mine();
     }
 
     public RANK findRankMiner() throws GameActionException{
