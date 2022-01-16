@@ -281,8 +281,8 @@ public class Comms {
         int gridY = gridSquare / CHANNEL.GRID_SIZE;
         int gridSquareWidth = width / CHANNEL.GRID_SIZE;
         int gridSquareHeight = height / CHANNEL.GRID_SIZE;
-        int x = (gridX * CHANNEL.GRID_SIZE) * gridSquareWidth + gridSquareWidth / 2;
-        int y = (gridY * CHANNEL.GRID_SIZE) * gridSquareHeight + gridSquareHeight / 2;
+        int x = gridX * gridSquareWidth + gridSquareWidth / 2;
+        int y = gridY * gridSquareHeight + gridSquareHeight / 2;
         return new MapLocation(x, y);
     }
 
