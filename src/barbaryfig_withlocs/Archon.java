@@ -162,9 +162,7 @@ public class Archon extends Unit {
                 build(defaultBuildOrder);
                 break;
         }
-        // rc.setIndicatorString("Number of miners: " + total_miner_count);
-        // rc.setIndicatorString("mode: " + mode.toString() + " " +
-        // radio.totalUnderThreat());
+        rc.setIndicatorString("mode: " + mode.toString() + " " + radio.totalUnderThreat());
     }
 
     public void build(int[] build_order) throws GameActionException {

@@ -82,14 +82,18 @@ public class Comms {
         }
     }
 
-    public void clearBuilds() throws GameActionException {}
-
-    public void getClearRound(int archonNumber) throws GameActionException {}
-
     public void clearThreat() throws GameActionException{
         if (round_num % 15 == 0){
             for (int i = 0; i < 4; i++) {
                 rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i, 0);
+            }
+        }
+    }
+
+    public void clearTargetAreas() throws GameActionException {
+        if (round_num % 3 == 0){
+            for (int i = 0; i < 5; i++) {
+                rc.writeSharedArray(CHANNEL.TARGET.getValue() + i, 0);
             }
         }
     }
