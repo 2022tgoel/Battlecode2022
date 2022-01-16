@@ -163,9 +163,9 @@ public class Soldier extends Unit {
                 int w = data / 4096;
                 int x = (data - w * 4096) / 64;
                 int y = data % 64;
-                System.out.println("I received an enemy at " + x + " " + y);
+                System.out.println("I received an enemy at " + x + " " + y + " on round " + round_num);
                 MapLocation potentialTarget = new MapLocation(x, y);
-                if (rc.getLocation().distanceSquaredTo(potentialTarget) <= 500) {
+                if (rc.getLocation().distanceSquaredTo(potentialTarget) <= mapArea / 9) {
                     target = potentialTarget;
                     MapLocation cur = rc.getLocation();
                     // wanders in direction of target
