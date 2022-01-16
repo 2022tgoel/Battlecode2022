@@ -27,13 +27,13 @@ public class Comms {
      */
     public static int getTopActiveGridSquare(RobotController rc, int i) throws GameActionException {
         int chan = CHANNEL.TOP4_ACTIVE_GRID_SQUARES.getValue();
-        int value = (rc.readSharedArray(chan) >> (i * 8)) & 0b0000_1111;
+        int value = (rc.readSharedArray(chan) >> (i * 4)) & 0b0000_1111;
         return value;
     }
 
     public void setTopFourActiveGridSquares(int a, int b, int c, int d) throws GameActionException {
         int chan = CHANNEL.TOP4_ACTIVE_GRID_SQUARES.getValue();
-        int encoded = a << 24 | b << 16 | c << 8 | d;
+        int encoded = a << 12 | b << 8 | c << 4 | d;
 
         rc.writeSharedArray(chan, encoded);
     }
@@ -281,8 +281,8 @@ public class Comms {
         int gridY = gridSquare / CHANNEL.GRID_SIZE;
         int gridSquareWidth = width / CHANNEL.GRID_SIZE;
         int gridSquareHeight = height / CHANNEL.GRID_SIZE;
-        int x = (gridX * CHANNEL.GRID_SIZE) * gridSquareWidth + gridSquareWidth / 2;
-        int y = (gridY * CHANNEL.GRID_SIZE) * gridSquareHeight + gridSquareHeight / 2;
+        int x = gridX * gridSquareWidth + gridSquareWidth / 2;
+        int y = gridY * gridSquareHeight + gridSquareHeight / 2;
         return new MapLocation(x, y);
     }
 

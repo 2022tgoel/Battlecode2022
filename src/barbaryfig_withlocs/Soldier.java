@@ -19,7 +19,7 @@ public class Soldier extends Unit {
         CONVOY;
     }
 
-    final int ACTIVE_SQUARE_MINIMUM = 5;
+    final int ACTIVE_SQUARE_MINIMUM = 1;
 
     boolean attemptedAttack = false;
     boolean convoy_found = false;
@@ -50,21 +50,21 @@ public class Soldier extends Unit {
         initialize();
     }
 
-    /**
-     * Tallies up enemies based on their approximate location.
-     */
-    public void tallyEnemies(RobotInfo[] robots) throws GameActionException {
-        int width = rc.getMapWidth();
-        int height = rc.getMapHeight();
-        int baseChannelID = CHANNEL.GRID_BASE.getValue();
-        for (RobotInfo enemy : robots) {
-            if (enemy.team == rc.getTeam().opponent() && enemy.type == RobotType.SOLDIER) {
-                int gridSquare = Comms.locationToGridSquare(enemy.location.x, enemy.location.y,
-                        width, height);
-                int current = Comms.getGridSquareValue(rc, baseChannelID, gridSquare, CHANNEL.GRID_SQUARES_PER_CHANNEL);
-                if (current < 15) {
-                    Comms.setGridSquareValue(rc, baseChannelID, gridSquare, CHANNEL.GRID_SQUARES_PER_CHANNEL,
-                            current + 1, current);
+    public void calculateAndStoreClosestActiveSquare() throws GameActionException {
+        closestActiveSquare = -1;
+        int closestActiveSquareDistanceSquared = Integer.MAX_VALUE;
+        // Determine which grid square to go to
+        for (int i = 0; i < 4; i++) {
+            int square = Comms.getTopActiveGridSquare(rc, i);
+            int squareValue = Comms.getGridSquareValue(rc, CHANNEL.GRID_BASE.getValue(), square,
+                    CHANNEL.GRID_SQUARES_PER_CHANNEL);
+            MapLocation squareCenter = Comms.getGridSquareCenter(square, rc.getMapWidth(), rc.getMapHeight());
+
+            if (squareValue > ACTIVE_SQUARE_MINIMUM) {
+                int distanceSquared = rc.getLocation().distanceSquaredTo(squareCenter);
+                if (distanceSquared < closestActiveSquareDistanceSquared) {
+                    closestActiveSquare = square;
+                    closestActiveSquareDistanceSquared = distanceSquared;
                 }
             }
         }
@@ -77,20 +77,19 @@ public class Soldier extends Unit {
         if (Comms.isTallyingRound(roundNum)) {
             tallyEnemies(rc.senseNearbyRobots());
         } else if (Comms.isTallyingRound(roundNum - 1)) {
-            closestActiveSquare = -1;
-            int closestActiveSquareValue = ACTIVE_SQUARE_MINIMUM;
-            // Determine which grid square to go to
-            for (int i = 0; i < 4; i++) {
-                int square = Comms.getTopActiveGridSquare(rc, i);
-                int squareValue = Comms.getGridSquareValue(rc, CHANNEL.GRID_BASE.getValue(), square,
-                        CHANNEL.GRID_SQUARES_PER_CHANNEL);
-
-                if (squareValue > closestActiveSquareValue) {
-                    closestActiveSquareValue = squareValue;
-                    closestActiveSquare = square;
-                }
-            }
+            calculateAndStoreClosestActiveSquare();
         }
+
+        String indicator = "CLOSEST ACTIVE SQUARE: " + closestActiveSquare;
+
+        if (closestActiveSquare == -1) {
+            indicator += " (no active squares)";
+        } else {
+            indicator += " (moving to:"
+                    + Comms.getGridSquareCenter(closestActiveSquare, rc.getMapWidth(), rc.getMapHeight()) + ")";
+        }
+
+        rc.setIndicatorString(indicator);
         tallyUnitTotals();
 
         attemptedAttack = attemptAttack(false);
@@ -125,7 +124,7 @@ public class Soldier extends Unit {
         }
 
         senseMiningArea();
-        rc.setIndicatorString("MODE: " + mode.toString());
+        // rc.setIndicatorString("MODE: " + mode.toString());
     }
 
     public int[] getPotentialFleeDirection() throws GameActionException {

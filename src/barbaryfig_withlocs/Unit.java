@@ -48,6 +48,26 @@ public class Unit {
 
     }
 
+    /**
+     * Tallies up enemies based on their approximate location.
+     */
+    public void tallyEnemies(RobotInfo[] robots) throws GameActionException {
+        int width = rc.getMapWidth();
+        int height = rc.getMapHeight();
+        int baseChannelID = CHANNEL.GRID_BASE.getValue();
+        for (RobotInfo enemy : robots) {
+            if (enemy.team == rc.getTeam().opponent() && enemy.type == RobotType.SOLDIER) {
+                int gridSquare = Comms.locationToGridSquare(enemy.location.x, enemy.location.y,
+                        width, height);
+                int current = Comms.getGridSquareValue(rc, baseChannelID, gridSquare, CHANNEL.GRID_SQUARES_PER_CHANNEL);
+                if (current < 15) {
+                    Comms.setGridSquareValue(rc, baseChannelID, gridSquare, CHANNEL.GRID_SQUARES_PER_CHANNEL,
+                            current + 1, current);
+                }
+            }
+        }
+    }
+
     // when you sense or detect, you get an archon_index
     /**
      * detectArchon() looks through the archon positions for a new one, then stores
@@ -59,7 +79,7 @@ public class Unit {
         if (archon_index != -1) {
             int data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + archon_index);
             if (data != 0) {
-                rc.setIndicatorString("archon found UWU1 " + archon_index);
+                // rc.setIndicatorString("archon found UWU1 " + archon_index);
                 assert (archon_index != -1);
                 int x = data / 64;
                 int y = data % 64;
@@ -70,7 +90,7 @@ public class Unit {
         for (int i = 0; i < 4; i++) {
             int data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + i);
             if (data != 0) {
-                rc.setIndicatorString("archon found UWU2 " + archon_index);
+                // rc.setIndicatorString("archon found UWU2 " + archon_index);
                 archon_index = i;
                 assert (archon_index != -1);
                 int x = data / 64;
@@ -351,7 +371,7 @@ public class Unit {
                 s += String.valueOf(costs[i]) + " ";
             }
             s += String.valueOf(rc.canMove(toDest));
-            rc.setIndicatorString(s);
+            // rc.setIndicatorString(s);
             int cost = 99999;
             Direction optimalDir = null;
             for (int i = 0; i < dirs.length; i++) {
@@ -484,7 +504,7 @@ public class Unit {
     }
 
     public RANK findRank() throws GameActionException {
-        rc.setIndicatorString("READY TO READ");
+        // rc.setIndicatorString("READY TO READ");
         int data;
         // check all channels to see if you've received a rank
         for (int i = 0; i < 2; i++) {
