@@ -53,6 +53,7 @@ public class Archon extends Unit {
         radio.update();
         radio.clearThreat();
         radio.clearMiningAreas();
+        radio.clearTargetAreas();
 
         archonNumber = radio.getArchonNum(num_archons_init, num_archons_alive, archonNumber);
         num_archons_alive = rc.getArchonCount();
