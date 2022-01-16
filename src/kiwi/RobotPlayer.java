@@ -42,7 +42,7 @@ public strictfp class RobotPlayer {
         // health " + rc.getHealth());
 
         // You can also use indicators to save debug notes in replays.
-        rc.setIndicatorString("Hello world!");
+        // rc.setIndicatorString("Hello world!");
 
         Unit robot;
 

@@ -29,6 +29,7 @@ public class Miner extends Unit {
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
         updateCount();
+        senseArchon();
         int amountMined = mine();
         mode = getMode(amountMined);
         switch (rank) {
@@ -44,7 +45,6 @@ public class Miner extends Unit {
                         moveInDirection(fleeDirection);
                         break;
                 }
-                senseArchon();
                 if (adjacentToEdge()) {
                     exploratoryDir = getExploratoryDir(7);
                 }

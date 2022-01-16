@@ -154,7 +154,7 @@ public class Soldier extends Unit {
             data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             if (data == 0) {
                 rc.writeSharedArray(CHANNEL.TARGET.getValue() + i, loc);
-                System.out.println("I broadcasted an enemy at " + enemy.toString());
+                // System.out.println("I broadcasted an enemy at " + enemy.toString());
             }
         }
     }
@@ -167,7 +167,7 @@ public class Soldier extends Unit {
                 int w = data / 4096;
                 int x = (data - w * 4096) / 64;
                 int y = data % 64;
-                System.out.println("I received an enemy at " + x + " " + y);
+                // System.out.println("I received an enemy at " + x + " " + y);
                 MapLocation potentialTarget = new MapLocation(x, y);
                 if (rc.getLocation().distanceSquaredTo(potentialTarget) <= 500) {
                     target = potentialTarget;
@@ -241,7 +241,7 @@ public class Soldier extends Unit {
             return MODE.FLEE;
         }
         // Priority 3 - Kill Archons.
-        boolean archonDetected = detectArchon() || senseArchon();
+        boolean archonDetected = checkForRecordedArchon() || senseArchon();
         if (archonDetected) {
             if (rc.getLocation().distanceSquaredTo(archon_target) <= ARUSH_RSQR)
                 return MODE.ARCHON_RUSH;

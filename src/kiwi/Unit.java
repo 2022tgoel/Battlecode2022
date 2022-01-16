@@ -49,7 +49,7 @@ public class Unit {
      * 
      * @return true if it found an archon
      **/
-    public boolean detectArchon() throws GameActionException {
+    public boolean checkForRecordedArchon() throws GameActionException {
         if (archon_index != -1) {
             int data = rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + archon_index);
             if (data != 0) {
@@ -114,7 +114,8 @@ public class Unit {
             }
         }
         int loc_int = locationToInt(loc);
-        rc.writeSharedArray(indToPut, loc_int);
+        rc.writeSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + indToPut, loc_int);
+        System.out.println("FOUND AN ARCHON!!!");
         // rc.setIndicatorString("broadcasting succesful, archon_index " +
         // available_index);
         return indToPut;
@@ -345,7 +346,7 @@ public class Unit {
                 s += String.valueOf(costs[i]) + " ";
             }
             s += String.valueOf(rc.canMove(toDest));
-            rc.setIndicatorString(s);
+            // rc.setIndicatorString(s);
             int cost = 99999;
             Direction optimalDir = null;
             for (int i = 0; i < dirs.length; i++) {

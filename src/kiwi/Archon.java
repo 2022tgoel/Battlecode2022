@@ -61,6 +61,18 @@ public class Archon extends Unit {
         radio.clearMiningAreas();
         radio.clearTargetAreas();
 
+        boolean foundEnemyArchon = false;
+        for (int i = 0; i < 4; i++) {
+            MapLocation al = radio.getEnemyArchonLocation(i);
+            if (al != null) {
+                foundEnemyArchon = true;
+                System.out.println("enemy archon @ " + al);
+            }
+        }
+        if (!foundEnemyArchon) {
+            // System.out.println("no enemy archon");
+        }
+
         num_archons_alive = rc.getArchonCount();
         total_miner_count = radio.getMiners();
         total_builder_count = radio.getBuilders();
@@ -101,10 +113,12 @@ public class Archon extends Unit {
                 }
                 break;
             case AGGRO:
+                rc.setIndicatorDot(rc.getLocation(), 255, 0, 0);
                 // Soldier, soldier, miner cycle
                 build(new int[] { 2, 2, 1 });
                 break;
             case OTHER_AGGRO:
+                rc.setIndicatorDot(rc.getLocation(), 0, 0, 255);
                 // Save for other archon
                 break;
             case DEFAULT:
@@ -123,8 +137,10 @@ public class Archon extends Unit {
                 // BUILD_ORDER_FOUND_NO_OTHER_ARCHON);
                 break;
         }
-        rc.setIndicatorString("Number of miners: " + total_miner_count);
-        rc.setIndicatorString("mode: " + mode.toString() + " " + radio.totalUnderThreat());
+        // rc.setIndicatorString("Number of miners: " + total_miner_count);
+        // rc.setIndicatorString("mode: " + mode.toString() + " " +
+        // radio.totalUnderThreat());
+        System.out.println("MODE: " + mode.toString());
     }
 
     public void build(int[] build_order) throws GameActionException {
@@ -199,12 +215,15 @@ public class Archon extends Unit {
             return MODE.INITIAL;
         }
 
-        MapLocation enemyArchonLocation = radio.getEnemyArchonLocation(0);
-        if (enemyArchonLocation != null) {
-            int closestArchonID = closestArchonToLocation(enemyArchonLocation);
-            if (closestArchonID == archonNumber) {
-                return MODE.AGGRO;
-            } else {
+        MapLocation enemyArchonLocation = null;
+        for (int i = 0; i < 4; i++) {
+            enemyArchonLocation = radio.getEnemyArchonLocation(i);
+            if (enemyArchonLocation != null) {
+                int closestArchonID = closestArchonToLocation(enemyArchonLocation);
+                if (closestArchonID == archonNumber) {
+                    return MODE.AGGRO;
+                }
+
                 return MODE.OTHER_AGGRO;
             }
         }
