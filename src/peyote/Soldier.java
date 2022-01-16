@@ -70,7 +70,13 @@ public class Soldier extends Unit {
             exploratoryDir = getExploratoryDir(5);
         }
         senseMiningArea();
-        rc.setIndicatorString("MODE: " + mode.toString());
+        visualizeTarget();
+        if (round_num % 3 == 0){
+            target = null;
+        }
+    }
+
+    public void visualizeTarget() throws GameActionException {
         if (target != null) {
             rc.setIndicatorString("TARGET: " + target.toString() + " MODE: " + mode.toString());
             rc.setIndicatorLine(rc.getLocation(), target, 100, 0, 0);
@@ -336,8 +342,9 @@ public class Soldier extends Unit {
             // rc.writeSharedArray(, value);
             data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
             // go through channels until you find an empty one to communicate with.
-            if (data != 0) {
-                int x = data / 64;
+            int w = data / 4096;
+            if (w != 0) {
+                int x = (data - w * 4096) / 64;
                 int y = data % 64;
                 if (validCoords(x, y)) {
                     archons[numThreatenedArchons] = new MapLocation(x, y);
