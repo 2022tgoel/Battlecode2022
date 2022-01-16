@@ -1,4 +1,4 @@
-package echinocereus;
+package lophophora;
 
 import battlecode.common.*;
 import java.util.*;
@@ -10,7 +10,7 @@ public class Unit{
     RANK[] rank_map = initializeRankMap();
     final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
-    static final int minerToLeadRate = 50;
+    static final int minerToLeadRate = 100;
     int seed_increment = 4;
     MapLocation homeArchon;
     public MapLocation archon_target;
@@ -142,14 +142,6 @@ public class Unit{
         }
     }
 
-    public int numFriendlyMiners(){
-        RobotInfo[] allies =  rc.senseNearbyRobots(-1, rc.getTeam());
-        int c = 0;
-        for (RobotInfo r : allies){
-            if (r.type == RobotType.MINER) c++;
-        }
-        return c;
-    }
 
     public boolean senseMiningArea() throws GameActionException {
         int value = 0;
@@ -169,10 +161,10 @@ public class Unit{
         }
         if (value >=25){
             MapLocation dest = new MapLocation(cx/value, cy/value);
-            int demand = value/minerToLeadRate - numFriendlyMiners();
-         //   System.out.println(dest);
+            // demand disabled for now
+            int demand = value/minerToLeadRate;
             if (demand > 0) {
-                broadcastMiningArea(dest, Math.min(demand, 7)); // seven is current cap for demand
+                broadcastMiningArea(dest, demand); 
                 return true;
             }
         }
@@ -180,11 +172,11 @@ public class Unit{
     }
     
     public void broadcastMiningArea(MapLocation loc, int demand) throws GameActionException{
-        assert(demand < 8);
         int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
         //fuzzy location
         int x_loc= Math.min( (int)Math.round((double)loc.x/4.0) , 15);
         int y_loc= Math.min( (int)Math.round((double)loc.y/4.0) , 15);
+        rc.setIndicatorDot(new MapLocation(x_loc*4, y_loc*4), 255, 0, 0);
         for (int i= 0; i < 5; i++){
             int data = rc.readSharedArray(CHANNEL.MINING1.getValue() + i);
             int x = (data >> 4) & 15;
