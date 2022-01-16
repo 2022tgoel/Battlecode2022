@@ -54,7 +54,7 @@ public class Miner extends Unit {
         }
         amountMined+=mine();
         senseMiningArea();
-        rc.setIndicatorString(" " + mode + " " + amountMined + " " + target);
+   //     rc.setIndicatorString(" " + mode + " " + amountMined + " " + target);
     }
 
     public RANK findRankMiner() throws GameActionException{
@@ -76,23 +76,32 @@ public class Miner extends Unit {
             }
             return MODE.FLEEING;
         }
-
-        if (target!=null) { //continue going
+        //check that you should still pursue
+        if (target!=null) {
             if (rc.canSenseLocation(target)){
-                if (getValue(target) <= 1 || rc.senseRobotAtLocation(target)!=null) target = null; 
+                if (getValue(target) <= 1) {
+                    target = null; 
+                }
+                else if (occupiedWithMinerAlly(target)){
+                    target = null; 
+                }
             }
-            else return MODE.MINE_DISCOVERED;
         }
-        //found another, go there
-        MapLocation loc = findMiningAreaWithSensing();
-        if (loc!=null){
-            target = loc;
-            return MODE.MINE_DISCOVERED; 
+        //choose location to pursue
+        if (target!=null){
+            return MODE.MINE_DISCOVERED;
         }
-        loc = findMiningAreaWithBroadcast();
-        if (loc!=null){
-            target = loc;
-            return MODE.MINE_DISCOVERED;            
+        else {
+            MapLocation loc = findMiningAreaWithSensing();
+            if (loc!=null){
+                target = loc;
+                return MODE.MINE_DISCOVERED; 
+            }
+            loc = findMiningAreaWithBroadcast();
+            if (loc!=null){
+                target = loc;
+                return MODE.MINE_DISCOVERED;            
+            }
         }
         //
         return MODE.EXPLORING;
@@ -123,6 +132,15 @@ public class Miner extends Unit {
         return rc.senseGold(loc) * goldToLeadConversionRate + rc.senseLead(loc);
     }
 
+    public boolean occupiedWithMinerAlly(MapLocation loc) throws GameActionException{
+        if (rc.getLocation().equals(loc)) return false;
+        RobotInfo r = rc.senseRobotAtLocation(loc);
+        if (r!= null && r.team == rc.getTeam() && r.type == RobotType.MINER){
+            return true;
+        }
+        else return false;
+    }
+
     public boolean isMiningArea(MapLocation loc) throws GameActionException{
         for (int i = 0; i < 5; i++){
             int data = rc.readSharedArray(CHANNEL.MINING1.getValue()+i);
@@ -143,8 +161,8 @@ public class Miner extends Unit {
         MapLocation bestLocation = null;
         
         for (MapLocation loc: goldLocs) {
-            if (rc.senseRobotAtLocation(loc) == null){
-                int res = getValue(loc);
+            if (!occupiedWithMinerAlly(loc)){
+                int res = getValue(loc) + rng.nextInt(5);
                 if (res > maxRes) {
                     maxRes = res;
                     bestLocation = loc;
@@ -153,8 +171,8 @@ public class Miner extends Unit {
         }
 
         for (MapLocation loc: leadLocs) {
-            if (rc.senseRobotAtLocation(loc) == null){
-                int res = getValue(loc);
+            if (!occupiedWithMinerAlly(loc)){
+                int res = getValue(loc)+ rng.nextInt(5);
                 if (res > maxRes) {
                     maxRes = res;
                     bestLocation = loc;
@@ -273,7 +291,7 @@ public class Miner extends Unit {
     public int mine() throws GameActionException{
         //prioritize gold
         int amountMined = 0;
-        for (MapLocation loc : rc.senseNearbyLocationsWithGold()) {
+        for (MapLocation loc : rc.senseNearbyLocationsWithGold(1)) {
             // Notice that the Miner's action cooldown is very low.
             // You can mine multiple times per turn!
             while (rc.canMineGold(loc)) {
@@ -282,9 +300,9 @@ public class Miner extends Unit {
             }
         }
         //then go to lead
-        for (MapLocation loc : rc.senseNearbyLocationsWithLead()) {
+        for (MapLocation loc : rc.senseNearbyLocationsWithLead(1)) {
             // Notice that the Miner's action cooldown is very low.
-            // You can mine multiple times per turn!
+            // You can mine multiple times per turn;
             while (rc.canMineLead(loc) && rc.senseLead(loc) > 1) {
                 rc.mineLead(loc);
                 amountMined+=1;
