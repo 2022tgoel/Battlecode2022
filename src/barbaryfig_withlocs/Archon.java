@@ -96,9 +96,15 @@ public class Archon extends Unit {
                 }
             }
 
+            String squares = "";
+            for (int i = 4; --i >= 0;) {
+                squares += (mostActiveGridSquares[i] + "=" + mostActiveGridSquareCounts[i] + ";");
+            }
+            rc.setIndicatorString("SQUARES: " + squares);
+
             // Now we have the most active grid squares.
-            radio.setTopFourActiveGridSquares(mostActiveGridSquares[0], mostActiveGridSquares[1],
-                    mostActiveGridSquares[2], mostActiveGridSquares[3]);
+            radio.setTopFourActiveGridSquares(mostActiveGridSquares[3], mostActiveGridSquares[2],
+                    mostActiveGridSquares[1], mostActiveGridSquares[0]);
         }
 
         archonNumber = radio.getArchonNum(num_archons_init, num_archons_alive, archonNumber);
@@ -154,8 +160,9 @@ public class Archon extends Unit {
                 build(defaultBuildOrder);
                 break;
         }
-        rc.setIndicatorString("Number of miners: " + total_miner_count);
-        rc.setIndicatorString("mode: " + mode.toString() + " " + radio.totalUnderThreat());
+        // rc.setIndicatorString("Number of miners: " + total_miner_count);
+        // rc.setIndicatorString("mode: " + mode.toString() + " " +
+        // radio.totalUnderThreat());
     }
 
     public void build(int[] build_order) throws GameActionException {
@@ -164,8 +171,9 @@ public class Archon extends Unit {
             switch (counter % 3) {
                 case 0:
                     if (built_units < build_order[counter % 3]) {
-                        rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " "
-                                + build_order[counter % 3]);
+                        // rc.setIndicatorString("Trying to build a miner" + " built_units: " +
+                        // built_units + " "
+                        // + build_order[counter % 3]);
                         unit_built = buildMiner(dir);
                         // System.out.println("MINER BUILT: " + unit_built + " Roundnum: " +
                         // rc.getRoundNum());
@@ -175,8 +183,9 @@ public class Archon extends Unit {
                     break;
                 case 1:
                     if (built_units < build_order[counter % 3]) {
-                        rc.setIndicatorString("Trying to build a soldier" + " built_units: " + built_units + " "
-                                + build_order[counter % 3]);
+                        // rc.setIndicatorString("Trying to build a soldier" + " built_units: " +
+                        // built_units + " "
+                        // + build_order[counter % 3]);
                         unit_built = buildSoldier(dir);
                         // System.out.println("SOLDIER BUILT: " + unit_built);
                         if (unit_built)
@@ -185,8 +194,9 @@ public class Archon extends Unit {
                     break;
                 case 2:
                     if (built_units < build_order[counter % 3]) {
-                        rc.setIndicatorString("Trying to build a builder" + " built_units: " + built_units + " "
-                                + build_order[counter % 3]);
+                        // rc.setIndicatorString("Trying to build a builder" + " built_units: " +
+                        // built_units + " "
+                        // + build_order[counter % 3]);
                         unit_built = buildBuilder(dir);
                         // System.out.println("BUILDER BUILT: " + unit_built);
                         if (unit_built)
@@ -245,7 +255,7 @@ public class Archon extends Unit {
     }
 
     public boolean buildBuilder(Direction dir) throws GameActionException {
-        rc.setIndicatorString("here " + rc.canBuildRobot(RobotType.BUILDER, dir));
+        // rc.setIndicatorString("here " + rc.canBuildRobot(RobotType.BUILDER, dir));
         if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
             rc.buildRobot(RobotType.BUILDER, dir);
             built_units++;
