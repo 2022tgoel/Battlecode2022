@@ -102,6 +102,8 @@ public class Archon extends Unit {
             }
             rc.setIndicatorString("SQUARES: " + squares);
 
+            System.out.println("SQUARES: " + squares);
+
             // Now we have the most active grid squares.
             radio.setTopFourActiveGridSquares(mostActiveGridSquares[3], mostActiveGridSquares[2],
                     mostActiveGridSquares[1], mostActiveGridSquares[0]);

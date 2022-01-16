@@ -64,6 +64,8 @@ public class Unit {
                     Comms.setGridSquareValue(rc, baseChannelID, gridSquare, CHANNEL.GRID_SQUARES_PER_CHANNEL,
                             current + 1, current);
                 }
+
+                System.out.println("Enemy detected in " + gridSquare + " at " + enemy.location);
             }
         }
     }

@@ -37,14 +37,14 @@ public enum CHANNEL {
      * There are 16 grid squares, so locating one requires 4 bits. Grid squares are
      * verified before soldiers travel to them, so empty grid squares don't matter.
      */
-    TOP4_ACTIVE_GRID_SQUARES(24),
+    TOP4_ACTIVE_GRID_SQUARES(36),
 
     ORDERS(61),
     SEND_RANKS1(62),
     SEND_RANKS2(63),
     ;
 
-    public static final int GRID_SQUARES_PER_CHANNEL = 4;
+    public static final int GRID_SQUARES_PER_CHANNEL = 1;
 
     public static final int GRID_SIZE = 4;
 
