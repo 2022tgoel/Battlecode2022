@@ -21,8 +21,8 @@ public class Comms {
             rc.writeSharedArray(CHANNEL.ROUND_NUM.getValue(), rc.getRoundNum());
 
             // clear robot counter update channels
-            for(RobotType rt : RobotType.values()){
-                CHANNEL ch = getCountChannel(rt, false);
+            for(BiCHANNEL bich : BiCHANNEL.values()){
+                CHANNEL ch = getCounterChannel(bich, false);
                 if(ch != null) rc.writeSharedArray(ch.getValue(), 0);
             }
 
@@ -67,36 +67,47 @@ public class Comms {
         rc.writeSharedArray(CHANNEL.BUILDERS_ALIVE.getValue(), 0);
     }
  */
-    // should add channels for each unit...
-    public void updateCount() throws GameActionException {
-        updateCount(rc.getType());
+
+    public void updateCounter() throws GameActionException {
+        updateCounter(rc.getType());
     }
 
-    public void updateCount(RobotType rt) throws GameActionException {
-        CHANNEL channel = getCountChannel(rt, false);
+    public void updateCounter(RobotType rt) throws GameActionException {
+        updateCounter(getRobotCounterBiChannel(rt));
+    }
 
+    public void updateCounter(BiCHANNEL bich) throws GameActionException {
+        CHANNEL channel = getCounterChannel(bich, false);
         int num = wasFirstConnection ? 0 : rc.readSharedArray(channel.getValue());
         rc.writeSharedArray(channel.getValue(), num + 1);
     }
 
-    public int getCount(RobotType rt) throws GameActionException {
-        CHANNEL channel = getCountChannel(rt, true);
+    public int readCounter(RobotType rt) throws GameActionException {
+        return readCounter(getRobotCounterBiChannel(rt));
+    }
+
+    public int readCounter(BiCHANNEL bich) throws GameActionException {
+        CHANNEL channel = getCounterChannel(bich, true);
         return rc.readSharedArray(channel.getValue());
     }
 
-    public CHANNEL getCountChannel(RobotType rt, boolean isReadMode){
-        boolean mod = rc.getRoundNum() % 2 == 0;
-        if(isReadMode) mod = !mod;
-        switch (rt) {
+    public BiCHANNEL getRobotCounterBiChannel(RobotType rt){
+        switch(rt){
             case MINER:
-                return mod ? CHANNEL.MINERS_ALIVE : CHANNEL.MINERS_ALIVE_ALT;
+                return BiCHANNEL.MINERS_ALIVE;
             case SOLDIER:
-                return mod ? CHANNEL.SOLDIERS_ALIVE : CHANNEL.SOLDIERS_ALIVE_ALT;
+                return BiCHANNEL.SOLDIERS_ALIVE;
             case BUILDER:
-                return mod ? CHANNEL.BUILDERS_ALIVE : CHANNEL.BUILDERS_ALIVE_ALT;
+                return BiCHANNEL.BUILDERS_ALIVE;
             default:
                 return null;
         }
+    }
+
+    public CHANNEL getCounterChannel(BiCHANNEL bich, boolean isReadMode){
+        boolean mod = rc.getRoundNum() % 2 == 0;
+        if(isReadMode) mod = !mod;
+        return mod ? bich.ch1 : bich.ch2;
     }
 
     public void postBuild(BOT b) throws GameActionException {

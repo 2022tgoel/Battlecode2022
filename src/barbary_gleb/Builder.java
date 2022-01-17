@@ -30,7 +30,7 @@ public class Builder extends Unit {
     public void run() throws GameActionException {
         super.run();
         build_order = getBuildOrder();
-        radio.updateCount();
+        radio.updateCounter();
         switch (rank) {
             case MARTYR:
                 forTheGreaterGood();

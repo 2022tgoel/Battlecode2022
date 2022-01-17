@@ -17,6 +17,15 @@
 
 > Task :run
 [server:debug] Awaiting match
-[server:debug] Running: pathfindingplayer_OLD_v3 (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs triangle (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [eckleburg]
+[server:debug] Running: barbary_gleb (D:\CalebArulandu\Interests\Computer_Science\Battlecode\2022\Battlecode2022\build\classes)  vs barbaryfig (D:\CalebArulandu\Interests\Computer_Science\Battlecode\2022\Battlecode2022\build\classes)  on [explore]
 [server] -------------------- Match Starting --------------------
-[server] pathfindingplayer_OLD_v3 vs. triangle on eckleburg
+[server] barbary_gleb vs. barbaryfig on explore
+[server]                   barbaryfig (B) wins (round 179)
+[server] Reason: The winning team won by annihilating the enemy team's Archons.
+[server] -------------------- Match Finished --------------------
+[server:debug] match completed in 1.796 seconds
+[server:debug] Awaiting match
+[server:debug] Shutting down server
+
+BUILD SUCCESSFUL in 3s
+9 actionable tasks: 2 executed, 7 up-to-date

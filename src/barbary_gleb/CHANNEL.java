@@ -37,3 +37,4 @@ public enum CHANNEL {
     CHANNEL(int id) { this.id = id; }
     public int getValue() { return id; }
 }
+

@@ -59,9 +59,9 @@ public class Archon extends Unit {
 
         archonNumber = radio.getArchonNum(num_archons_init, num_archons_alive, archonNumber);
         num_archons_alive = rc.getArchonCount();
-        total_miner_count = radio.getCount(RobotType.MINER);
-        total_builder_count = radio.getCount(RobotType.BUILDER);
-        total_soldier_count = radio.getCount(RobotType.SOLDIER);
+        total_miner_count = radio.readCounter(RobotType.MINER);
+        total_builder_count = radio.readCounter(RobotType.BUILDER);
+        total_soldier_count = radio.readCounter(RobotType.SOLDIER);
 
         MODE mode = determineMode();
         switch (mode) {
@@ -78,8 +78,6 @@ public class Archon extends Unit {
                 }
                 break;
             case INITIAL:
-                moveToOptimalCooldown();
-
                 if (round_num % num_archons_alive != archonNumber) {
                     break;
                 }
@@ -174,16 +172,13 @@ public class Archon extends Unit {
         // move only if it gives u better cooldown multiplier
         if(curRubble/10 > minRubble/10){
             if(rc.getMode() == RobotMode.TURRET && rc.isTransformReady()) {
-                System.out.println("Archon transformed to PORTABLE");
                 rc.transform();
             }
             if(rc.isMovementReady()) {
-                System.out.println("Archon moving to " + minRubbleLoc + " with rubble: " + curRubble + " -> " + minRubble);
                 fuzzyMove(minRubbleLoc);
             }
         } else {
             if(rc.getMode() == RobotMode.PORTABLE && rc.isTransformReady()) {
-                System.out.println("Archon transformed to TURRET");
                 rc.transform();
             }
         }
@@ -206,7 +201,7 @@ public class Archon extends Unit {
     public boolean buildMiner(Direction dir) throws GameActionException{
         if (rc.canBuildRobot(RobotType.MINER, dir)) {
             rc.buildRobot(RobotType.MINER, dir);
-            radio.updateCount(RobotType.MINER);
+            radio.updateCounter(RobotType.MINER);
             built_units++;
             num_miners++;
             total_miner_count++;
@@ -218,7 +213,7 @@ public class Archon extends Unit {
     public boolean buildSoldier(Direction dir) throws GameActionException{ 
         if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
             rc.buildRobot(RobotType.SOLDIER, dir);
-            radio.updateCount(RobotType.SOLDIER);
+            radio.updateCounter(RobotType.SOLDIER);
             built_units++;
             num_soldiers++;
             total_soldier_count++;
@@ -231,7 +226,7 @@ public class Archon extends Unit {
         rc.setIndicatorString("here " + rc.canBuildRobot(RobotType.BUILDER, dir));
         if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
             rc.buildRobot(RobotType.BUILDER, dir);
-            radio.updateCount(RobotType.BUILDER);
+            radio.updateCounter(RobotType.BUILDER);
             built_units++;
             num_builders++;
             total_builder_count++;

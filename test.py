@@ -2,14 +2,16 @@ import os
 import sys
 import platform
 
+JDK_PATH = 'C:/Program Files/Java/jdk1.8.0_311' # set to None if u don't care / old test.py was working
 
 def main():
     print("Starting Tests!")
-    playerA = "pathfindingplayer_OLD_v3"
-    playerB = "triangle"
+    playerA = sys.argv[1].strip() if len(sys.argv) >= 3 else "pathfindingplayer_OLD_v3"
+    playerB = sys.argv[2].strip() if len(sys.argv) >= 3 else "triangle"
     playAllMaps(playerA, playerB)
 
 def playAllMaps(playerA: str, playerB: str):
+    changeGame(playerA, playerB, 'other') # init gradle.properties before running any commands
     listMaps()
     maps = getMaps()
     winsA = 0
@@ -42,7 +44,7 @@ def listMaps():
 
 def getMaps():
     maps = []
-    with open("test/maps.txt", "r") as f:
+    with open("./test/maps.txt", "r") as f:
         f_iter = iter(f)
         next(f_iter, None)
         next(f_iter, None)
@@ -62,7 +64,9 @@ def changeGame(player1: str, player2: str, map: str):
         f.write(f"maps={map}\n")
         f.write(f"source=src\n")
         f.write(f"profilerEnabled=false\n")
-        f.write(f"outputVerbose=false")
+        f.write(f"outputVerbose=false\n")
+        if JDK_PATH is not None:
+            f.write(f"org.gradle.java.home={JDK_PATH}")
 
 def executeGame():
     if (platform.system() == 'Windows'):
