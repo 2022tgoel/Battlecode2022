@@ -30,6 +30,9 @@ public class Miner extends Unit {
         round_num = rc.getRoundNum();
         updateCount();
         senseArchon();
+        if (detectNewStressfulSituation()) {
+            broadcastDistress(stressLocation);
+        }
         int amountMined = mine();
         mode = getMode(amountMined);
         switch (rank) {

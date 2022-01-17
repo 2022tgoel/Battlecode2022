@@ -42,6 +42,62 @@ public class Unit {
 
     }
 
+    protected CHANNEL stressChannel = null;
+    protected MapLocation stressLocation = null;
+
+    public void broadcastDistress(MapLocation stressLocation) throws GameActionException {
+        for (int i = 0; i < 4; i++) {
+            stressChannel = CHANNEL.byID[CHANNEL.DISTRESS.getValue() + i];
+            if (stressChannel.readInt(rc) == 0) {
+                stressChannel.writeLocation(rc, stressLocation);
+            }
+        }
+    }
+
+    public boolean hasStressfulEnvironment() throws GameActionException {
+        // Returns whether there are more than 2 enemy robots
+        int numEnemies = 0;
+        for (RobotInfo ri : rc.senseNearbyRobots(9, rc.getTeam().opponent())) {
+            if (ri.type == RobotType.SOLDIER) {
+                if (++numEnemies > 2) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 
+     * @return whether there is a new stressful situation
+     * @throws GameActionException
+     */
+    public boolean detectNewStressfulSituation() throws GameActionException {
+        if (stressLocation != null) {
+            if (rc.getLocation().distanceSquaredTo(stressLocation) < 9) {
+                if (!hasStressfulEnvironment()) {
+                    int stressLocationInt = Comms.locationToInt(stressLocation);
+                    // Clear the existing distress signal
+                    if (stressChannel.readInt(rc) == stressLocationInt) {
+                        stressChannel.writeInt(rc, 0);
+                    }
+                    stressChannel = null;
+                    stressLocation = null;
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        if (hasStressfulEnvironment()) {
+            stressLocation = rc.getLocation();
+            return true;
+        }
+
+        return false;
+    }
+
     // when you sense or detect, you get an archon_index
     /**
      * detectArchon() looks through the archon positions for a new one, then stores

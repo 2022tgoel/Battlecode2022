@@ -35,66 +35,11 @@ public class Soldier extends Unit {
     private int stopFleeingRound = 10000;
     private int DRUSH_RSQR = 400;
     private int ARUSH_RSQR = 900;
-    private CHANNEL stressChannel = null;
-    private MapLocation stressLocation = null;
 
     public Soldier(RobotController rc) throws GameActionException {
         super(rc);
         rank = findRankSoldier();
         initialize();
-    }
-
-    public void broadcastDistress(MapLocation stressLocation) throws GameActionException {
-        for (int i = 0; i < 4; i++) {
-            stressChannel = CHANNEL.byID[CHANNEL.DISTRESS.getValue() + i];
-            if (stressChannel.readInt(rc) == 0) {
-                stressChannel.writeLocation(rc, stressLocation);
-            }
-        }
-    }
-
-    public boolean hasStressfulEnvironment() throws GameActionException {
-        // Returns whether there are more than 2 enemy robots
-        int numEnemies = 0;
-        for (RobotInfo ri : rc.senseNearbyRobots(9, rc.getTeam().opponent())) {
-            if (ri.type == RobotType.SOLDIER) {
-                if (++numEnemies > 2) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * 
-     * @return whether there is a new stressful situation
-     * @throws GameActionException
-     */
-    public boolean detectNewStressfulSituation() throws GameActionException {
-        if (stressLocation != null) {
-            if (rc.getLocation().distanceSquaredTo(stressLocation) < 9) {
-                if (!hasStressfulEnvironment()) {
-                    int stressLocationInt = Comms.locationToInt(stressLocation);
-                    // Clear the existing distress signal
-                    if (stressChannel.readInt(rc) == stressLocationInt) {
-                        stressChannel.writeInt(rc, 0);
-                    }
-                    stressChannel = null;
-                    stressLocation = null;
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        if (hasStressfulEnvironment()) {
-            stressLocation = rc.getLocation();
-            return true;
-        }
-
-        return false;
     }
 
     @Override
@@ -267,6 +212,9 @@ public class Soldier extends Unit {
 
     public void huntTarget() throws GameActionException {
         forgetDistantTargets();
+        if (target == null) {
+            return;
+        }
 
         // if target is within 3 tiles, do not move closer, otherwise move closer
         MapLocation cur = rc.getLocation();
