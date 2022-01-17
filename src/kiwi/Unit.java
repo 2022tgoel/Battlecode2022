@@ -57,9 +57,10 @@ public class Unit {
     public boolean hasStressfulEnvironment() throws GameActionException {
         // Returns whether there are more than 2 enemy robots
         int numEnemies = 0;
+        int stressfulEnemiesCount = rc.getType() == RobotType.SOLDIER ? 1 : 0;
         for (RobotInfo ri : rc.senseNearbyRobots(9, rc.getTeam().opponent())) {
             if (ri.type == RobotType.SOLDIER) {
-                if (++numEnemies > 2) {
+                if (++numEnemies > stressfulEnemiesCount) {
                     return true;
                 }
             }

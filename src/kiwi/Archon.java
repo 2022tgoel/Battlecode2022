@@ -157,12 +157,11 @@ public class Archon extends Unit {
     }
 
     public MODE determineMode() throws GameActionException {
-        int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
         if (underThreat())
             return MODE.THREATENED;
         else if (radio.totalUnderThreat() > 0)
             return MODE.OTHER_THREATENED;
-        else if (num_miners < (sizeBracket * 3) / num_archons_init)
+        else if (num_miners < (2.5 * mapArea / 1000d) / num_archons_init)
             return MODE.INITIAL;
         else
             return MODE.DEFAULT;

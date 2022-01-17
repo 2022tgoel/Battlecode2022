@@ -50,6 +50,8 @@ public class Soldier extends Unit {
         findTargets();
         if (detectNewStressfulSituation()) {
             broadcastDistress(stressLocation);
+            // If we're in a stressful situation during hunting, flee.
+            target = null;
         }
         mode = determineMode();
         switch (mode) {
@@ -63,7 +65,6 @@ public class Soldier extends Unit {
             case HUNTING:
             case SUPPORT:
                 huntTarget();
-                // target = null;
                 break;
             case DEFENSIVE_RUSH:
                 defensiveMove();
@@ -73,8 +74,7 @@ public class Soldier extends Unit {
             default:
                 break;
         }
-        if (!didAttemptAttack)
-            attemptAttack(true);
+
         if (adjacentToEdge()) {
             exploratoryDir = getExploratoryDir(5);
         }
@@ -217,35 +217,42 @@ public class Soldier extends Unit {
         }
 
         // if target is within 3 tiles, do not move closer, otherwise move closer
-        MapLocation cur = rc.getLocation();
-        RobotInfo[] friendlySoldiers = rc.senseNearbyRobots(-1, rc.getTeam());
-        int[] dir = new int[2];
-        int dx = 0;
-        int dy = 0;
-        int num_soldiers = 0;
-        if (friendlySoldiers != null) {
-            for (RobotInfo robot : friendlySoldiers) {
+        MapLocation currentLocation = rc.getLocation();
+        RobotInfo[] friendlyRobots = rc.senseNearbyRobots(-1, rc.getTeam());
+        // Keeps track of our direction relative to the target
+        int[] direction = new int[2];
+        int friendlySoldierCount = 0;
+        if (friendlyRobots != null) {
+            for (RobotInfo robot : friendlyRobots) {
                 if (robot.type == RobotType.SOLDIER) {
-                    dir[0] += (target.x - robot.location.x);
-                    dir[1] += (target.y - robot.location.y);
-                    num_soldiers++;
+                    direction[0] += (target.x - robot.location.x);
+                    direction[1] += (target.y - robot.location.y);
+                    friendlySoldierCount++;
                 }
             }
         }
-        dx += (target.x - cur.x);
-        dy += (target.y - cur.y);
-        dir[0] = (dir[0] + dx) / (num_soldiers + 1);
-        dir[1] = (dir[1] + dy) / (num_soldiers + 1);
-        if (dir[0] != 0 || dir[1] != 0)
-            exploratoryDir = dir;
-        else {
-            dir = new int[] { dx, dy };
-            exploratoryDir = dir;
+        int dx = (target.x - currentLocation.x);
+        int dy = (target.y - currentLocation.y);
+        direction[0] = (direction[0] + dx) / (friendlySoldierCount + 1);
+        direction[1] = (direction[1] + dy) / (friendlySoldierCount + 1);
+        if (direction[0] != 0 || direction[1] != 0) {
+            exploratoryDir = direction;
+        } else {
+            direction = new int[] { dx, dy };
+            exploratoryDir = direction;
         }
-        if (rc.getLocation().distanceSquaredTo(target) <= 9)
-            return;
-        else
-            moveInDirection(dir);
+        if (rc.getLocation().distanceSquaredTo(target) > 9) {
+            moveInDirection(direction);
+        }
+
+        // Now, attack.
+        boolean attackMiners = mode == MODE.SUPPORT;
+        while (rc.isActionReady()) {
+            if (!attemptAttack(attackMiners)) {
+                // Stop when there is nothing left to attack.
+                break;
+            }
+        }
     }
 
     public MODE determineMode() throws GameActionException {
@@ -275,19 +282,22 @@ public class Soldier extends Unit {
         }
 
         // Priority 2 - Don't die.
-        int[] potFleeDir = getPotentialFleeDirection();
-        boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
-        if (!validFlee && stopFleeingRound == round_num) {
-            exploratoryDir = getExploratoryDir(5);
-        }
-        if (validFlee || stopFleeingRound <= round_num) {
-            if (validFlee)
-                fleeDirection = potFleeDir;
-            // keep fleeing for two moves (2 rounds per move)
-            if (stopFleeingRound <= round_num) {
-                stopFleeingRound = round_num + 4;
+        if (target != null) {
+            // Don't flee if we have a target.
+            int[] potFleeDir = getPotentialFleeDirection();
+            boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
+            if (!validFlee && stopFleeingRound == round_num) {
+                exploratoryDir = getExploratoryDir(5);
             }
-            return MODE.FLEE;
+            if (validFlee || stopFleeingRound <= round_num) {
+                if (validFlee)
+                    fleeDirection = potFleeDir;
+                // keep fleeing for two moves (2 rounds per move)
+                if (stopFleeingRound <= round_num) {
+                    stopFleeingRound = round_num + 4;
+                }
+                return MODE.FLEE;
+            }
         }
         // Priority 3 - Kill Archons.
         boolean archonDetected = checkForRecordedArchon() || senseArchon();
@@ -298,27 +308,29 @@ public class Soldier extends Unit {
 
         // If there's a nearby target, and we have enough ppl nearby, swarm it.
         if (target == null) {
-            RobotInfo[] nearby = rc.senseNearbyRobots(-1, rc.getTeam());
-            int soldierCount = 0;
+            RobotInfo[] nearby = rc.senseNearbyRobots(-1);
+            int friendlySoldierCount = 0;
+            int enemySoldierCount = 0;
             if (nearby != null) {
                 for (RobotInfo robot : nearby) {
                     if (robot.type == RobotType.SOLDIER) {
-                        soldierCount++;
-                        if (soldierCount > 3)
-                            break;
+                        if (robot.team == rc.getTeam()) {
+                            friendlySoldierCount++;
+                        } else {
+                            enemySoldierCount++;
+                        }
                     }
+                }
+                if (friendlySoldierCount > enemySoldierCount) {
+                    // MapLocation tgt = Comms.getTarget(rc, i);
+                    // if (tgt == null)
+                    // continue;
+                    // if (rc.getLocation().distanceSquaredTo(tgt) < 100) {
+                    // target = tgt;
+                    return MODE.HUNTING;
+                    // }
                 }
             }
-            if (soldierCount > 3)
-                for (int i = 0; i < 4; i++) {
-                    MapLocation tgt = Comms.getTarget(rc, i);
-                    if (tgt == null)
-                        continue;
-                    if (rc.getLocation().distanceSquaredTo(tgt) < 100) {
-                        target = tgt;
-                        return MODE.HUNTING;
-                    }
-                }
         }
 
         // Priority 4 - Hunt enemies.
