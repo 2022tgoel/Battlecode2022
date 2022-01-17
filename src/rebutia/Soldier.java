@@ -70,13 +70,18 @@ public class Soldier extends Unit {
             exploratoryDir = getExploratoryDir(5);
         }
         senseMiningArea();
-        rc.setIndicatorString("MODE: " + mode.toString());
+        visualize();
+    }
+
+    public void visualize() throws GameActionException {
         if (target != null) {
-            rc.setIndicatorString("TARGET: " + target.toString() + " MODE: " + mode.toString());
-            rc.setIndicatorLine(rc.getLocation(), target, 100, 0, 0);
+            if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: " + target.toString() + " MODE: " + mode.toString());
+            else rc.setIndicatorString("TARGET: " + target.toString() + " MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
+            rc.setIndicatorLine(rc.getLocation(), target, 0, 100, 0);
         }
         else {
-            rc.setIndicatorString("TARGET: null MODE: " + mode.toString());
+            if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: null MODE: " + mode.toString());
+            else rc.setIndicatorString("TARGET: null MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
         }
     }
 
@@ -143,20 +148,11 @@ public class Soldier extends Unit {
         }
     }
 
-    public void broadcastTarget(MapLocation enemy) throws GameActionException {
-        int data;
-        int loc = 64 * enemy.x + enemy.y;
-        for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
-            data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
-            if (data == 0) {
-                rc.writeSharedArray(CHANNEL.TARGET.getValue() + i, loc);
-                System.out.println("I broadcasted an enemy at " + enemy.toString());
-            }
-        }
-    }
-
     public void findTargets() throws GameActionException {
         int data;
+        int closestDist = 100000;
+        MapLocation cur = rc.getLocation();
+        MapLocation closestTarget = null;
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
             data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             if (data != 0) {
@@ -165,13 +161,19 @@ public class Soldier extends Unit {
                 int y = data % 64;
                 System.out.println("I received an enemy at " + x + " " + y + " on round " + round_num);
                 MapLocation potentialTarget = new MapLocation(x, y);
-                if (rc.getLocation().distanceSquaredTo(potentialTarget) <= mapArea / 16) {
-                    target = potentialTarget;
-                    MapLocation cur = rc.getLocation();
-                    // wanders in direction of target
-                    exploratoryDir = new int[]{potentialTarget.x - cur.x, potentialTarget.y - cur.y};
-                    break;
+                if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
+                    closestDist = cur.distanceSquaredTo(potentialTarget);
+                    closestTarget = potentialTarget;
                 }
+            }
+        }
+
+        // finds closest target, and advances towards it.
+        if (closestTarget != null) {
+            if (cur.distanceSquaredTo(closestTarget) <= mapArea / 16) {
+                target = closestTarget;
+                exploratoryDir = new int[]{closestTarget.x - cur.x, closestTarget.y - cur.y};
+                // wanders in direction of target
             }
         }
     }
@@ -221,9 +223,7 @@ public class Soldier extends Unit {
         // Priority 2 - Don't die.
         int[] potFleeDir = fleeDirection();
         boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
-        if (!validFlee && stopFleeingRound == round_num) {
-            exploratoryDir = getExploratoryDir(5);
-        }
+        if (!validFlee && stopFleeingRound == round_num) exploratoryDir = getExploratoryDir(5);
         if (validFlee || stopFleeingRound <= round_num) {
             if (validFlee) fleeDirection = potFleeDir;
             // keep fleeing for two moves (2 rounds per move)
@@ -258,7 +258,13 @@ public class Soldier extends Unit {
                 }
             }
         }
-        fuzzyMove(closest);
+        // if you don't see the enemy, and you're not close to the archon, move towards it
+        if (rc.getLocation().distanceSquaredTo(closest) > 36 || target == null) {
+            fuzzyMove(closest);
+        }
+        else {
+            huntTarget();
+        }
     }
 
     public boolean archonDied() throws GameActionException{

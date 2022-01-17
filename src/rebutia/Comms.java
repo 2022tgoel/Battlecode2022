@@ -92,7 +92,7 @@ public class Comms {
 
     public void clearTargetAreas() throws GameActionException {
         if (round_num % 3 == 0){
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
                 rc.writeSharedArray(CHANNEL.TARGET.getValue() + i, 0);
             }
         }

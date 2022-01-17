@@ -70,13 +70,13 @@ public class Archon extends Unit {
                 int tot = radio.totalUnderThreat();
                 
                 if (round_num % tot !=threatChannel){ //alternate between those under threat
-                    return;
+                    break;
                 }
                 Direction[] enemyDirs = getEnemyDirs();
                 for (Direction dir: enemyDirs) {
                     buildSoldier(dir);
                 }
-                return;
+                break;
             case INITIAL:
                 if (round_num % num_archons_alive != archonNumber) {
                     return;
@@ -156,9 +156,13 @@ public class Archon extends Unit {
         else return  MODE.DEFAULT;
     }
 
-    public boolean underThreat(){
+    public boolean underThreat() throws GameActionException{
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        return (enemies.length >=1);
+        if (enemies.length > 0) {
+            broadcastTarget(enemies[0].location);
+            return true;
+        }
+        return false;
     }
     
     /////////////////////////////////////////////////////////////////////
