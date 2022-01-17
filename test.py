@@ -5,8 +5,8 @@ import platform
 
 def main():
     print("Starting Tests!")
-    playerA = "barbaryfig"
-    playerB = "peyote_old"
+    playerA = "peyote_old"
+    playerB = "rebutia"
     playAllMaps(playerA, playerB)
 
 def playAllMaps(playerA: str, playerB: str):

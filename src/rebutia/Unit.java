@@ -10,6 +10,7 @@ public class Unit{
     RANK[] rank_map = initializeRankMap();
     final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
+    static final int minerToLeadRate = 250;
     int seed_increment = 4;
     MapLocation homeArchon;
     public MapLocation archon_target;
@@ -141,6 +142,15 @@ public class Unit{
         }
     }
 
+    public int numFriendlyMiners(){
+        RobotInfo[] allies =  rc.senseNearbyRobots(-1, rc.getTeam());
+        int c = 0;
+        for (RobotInfo r : allies){
+            if (r.type == RobotType.MINER) c++;
+        }
+        return c;
+    }
+
 
     public boolean senseMiningArea() throws GameActionException {
         int value = 0;
@@ -158,33 +168,38 @@ public class Unit{
             cx+=margin*loc.x;
             cy+=margin*loc.y;
         }
-        if (value >=75){ 
+        if (value >=25){
             MapLocation dest = new MapLocation(cx/value, cy/value);
-         //   System.out.println(dest);
-            broadcastMiningArea(dest);
-            return true;
+            // demand disabled for now
+            int demand = value/minerToLeadRate - numFriendlyMiners();
+            if (demand > 0) {
+                broadcastMiningArea(dest, demand); 
+                return true;
+            }
         }
         return false;
     }
     
-    public void broadcastMiningArea(MapLocation loc) throws GameActionException{
-        //check that the loc is not already broadcasted
+    public void broadcastMiningArea(MapLocation loc, int demand) throws GameActionException{
         int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
+        //fuzzy location
+        int x_loc= Math.min( (int)Math.round((double)loc.x/4.0) , 15);
+        int y_loc= Math.min( (int)Math.round((double)loc.y/4.0) , 15);
         for (int i= 0; i < 5; i++){
             int data = rc.readSharedArray(CHANNEL.MINING1.getValue() + i);
-            int x = data / 64;
-            int y = data % 64;
-            if (loc.x == x && loc.y == y) {
+            int x = (data >> 4) & 15;
+            int y = data & 15;
+            if (x_loc == x && y_loc == y) {
                 return;
             }
             if (data == 0){
                 indToPut = i;
             }
         }
-        MapLocation dest = new MapLocation(Math.min((int)Math.round((double)loc.x/7.0)*7, rc.getMapWidth()-1),
-                                          Math.min((int)Math.round((double)loc.y/7.0)*7, rc.getMapHeight()-1));//rounding each value to multiples of seven - it's a fuzzy location!
-        int loc_int = locationToInt(dest); 
-        rc.writeSharedArray(CHANNEL.MINING1.getValue() +indToPut, loc_int);
+        int value = (demand << 8) + (x_loc << 4) + y_loc; 
+        rc.setIndicatorDot(new MapLocation(x_loc*4, y_loc*4), 255, 0, 0);
+        System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 + " " + demand + " " + rc.getRoundNum());
+        rc.writeSharedArray(CHANNEL.MINING1.getValue() +indToPut, value);
     }
     /**
      * validCoords() check if the x and y are on the map
@@ -276,7 +291,7 @@ public class Unit{
                         cost+=5;
                     }
                     if (i >= 3) {
-                        cost += 50;
+                        cost += 30;
                     }
                     if (i >=5 ){
                         cost+=30;
@@ -326,7 +341,7 @@ public class Unit{
             
             String s = "";
             for (int i= 0; i < dirs.length;i++){
-                s+=String.valueOf(costs[i])+ " ";
+                s+=dirs[i] + " " + String.valueOf(costs[i])+ " ";
             }
             s+=String.valueOf(rc.canMove(toDest));
             rc.setIndicatorString(s);
@@ -501,6 +516,18 @@ public class Unit{
             default:
                 break;
             
+        }
+    }
+
+    public void broadcastTarget(MapLocation enemy) throws GameActionException {
+        int data;
+        int loc = 64 * enemy.x + enemy.y;
+        for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
+            data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
+            if (data == 0) {
+                rc.writeSharedArray(CHANNEL.TARGET.getValue() + i, loc);
+                System.out.println("I broadcasted an enemy at " + enemy.toString());
+            }
         }
     }
 }
