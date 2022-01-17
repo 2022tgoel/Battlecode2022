@@ -10,6 +10,7 @@ public enum CHANNEL {
     MINERS_ALIVE(10),
     SOLDIERS_ALIVE(11),
     BUILDERS_ALIVE(12),
+    LEAD_ESTIMATE(13),
     // channels 15 - 19
     MINING1(15),
     // channels 20 - 24

@@ -1,10 +1,6 @@
 package barbary_gleb;
-
 import battlecode.common.*;
-import javafx.util.Pair;
-
 import java.util.Arrays;
-import java.util.Collections;
 
 public class Archon extends Unit {
 

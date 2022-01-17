@@ -15,6 +15,7 @@ public class Miner extends Unit {
     int round_num;
     MODE mode;
     private MapLocation target;
+    private boolean isBroadcast; //whether the target you are pursuing was taken off broadcast
     private int[] fleeDirection;
     RANK rank;
     private int stopFleeingRound = 10000;
@@ -54,7 +55,7 @@ public class Miner extends Unit {
         }
         amountMined+=mine();
         senseMiningArea();
-   //     rc.setIndicatorString(" " + mode + " " + amountMined + " " + target);
+        rc.setIndicatorString(" " + mode + " " + amountMined + " " + target);
     }
 
     public RANK findRankMiner() throws GameActionException{
@@ -78,11 +79,9 @@ public class Miner extends Unit {
         }
         //check that you should still pursue
         if (target!=null) {
-            if (rc.canSenseLocation(target)){
-                if (getValue(target) <= 1) {
-                    target = null; 
-                }
-                else if (occupiedWithMinerAlly(target)){
+            if ((!isBroadcast && rc.canSenseLocation(target)) || (isBroadcast && rc.getLocation().distanceSquaredTo(target)<=10)) {//stricter distance requirements for a broadcast
+                if (getValue(target) <= 1 || occupiedWithMinerAlly(target)){
+                    rc.setIndicatorDot(target, 0, 255, 0);
                     target = null; 
                 }
             }
@@ -95,11 +94,13 @@ public class Miner extends Unit {
             MapLocation loc = findMiningAreaWithSensing();
             if (loc!=null){
                 target = loc;
+                isBroadcast = false;
                 return MODE.MINE_DISCOVERED; 
             }
             loc = findMiningAreaWithBroadcast();
             if (loc!=null){
                 target = loc;
+                isBroadcast = true;
                 return MODE.MINE_DISCOVERED;            
             }
         }

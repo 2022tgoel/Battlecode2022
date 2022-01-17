@@ -142,6 +142,15 @@ public class Unit{
         }
     }
 
+    public int numFriendlyMiners(){
+        RobotInfo[] allies =  rc.senseNearbyRobots(-1, rc.getTeam());
+        int c = 0;
+        for (RobotInfo r : allies){
+            if (r.type == RobotType.MINER) c++;
+        }
+        return c;
+    }
+
 
     public boolean senseMiningArea() throws GameActionException {
         int value = 0;
@@ -162,7 +171,7 @@ public class Unit{
         if (value >=25){
             MapLocation dest = new MapLocation(cx/value, cy/value);
             // demand disabled for now
-            int demand = value/minerToLeadRate;
+            int demand = value/minerToLeadRate - numFriendlyMiners();
             if (demand > 0) {
                 broadcastMiningArea(dest, demand); 
                 return true;
@@ -176,7 +185,6 @@ public class Unit{
         //fuzzy location
         int x_loc= Math.min( (int)Math.round((double)loc.x/4.0) , 15);
         int y_loc= Math.min( (int)Math.round((double)loc.y/4.0) , 15);
-        rc.setIndicatorDot(new MapLocation(x_loc*4, y_loc*4), 255, 0, 0);
         for (int i= 0; i < 5; i++){
             int data = rc.readSharedArray(CHANNEL.MINING1.getValue() + i);
             int x = (data >> 4) & 15;
@@ -189,7 +197,8 @@ public class Unit{
             }
         }
         int value = (demand << 8) + (x_loc << 4) + y_loc; 
-       // System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 + " " + demand + " " + rc.getRoundNum());
+        rc.setIndicatorDot(new MapLocation(x_loc*4, y_loc*4), 255, 0, 0);
+        System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 + " " + demand + " " + rc.getRoundNum());
         rc.writeSharedArray(CHANNEL.MINING1.getValue() +indToPut, value);
     }
     /**
@@ -282,7 +291,7 @@ public class Unit{
                         cost+=5;
                     }
                     if (i >= 3) {
-                        cost += 50;
+                        cost += 30;
                     }
                     if (i >=5 ){
                         cost+=30;
@@ -332,7 +341,7 @@ public class Unit{
             
             String s = "";
             for (int i= 0; i < dirs.length;i++){
-                s+=String.valueOf(costs[i])+ " ";
+                s+=dirs[i] + " " + String.valueOf(costs[i])+ " ";
             }
             s+=String.valueOf(rc.canMove(toDest));
             rc.setIndicatorString(s);

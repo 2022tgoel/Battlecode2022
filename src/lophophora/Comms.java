@@ -95,7 +95,7 @@ public class Comms {
     }
 
     public void clearMiningAreas() throws GameActionException {
-        if (round_num % 3 == 0){
+        if (round_num % 10 == 0){
             for (int i = 0; i < 5; i++) {
                 rc.writeSharedArray(CHANNEL.MINING1.getValue() + i, 0);
             }

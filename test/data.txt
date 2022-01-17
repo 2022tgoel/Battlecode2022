@@ -20,13 +20,13 @@
 [server:debug] Running: peyote (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs barbaryfig (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [explore]
 [server] -------------------- Match Starting --------------------
 [server] peyote vs. barbaryfig on explore
-[server]                     peyote (A) wins (round 630)
+[server]                     peyote (A) wins (round 962)
 [server] Reason: The winning team won by annihilating the enemy team's Archons.
 [server] -------------------- Match Finished --------------------
-[server:debug] match completed in 7.090 seconds
+[server:debug] match completed in 6.699 seconds
 [server:debug] Awaiting match
 [server:debug] Shutting down server
-Closed: /0:0:0:0:0:0:0:1:64271 for null
+Closed: /0:0:0:0:0:0:0:1:60918 for null
 
-BUILD SUCCESSFUL in 9s
+BUILD SUCCESSFUL in 8s
 9 actionable tasks: 2 executed, 7 up-to-date
