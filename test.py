@@ -6,7 +6,7 @@ import platform
 def main():
     print("Starting Tests!")
     playerA = "peyote_old"
-    playerB = "rebutia"
+    playerB = "rebutia_transitions"
     playAllMaps(playerA, playerB)
 
 def playAllMaps(playerA: str, playerB: str):

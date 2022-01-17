@@ -1,4 +1,4 @@
-package rebutia;
+package rebutia_transitions;
 
 import battlecode.common.*;
 import java.util.*;
