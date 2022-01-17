@@ -163,6 +163,7 @@ public class Soldier extends Unit {
 
     public void findTargets() throws GameActionException {
         int data;
+        MapLocation cur = rc.getLocation();
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
             data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             if (data != 0) {
@@ -171,11 +172,10 @@ public class Soldier extends Unit {
                 int y = data % 64;
                 System.out.println("I received an enemy at " + x + " " + y + " on round " + round_num);
                 MapLocation potentialTarget = new MapLocation(x, y);
+                exploratoryDir = new int[]{potentialTarget.x - cur.x, potentialTarget.y - cur.y};
                 if (rc.getLocation().distanceSquaredTo(potentialTarget) <= mapArea / 16) {
                     target = potentialTarget;
-                    MapLocation cur = rc.getLocation();
                     // wanders in direction of target
-                    exploratoryDir = new int[]{potentialTarget.x - cur.x, potentialTarget.y - cur.y};
                     break;
                 }
             }
