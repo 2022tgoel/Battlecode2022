@@ -29,10 +29,7 @@ public class Miner extends Unit {
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
         updateCount();
-        senseArchon();
-        if (detectNewStressfulSituation()) {
-            broadcastDistress(stressLocation);
-        }
+
         int amountMined = mine();
         mode = getMode(amountMined);
         switch (rank) {

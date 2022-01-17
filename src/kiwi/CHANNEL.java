@@ -20,12 +20,6 @@ public enum CHANNEL {
     TARGET(20),
     // channels 25 - 28
     FRIENDLY_ARCHON_LOCATION(25),
-    // channels 29 - 33
-    DISTRESS(29),
-    DISTRESS1(30),
-    DISTRESS2(31),
-    DISTRESS3(32),
-    DISTRESS4(33),
     ORDERS(61),
     SEND_RANKS1(62),
     SEND_RANKS2(63),

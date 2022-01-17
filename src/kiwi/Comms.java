@@ -144,15 +144,6 @@ public class Comms {
         return numThreatenedArchons;
     }
 
-    public void clearArchonNumbers() throws GameActionException {
-        // if you don't read all 0s for the first four numbers, set them to zero.
-        for (int i = 0; i < 4; i++) {
-            if ((rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + i)) != 0) {
-                rc.writeSharedArray(i, 0);
-            }
-        }
-    }
-
     public static MapLocation getFriendlyArchonLocation(RobotController rc, int i) throws GameActionException {
         if (i > rc.getArchonCount()) {
             return null;

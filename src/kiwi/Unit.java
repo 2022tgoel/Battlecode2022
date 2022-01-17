@@ -1,20 +1,18 @@
 package kiwi;
 
-import battlecode.common.*;
-import java.util.*;
+import java.util.Random;
+
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
 
 // shared code across the units
 public class Unit {
 
-    RobotController rc;
-    int archon_index = -1;
-    RANK[] rank_map = initializeRankMap();
-    final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
-    int seed_increment = 4;
-    MapLocation homeArchon;
-    public MapLocation archon_target;
-    public int mapArea;
     /** Array containing all the possible movement directions. */
     static final Direction[] directions = {
             Direction.NORTH,
@@ -27,155 +25,121 @@ public class Unit {
             Direction.NORTHWEST,
     };
 
+    RobotController rc;
+
+    final Random rng = new Random();
+
+    int archonIndex = -1;
+
+    RANK[] rank_map = initializeRankMap();
+
+    MapLocation homeArchon;
+    MapLocation nearestEnemyArchon;
+
+    public int mapArea;
+
     public Unit(RobotController robotController) throws GameActionException {
         rc = robotController;
-        rng.setSeed((long) rc.getID() + seed_increment);
+        rng.setSeed((long) rc.getID() + 4);
         homeArchon = findHomeArchon();
         initializeRankMap();
         mapArea = getMapArea();
     }
 
     /**
-     * run() is a placeholder implemented in the specific files
+     * run() is executed for all troops. This includes taking roll, broadcasting
+     * nearby Archons, and broadcasting mining deposits.
      **/
     public void run() throws GameActionException {
-
+        updateCount();
+        boolean isMobile = rc.getType() == RobotType.SOLDIER || rc.getType() == RobotType.MINER;
+        if (isMobile) {
+            // Update Archon messaging.
+            // 1. Clean up missing Archons.
+            // 2. Broadcast nearby Archons.
+            clearMissingEnemyArchonBroadcasts();
+            RobotInfo[] allNearbyRobots = rc.senseNearbyRobots();
+            broadcastNearbyArchons(allNearbyRobots);
+            nearestEnemyArchon = getNearestBroadcastedEnemyArchon();
+            senseMiningArea();
+        }
     }
 
-    protected CHANNEL stressChannel = null;
-    protected MapLocation stressLocation = null;
+    public MapLocation readMapLocation(int index) throws GameActionException {
+        return Comms.intToLocation(rc.readSharedArray(index));
+    }
 
-    public void broadcastDistress(MapLocation stressLocation) throws GameActionException {
+    public MapLocation getNearestBroadcastedEnemyArchon() throws GameActionException {
+        MapLocation me = rc.getLocation();
+        MapLocation archon = null;
         for (int i = 0; i < 4; i++) {
-            stressChannel = CHANNEL.byID[CHANNEL.DISTRESS.getValue() + i];
-            if (stressChannel.readInt(rc) == 0) {
-                stressChannel.writeLocation(rc, stressLocation);
+            MapLocation nextArchon = readMapLocation(CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + i);
+            if (nextArchon == null) {
+                continue;
+            }
+
+            if (archon == null || me.distanceSquaredTo(nextArchon) < me.distanceSquaredTo(archon)) {
+                archon = nextArchon;
+                archonIndex = i;
             }
         }
+
+        return archon;
     }
 
-    public boolean hasStressfulEnvironment() throws GameActionException {
-        // Returns whether there are more than 2 enemy robots
-        int numEnemies = 0;
-        int stressfulEnemiesCount = rc.getType() == RobotType.SOLDIER ? 1 : 0;
-        for (RobotInfo ri : rc.senseNearbyRobots(9, rc.getTeam().opponent())) {
-            if (ri.type == RobotType.SOLDIER) {
-                if (++numEnemies > stressfulEnemiesCount) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * 
-     * @return whether there is a new stressful situation
-     * @throws GameActionException
-     */
-    public boolean detectNewStressfulSituation() throws GameActionException {
-        if (stressLocation != null) {
-            if (rc.getLocation().distanceSquaredTo(stressLocation) < 9) {
-                if (!hasStressfulEnvironment()) {
-                    int stressLocationInt = Comms.locationToInt(stressLocation);
-                    // Clear the existing distress signal
-                    if (stressChannel.readInt(rc) == stressLocationInt) {
-                        stressChannel.writeInt(rc, 0);
+    public void clearMissingEnemyArchonBroadcasts() throws GameActionException {
+        for (int i = 0; i < 4; i++) {
+            int chan = CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + i;
+            MapLocation enemy = readMapLocation(chan);
+            if (rc.canSenseLocation(enemy)) {
+                RobotInfo existing = rc.senseRobotAtLocation(enemy);
+                if (existing != null) {
+                    boolean isArchon = existing.getType() == RobotType.ARCHON;
+                    boolean isEnemy = existing.getTeam() == rc.getTeam().opponent();
+                    if (!(isArchon && isEnemy)) {
+                        rc.writeSharedArray(chan, 0);
                     }
-                    stressChannel = null;
-                    stressLocation = null;
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        if (hasStressfulEnvironment()) {
-            stressLocation = rc.getLocation();
-            return true;
-        }
-
-        return false;
-    }
-
-    // when you sense or detect, you get an archon_index
-    /**
-     * detectArchon() looks through the archon positions for a new one, then stores
-     * it in archon_index
-     * 
-     * @return true if it found an archon
-     **/
-    public boolean checkForRecordedArchon() throws GameActionException {
-        if (archon_index != -1) {
-            int data = rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + archon_index);
-            if (data != 0) {
-                rc.setIndicatorString("archon found UWU1 " + archon_index);
-                assert (archon_index != -1);
-                int x = data / 64;
-                int y = data % 64;
-                archon_target = new MapLocation(x, y);
-                return true;
-            }
-        }
-        for (int i = 0; i < 4; i++) {
-            int data = rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + i);
-            if (data != 0) {
-                rc.setIndicatorString("archon found UWU2 " + archon_index);
-                archon_index = i;
-                assert (archon_index != -1);
-                int x = data / 64;
-                int y = data % 64;
-                archon_target = new MapLocation(x, y);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * checks if any of the nearby robots are enemy archons, if so broadcasts it
-     * 
-     * @return true if archon was found, false otherwise
-     **/
-    public boolean senseArchon() throws GameActionException {
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        // if there are any nearby enemy robots, attack the one with the least health
-        boolean found = false;
-        if (nearbyBots.length > 0) {
-            for (RobotInfo bot : nearbyBots) {
-                if (bot.type == RobotType.ARCHON) {
-                    int ind = broadcastArchon(bot.location);
-                    archon_target = bot.location;
-                    // store index of last archon sensed
-                    archon_index = ind;
-                    found = true;
                 }
             }
         }
-        return found;
+    }
+
+    public void broadcastNearbyArchons(RobotInfo[] allNearbyRobots) throws GameActionException {
+        for (RobotInfo ri : allNearbyRobots) {
+            if (ri.type == RobotType.ARCHON && ri.getTeam() == rc.getTeam().opponent()) {
+                System.out.println("Sensed new archon at " + ri.location);
+                archonIndex = broadcastArchon(ri.location);
+                nearestEnemyArchon = ri.location;
+            }
+        }
     }
 
     public int broadcastArchon(MapLocation loc) throws GameActionException {
         // check that the loc is not already broadcasted
-        int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
-        for (int i = 0; i < 4; i++) {
-            int data = rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + i);
-            int x = data / 64;
-            int y = data % 64;
-            if (loc.x == x && loc.y == y) {
-                return i; // already broadcasted, return index where it is stored
+        int broadcastIndex = 0; // where to put the archon (if all spots are filled, it will be put at 0)
+        for (broadcastIndex = 0; broadcastIndex < 4; broadcastIndex++) {
+            MapLocation existingLocation = readMapLocation(CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + broadcastIndex);
+            if (existingLocation != null) {
+                if (loc.equals(existingLocation)) {
+                    // already broadcasted, return index where it is stored
+                    return broadcastIndex;
+                } else if (rc.canSenseLocation(existingLocation)) {
+                    // check if the archon still exists here.
+                    // if it doesn't, then we clear this index.
+                    RobotInfo ri = rc.senseRobotAtLocation(existingLocation);
+                    if (ri == null || ri.type != RobotType.ARCHON) {
+                        existingLocation = null;
+                    }
+                }
             }
-            if (data == 0) {
-                indToPut = i;
+            System.out.println("FOUND A NEW ARCHON!!!");
+            if (existingLocation == null) {
+                rc.writeSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + broadcastIndex, locationToInt(loc));
+                return broadcastIndex;
             }
         }
-        int loc_int = locationToInt(loc);
-        rc.writeSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + indToPut, loc_int);
-        System.out.println("FOUND AN ARCHON!!!");
-        // rc.setIndicatorString("broadcasting succesful, archon_index " +
-        // available_index);
-        return indToPut;
+        System.err.println("Reached end of Archon broadcast loop?");
+        return broadcastIndex;
     }
 
     /**
@@ -184,7 +148,7 @@ public class Unit {
      * @return false is the archon is not longer there, true otherwise
      **/
     public boolean approachArchon() throws GameActionException {
-        int data = rc.readSharedArray(archon_index);
+        int data = rc.readSharedArray(archonIndex);
         if (data != 0) {
             int x = data / 64;
             int y = data % 64;
@@ -192,8 +156,8 @@ public class Unit {
             if (rc.canSenseLocation(target)) {
                 RobotInfo r = rc.senseRobotAtLocation(target);
                 if (r == null || r.type != RobotType.ARCHON) {
-                    rc.writeSharedArray(archon_index, 0);
-                    archon_index = -1;
+                    rc.writeSharedArray(archonIndex, 0);
+                    archonIndex = -1;
                     return false;
                 }
 
@@ -201,7 +165,7 @@ public class Unit {
             fuzzyMove(target);
             return true;
         } else {
-            archon_index = -1;
+            archonIndex = -1;
             return false; // no longer there
         }
     }
