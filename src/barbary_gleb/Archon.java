@@ -3,6 +3,7 @@ package barbary_gleb;
 import battlecode.common.*;
 import javafx.util.Pair;
 
+import java.awt.*;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -38,8 +39,6 @@ public class Archon extends Unit {
     private int total_soldier_count= 0;
     private int total_miner_count = 0;
 
-    Comms radio;
-
 	public Archon(RobotController rc) throws GameActionException {
         super(rc);
         System.out.println("here");
@@ -47,12 +46,12 @@ public class Archon extends Unit {
         num_archons_init = num_archons_alive;
         dirs = sortedDirections();
         defaultBuildOrder = chooseBuildOrder();
-        radio = new Comms(rc);
         archonNumber = radio.getArchonNumInit();
     }
 
     @Override
     public void run() throws GameActionException {
+        super.run();
         round_num = rc.getRoundNum();
         radio.update();
         radio.clearThreat();
@@ -60,12 +59,10 @@ public class Archon extends Unit {
 
         archonNumber = radio.getArchonNum(num_archons_init, num_archons_alive, archonNumber);
         num_archons_alive = rc.getArchonCount();
-        total_miner_count = radio.getMiners();
-        total_builder_count = radio.getBuilders();
-        total_soldier_count = radio.getSoldiers();
-        if (round_num % num_archons_alive == archonNumber) {
-            radio.clearCounts();
-        }
+        total_miner_count = radio.getCount(RobotType.MINER);
+        total_builder_count = radio.getCount(RobotType.BUILDER);
+        total_soldier_count = radio.getCount(RobotType.SOLDIER);
+
         MODE mode = determineMode();
         switch (mode) {
             case THREATENED:
@@ -73,18 +70,18 @@ public class Archon extends Unit {
                 int tot = radio.totalUnderThreat();
                 
                 if (round_num % tot !=threatChannel){ //alternate between those under threat
-                    return;
+                    break;
                 }
                 Direction[] enemyDirs = getEnemyDirs();
                 for (Direction dir: enemyDirs) {
                     buildSoldier(dir);
                 }
-                return;
+                break;
             case INITIAL:
                 moveToOptimalCooldown();
 
                 if (round_num % num_archons_alive != archonNumber) {
-                    return;
+                    break;
                 }
                 /*
                 if (rc.getHealth() < RobotType.ARCHON.health && !builderInRange()){
@@ -104,7 +101,7 @@ public class Archon extends Unit {
 
 
                 if (round_num % num_archons_alive != archonNumber) {
-                    return;
+                    break;
                 }
                 /*
                 if (rc.getHealth() < RobotType.ARCHON.health && !builderInRange()){
@@ -115,8 +112,14 @@ public class Archon extends Unit {
                 build(defaultBuildOrder);
                 break;
         }
-        rc.setIndicatorString("Number of miners: " + total_miner_count);
-        rc.setIndicatorString("mode: " + mode.toString() + " " +radio.totalUnderThreat());
+
+        rc.setIndicatorString(
+                " mode: " + mode.toString() +
+                " miners: " + total_miner_count +
+                " soldiers: " + total_soldier_count +
+                " threat: " + radio.totalUnderThreat()
+        );
+
     }
 
     public void build(int[] build_order) throws GameActionException{
@@ -128,7 +131,6 @@ public class Archon extends Unit {
                         rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + build_order[counter % 3]);
                         unit_built = buildMiner(dir);
                         // System.out.println("MINER BUILT: " + unit_built + " Roundnum: " + rc.getRoundNum());
-                        if (unit_built) radio.setMiners(1);
                     }
                     break;
                 case 1:
@@ -136,7 +138,6 @@ public class Archon extends Unit {
                     rc.setIndicatorString("Trying to build a soldier" + " built_units: " + built_units + " " + build_order[counter % 3]);
                     unit_built = buildSoldier(dir);
                     // System.out.println("SOLDIER BUILT: " + unit_built);
-                    if (unit_built) radio.setSoldiers(1);
                     }
                     break;
                 case 2:
@@ -144,7 +145,6 @@ public class Archon extends Unit {
                         rc.setIndicatorString("Trying to build a builder" + " built_units: " + built_units + " " + build_order[counter % 3]);
                         unit_built = buildBuilder(dir);
                         // System.out.println("BUILDER BUILT: " + unit_built);
-                        if (unit_built) radio.setBuilders(1);
                     }
                     break;
             }
@@ -206,6 +206,7 @@ public class Archon extends Unit {
     public boolean buildMiner(Direction dir) throws GameActionException{
         if (rc.canBuildRobot(RobotType.MINER, dir)) {
             rc.buildRobot(RobotType.MINER, dir);
+            radio.updateCount(RobotType.MINER);
             built_units++;
             num_miners++;
             total_miner_count++;
@@ -217,6 +218,7 @@ public class Archon extends Unit {
     public boolean buildSoldier(Direction dir) throws GameActionException{ 
         if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
             rc.buildRobot(RobotType.SOLDIER, dir);
+            radio.updateCount(RobotType.SOLDIER);
             built_units++;
             num_soldiers++;
             total_soldier_count++;
@@ -229,6 +231,7 @@ public class Archon extends Unit {
         rc.setIndicatorString("here " + rc.canBuildRobot(RobotType.BUILDER, dir));
         if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
             rc.buildRobot(RobotType.BUILDER, dir);
+            radio.updateCount(RobotType.BUILDER);
             built_units++;
             num_builders++;
             total_builder_count++;

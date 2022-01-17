@@ -3,17 +3,39 @@ package barbary_gleb;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
+import battlecode.common.RobotType;
 
 public class Comms {
     RobotController rc;
     private int round_num;
+    boolean wasFirstConnection;
     public Comms(RobotController robotController) throws GameActionException{
         rc = robotController;
+        System.out.println(rc.getRoundNum() + " " + rc.getLocation() + " " + wasFirstConnection);
+    }
+
+    public boolean init() throws GameActionException {
+        wasFirstConnection = false;
+        // TODO: distribute init comms clearing?
+        if(rc.readSharedArray(CHANNEL.ROUND_NUM.getValue()) != rc.getRoundNum()){
+            rc.writeSharedArray(CHANNEL.ROUND_NUM.getValue(), rc.getRoundNum());
+
+            // clear robot counter update channels
+            for(RobotType rt : RobotType.values()){
+                CHANNEL ch = getCountChannel(rt, false);
+                if(ch != null) rc.writeSharedArray(ch.getValue(), 0);
+            }
+
+            wasFirstConnection = true;
+        }
+        return wasFirstConnection;
     }
 
     public void update() {
         round_num = rc.getRoundNum();
     }
+/*
+    @Deprecated due to AC channels. use Unit.getCounts(RobotType rt)
 
     public int getMiners() throws GameActionException{
         return rc.readSharedArray(CHANNEL.MINERS_ALIVE.getValue());
@@ -43,6 +65,38 @@ public class Comms {
         rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), 0);
         rc.writeSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue(), 0);
         rc.writeSharedArray(CHANNEL.BUILDERS_ALIVE.getValue(), 0);
+    }
+ */
+    // should add channels for each unit...
+    public void updateCount() throws GameActionException {
+        updateCount(rc.getType());
+    }
+
+    public void updateCount(RobotType rt) throws GameActionException {
+        CHANNEL channel = getCountChannel(rt, false);
+
+        int num = wasFirstConnection ? 0 : rc.readSharedArray(channel.getValue());
+        rc.writeSharedArray(channel.getValue(), num + 1);
+    }
+
+    public int getCount(RobotType rt) throws GameActionException {
+        CHANNEL channel = getCountChannel(rt, true);
+        return rc.readSharedArray(channel.getValue());
+    }
+
+    public CHANNEL getCountChannel(RobotType rt, boolean isReadMode){
+        boolean mod = rc.getRoundNum() % 2 == 0;
+        if(isReadMode) mod = !mod;
+        switch (rt) {
+            case MINER:
+                return mod ? CHANNEL.MINERS_ALIVE : CHANNEL.MINERS_ALIVE_ALT;
+            case SOLDIER:
+                return mod ? CHANNEL.SOLDIERS_ALIVE : CHANNEL.SOLDIERS_ALIVE_ALT;
+            case BUILDER:
+                return mod ? CHANNEL.BUILDERS_ALIVE : CHANNEL.BUILDERS_ALIVE_ALT;
+            default:
+                return null;
+        }
     }
 
     public void postBuild(BOT b) throws GameActionException {
