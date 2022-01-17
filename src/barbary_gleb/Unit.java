@@ -5,7 +5,7 @@ import battlecode.common.*;
 import java.util.Random;
 // shared code across the units
 public class Unit{
-
+    Comms radio;
     RobotController rc;
     int archon_index = -1;
     RANK[] rank_map = initializeRankMap();
@@ -33,14 +33,16 @@ public class Unit{
         homeArchon = findHomeArchon();
         initializeRankMap();
         mapArea = getMapArea();
+        radio = new Comms(rc);
     }
 
     /**
      * run() is a placeholder implemented in the specific files
      **/
     public void run() throws GameActionException{
-        
+        radio.init();
     }
+
     //when you sense or detect, you get an archon_index
     /**
      * detectArchon() looks through the archon positions for a new one, then stores it in archon_index
@@ -484,24 +486,5 @@ public class Unit{
 
     public int getMapArea() {
         return rc.getMapHeight() * rc.getMapWidth();
-    }
-
-    // should add channels for each unit...
-    public void updateCount() throws GameActionException {
-        RobotType r = rc.getType();
-        switch (r) {
-            case MINER:
-                int num = rc.readSharedArray(CHANNEL.MINERS_ALIVE.getValue());
-                rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), num + 1);
-            case SOLDIER:
-                num = rc.readSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue());
-                rc.writeSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue(), num + 1);
-            case BUILDER:
-                num = rc.readSharedArray(CHANNEL.BUILDERS_ALIVE.getValue());
-                rc.writeSharedArray(CHANNEL.BUILDERS_ALIVE.getValue(), num + 1);
-            default:
-                break;
-            
-        }
     }
 }

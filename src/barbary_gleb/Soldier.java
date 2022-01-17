@@ -45,8 +45,9 @@ public class Soldier extends Unit {
     }
     @Override
     public void run() throws GameActionException {
+        super.run();
         round_num = rc.getRoundNum();
-        updateCount();
+        radio.updateCounter();
         attacked = attemptAttack(false);
         mode = determineMode();
         switch (mode) {
