@@ -1,30 +1,30 @@
-package echinocereus;
+package baseline;
 
 import battlecode.common.*;
 import java.util.*;
+
 // shared code across the units
-public class Unit{
+public class Unit {
 
     RobotController rc;
     int archon_index = -1;
     RANK[] rank_map = initializeRankMap();
     final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
-    static final int minerToLeadRate = 50;
     int seed_increment = 4;
     MapLocation homeArchon;
     public MapLocation archon_target;
     public int mapArea;
     /** Array containing all the possible movement directions. */
     static final Direction[] directions = {
-        Direction.NORTH,
-        Direction.NORTHEAST,
-        Direction.EAST,
-        Direction.SOUTHEAST,
-        Direction.SOUTH,
-        Direction.SOUTHWEST,
-        Direction.WEST,
-        Direction.NORTHWEST,
+            Direction.NORTH,
+            Direction.NORTHEAST,
+            Direction.EAST,
+            Direction.SOUTHEAST,
+            Direction.SOUTH,
+            Direction.SOUTHWEST,
+            Direction.WEST,
+            Direction.NORTHWEST,
     };
 
     public Unit(RobotController robotController) throws GameActionException {
@@ -38,20 +38,80 @@ public class Unit{
     /**
      * run() is a placeholder implemented in the specific files
      **/
-    public void run() throws GameActionException{
-        
+    public void run() throws GameActionException {
+
     }
-    //when you sense or detect, you get an archon_index
+
+    protected CHANNEL stressChannel = null;
+    protected MapLocation stressLocation = null;
+
+    public void broadcastDistress(MapLocation stressLocation) throws GameActionException {
+        for (int i = 0; i < 4; i++) {
+            stressChannel = CHANNEL.byID[CHANNEL.DISTRESS.getValue() + i];
+            if (stressChannel.readInt(rc) == 0) {
+                stressChannel.writeLocation(rc, stressLocation);
+            }
+        }
+    }
+
+    public boolean hasStressfulEnvironment() throws GameActionException {
+        // Returns whether there are more than 2 enemy robots
+        int numEnemies = 0;
+        int stressfulEnemiesCount = rc.getType() == RobotType.SOLDIER ? 1 : 0;
+        for (RobotInfo ri : rc.senseNearbyRobots(9, rc.getTeam().opponent())) {
+            if (ri.type == RobotType.SOLDIER) {
+                if (++numEnemies > stressfulEnemiesCount) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /**
-     * detectArchon() looks through the archon positions for a new one, then stores it in archon_index
+     * 
+     * @return whether there is a new stressful situation
+     * @throws GameActionException
+     */
+    public boolean detectNewStressfulSituation() throws GameActionException {
+        if (stressLocation != null) {
+            if (rc.getLocation().distanceSquaredTo(stressLocation) < 9) {
+                if (!hasStressfulEnvironment()) {
+                    int stressLocationInt = Comms.locationToInt(stressLocation);
+                    // Clear the existing distress signal
+                    if (stressChannel.readInt(rc) == stressLocationInt) {
+                        stressChannel.writeInt(rc, 0);
+                    }
+                    stressChannel = null;
+                    stressLocation = null;
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        if (hasStressfulEnvironment()) {
+            stressLocation = rc.getLocation();
+            return true;
+        }
+
+        return false;
+    }
+
+    // when you sense or detect, you get an archon_index
+    /**
+     * detectArchon() looks through the archon positions for a new one, then stores
+     * it in archon_index
+     * 
      * @return true if it found an archon
      **/
-    public boolean detectArchon() throws GameActionException {
+    public boolean checkForRecordedArchon() throws GameActionException {
         if (archon_index != -1) {
-            int data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + archon_index);
+            int data = rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + archon_index);
             if (data != 0) {
                 rc.setIndicatorString("archon found UWU1 " + archon_index);
-                assert(archon_index != -1);
+                assert (archon_index != -1);
                 int x = data / 64;
                 int y = data % 64;
                 archon_target = new MapLocation(x, y);
@@ -59,11 +119,11 @@ public class Unit{
             }
         }
         for (int i = 0; i < 4; i++) {
-            int data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + i);
+            int data = rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + i);
             if (data != 0) {
                 rc.setIndicatorString("archon found UWU2 " + archon_index);
                 archon_index = i;
-                assert(archon_index != -1);
+                assert (archon_index != -1);
                 int x = data / 64;
                 int y = data % 64;
                 archon_target = new MapLocation(x, y);
@@ -72,8 +132,10 @@ public class Unit{
         }
         return false;
     }
+
     /**
      * checks if any of the nearby robots are enemy archons, if so broadcasts it
+     * 
      * @return true if archon was found, false otherwise
      **/
     public boolean senseArchon() throws GameActionException {
@@ -85,70 +147,63 @@ public class Unit{
                 if (bot.type == RobotType.ARCHON) {
                     int ind = broadcastArchon(bot.location);
                     archon_target = bot.location;
-                    //store index of last archon sensed 
+                    // store index of last archon sensed
                     archon_index = ind;
                     found = true;
-                }  
+                }
             }
         }
         return found;
     }
 
-    public int broadcastArchon(MapLocation loc) throws GameActionException{
-        //check that the loc is not already broadcasted
+    public int broadcastArchon(MapLocation loc) throws GameActionException {
+        // check that the loc is not already broadcasted
         int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
-        for (int i= 0; i < 4; i++){
-            int data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + i);
+        for (int i = 0; i < 4; i++) {
+            int data = rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + i);
             int x = data / 64;
             int y = data % 64;
             if (loc.x == x && loc.y == y) {
-                return i; //already broadcasted, return index where it is stored
+                return i; // already broadcasted, return index where it is stored
             }
-            if (data == 0){
+            if (data == 0) {
                 indToPut = i;
             }
         }
         int loc_int = locationToInt(loc);
-        rc.writeSharedArray(indToPut, loc_int);
-        // rc.setIndicatorString("broadcasting succesful, archon_index " + available_index);
+        rc.writeSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + indToPut, loc_int);
+        System.out.println("FOUND AN ARCHON!!!");
+        // rc.setIndicatorString("broadcasting succesful, archon_index " +
+        // available_index);
         return indToPut;
     }
 
     /**
      * approachArchon() moves towards the archon specified by archon_index
+     * 
      * @return false is the archon is not longer there, true otherwise
      **/
-    public boolean approachArchon() throws GameActionException{
+    public boolean approachArchon() throws GameActionException {
         int data = rc.readSharedArray(archon_index);
         if (data != 0) {
             int x = data / 64;
             int y = data % 64;
             MapLocation target = new MapLocation(x, y);
-            if (rc.canSenseLocation(target)){
+            if (rc.canSenseLocation(target)) {
                 RobotInfo r = rc.senseRobotAtLocation(target);
-                if (r == null || r.type != RobotType.ARCHON){
+                if (r == null || r.type != RobotType.ARCHON) {
                     rc.writeSharedArray(archon_index, 0);
                     archon_index = -1;
                     return false;
                 }
-                
+
             }
             fuzzyMove(target);
             return true;
+        } else {
+            archon_index = -1;
+            return false; // no longer there
         }
-        else {
-            archon_index = -1; 
-            return false; //no longer there
-        }
-    }
-
-    public int numFriendlyMiners(){
-        RobotInfo[] allies =  rc.senseNearbyRobots(-1, rc.getTeam());
-        int c = 0;
-        for (RobotInfo r : allies){
-            if (r.type == RobotType.MINER) c++;
-        }
-        return c;
     }
 
     public boolean senseMiningArea() throws GameActionException {
@@ -156,110 +211,115 @@ public class Unit{
         int cx = 0;
         int cy = 0;
         for (MapLocation loc : rc.senseNearbyLocationsWithGold()) {
-            int margin = rc.senseGold(loc)*goldToLeadConversionRate;
-            value+=margin;
-            cx+=margin*loc.x;
-            cy+=margin*loc.y;
+            int margin = rc.senseGold(loc) * goldToLeadConversionRate;
+            value += margin;
+            cx += margin * loc.x;
+            cy += margin * loc.y;
         }
         for (MapLocation loc : rc.senseNearbyLocationsWithLead()) {
-            int margin = rc.senseLead(loc)-1;
-            value+=margin;
-            cx+=margin*loc.x;
-            cy+=margin*loc.y;
+            int margin = rc.senseLead(loc) - 1;
+            value += margin;
+            cx += margin * loc.x;
+            cy += margin * loc.y;
         }
-        if (value >=25){
-            MapLocation dest = new MapLocation(cx/value, cy/value);
-            int demand = value/minerToLeadRate - numFriendlyMiners();
-         //   System.out.println(dest);
-            if (demand > 0) {
-                broadcastMiningArea(dest, Math.min(demand, 7)); // seven is current cap for demand
-                return true;
-            }
+        if (value >= 75) {
+            MapLocation dest = new MapLocation(cx / value, cy / value);
+            // System.out.println(dest);
+            broadcastMiningArea(dest);
+            return true;
         }
         return false;
     }
-    
-    public void broadcastMiningArea(MapLocation loc, int demand) throws GameActionException{
-        assert(demand < 8);
+
+    public void broadcastMiningArea(MapLocation loc) throws GameActionException {
+        // check that the loc is not already broadcasted
         int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
-        //fuzzy location
-        int x_loc= Math.min( (int)Math.round((double)loc.x/4.0) , 15);
-        int y_loc= Math.min( (int)Math.round((double)loc.y/4.0) , 15);
-        for (int i= 0; i < 5; i++){
+        for (int i = 0; i < 5; i++) {
             int data = rc.readSharedArray(CHANNEL.MINING1.getValue() + i);
-            int x = (data >> 4) & 15;
-            int y = data & 15;
-            if (x_loc == x && y_loc == y) {
+            int x = data / 64;
+            int y = data % 64;
+            if (loc.x == x && loc.y == y) {
                 return;
             }
-            if (data == 0){
+            if (data == 0) {
                 indToPut = i;
             }
         }
-        int value = (demand << 8) + (x_loc << 4) + y_loc; 
-       // System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 + " " + demand + " " + rc.getRoundNum());
-        rc.writeSharedArray(CHANNEL.MINING1.getValue() +indToPut, value);
+        MapLocation dest = new MapLocation(Math.min((int) Math.round((double) loc.x / 7.0) * 7, rc.getMapWidth() - 1),
+                Math.min((int) Math.round((double) loc.y / 7.0) * 7, rc.getMapHeight() - 1));// rounding each value to
+                                                                                             // multiples of seven -
+                                                                                             // it's a fuzzy location!
+        int loc_int = locationToInt(dest);
+        rc.writeSharedArray(CHANNEL.MINING1.getValue() + indToPut, loc_int);
     }
+
     /**
      * validCoords() check if the x and y are on the map
+     * 
      * @return bool, true if on the map
      **/
-    public boolean validCoords(int x_coord, int y_coord){
+    public boolean validCoords(int x_coord, int y_coord) {
         return x_coord >= 0 && x_coord < rc.getMapWidth() && y_coord >= 0 && y_coord < rc.getMapHeight();
     }
-    //pathfinding strategies
+
+    // pathfinding strategies
     /**
-     * moveToLocation() is the moving function that will actually be used by the bots (made a separate function for 
+     * moveToLocation() is the moving function that will actually be used by the
+     * bots (made a separate function for
      * easy replacement)
      * 
      * @param loc is where to go
      **/
-    public void moveToLocation(MapLocation loc) throws GameActionException{
-        fuzzyMove(loc); // best pathfinding strat 
+    public void moveToLocation(MapLocation loc) throws GameActionException {
+        fuzzyMove(loc); // best pathfinding strat
     }
 
-    public void moveInDirection(int[] toDest) throws GameActionException{
+    public void moveInDirection(int[] toDest) throws GameActionException {
         MapLocation loc = rc.getLocation();
         MapLocation dest = new MapLocation(loc.x + toDest[0], loc.y + toDest[1]);
         fuzzyMove(dest);
         // rc.setIndicatorString("I JUST MOVED TO " + toDest[0] + " " + toDest[1]);
     }
+
     /**
-     * fuzzyMove() is the method that moves to a location using a weight of how within the correct direction you are
-     *             how much rubble is in a square (rather that just thresholding rubbles)
+     * fuzzyMove() is the method that moves to a location using a weight of how
+     * within the correct direction you are
+     * how much rubble is in a square (rather that just thresholding rubbles)
      *
-     * @param dest  location you wish to move to
-     *            
+     * @param dest location you wish to move to
+     * 
      **/
-    //keep updating this so that you can see stagnation
-    static int calls = 0; //# of fuzzy move calls
+    // keep updating this so that you can see stagnation
+    static int calls = 0; // # of fuzzy move calls
     static MapLocation last = null;
-    static MapLocation cur =null;
-    public Direction fuzzyMove(MapLocation dest) throws GameActionException{
-        return fuzzyMove(dest, 0.1); //will not go to squares with more that 20 rubble
+    static MapLocation cur = null;
+
+    public Direction fuzzyMove(MapLocation dest) throws GameActionException {
+        return fuzzyMove(dest, 0.1); // will not go to squares with more that 20 rubble
     }
-    public Direction fuzzyMove(MapLocation dest, double rubbleWeight) throws GameActionException{
+
+    public Direction fuzzyMove(MapLocation dest, double rubbleWeight) throws GameActionException {
         MapLocation myLocation = rc.getLocation();
-        if (myLocation.equals(dest)){
-            return null; //you're already there!
+        if (myLocation.equals(dest)) {
+            return null; // you're already there!
         }
         Direction toDest = myLocation.directionTo(dest);
-        if (myLocation.add(toDest).equals(dest)){
-            if (rc.canMove(toDest)){
+        if (myLocation.add(toDest).equals(dest)) {
+            if (rc.canMove(toDest)) {
                 rc.move(toDest);
             }
-        }
-        else{
+        } else {
             Direction optimalDir = getBestDirectionFuzzy(toDest, rubbleWeight);
             if (optimalDir != null) {
-                if (rc.canMove(optimalDir)){ //if you can move in the optimalDir, then you can move toDest - toDest is into a wall
+                if (rc.canMove(optimalDir)) { // if you can move in the optimalDir, then you can move toDest - toDest is
+                                              // into a wall
                     rc.move(optimalDir);
-                    calls++; //only considered a call if you actually move
-                    if (((calls>>3)& 1) > 0) { //just completed your 8th, 16th, etc, call
+                    calls++; // only considered a call if you actually move
+                    if (((calls >> 3) & 1) > 0) { // just completed your 8th, 16th, etc, call
                         last = cur;
                         cur = myLocation;
                     }
-                } 
+                }
             }
             return optimalDir;
             // find location
@@ -269,36 +329,38 @@ public class Unit{
 
     }
 
-    public Direction getBestDirectionFuzzy(Direction toDest, double rubbleWeight) throws GameActionException{
+    public Direction getBestDirectionFuzzy(Direction toDest, double rubbleWeight) throws GameActionException {
         MapLocation myLocation = rc.getLocation();
-        Direction[] dirs = {toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(),
-                toDest.rotateRight().rotateRight(), toDest.opposite().rotateLeft(), toDest.opposite().rotateRight(), toDest.opposite()};
+        Direction[] dirs = { toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(),
+                toDest.rotateRight().rotateRight(), toDest.opposite().rotateLeft(), toDest.opposite().rotateRight(),
+                toDest.opposite() };
         int[] costs = new int[8];
-       // if (false) {
-        if (last!= null && (((calls>>3)&1) > 0) && (myLocation.distanceSquaredTo(last) <=4)) { //just completed your 8th, 16th, etc, call last turn
-            //you're stagnating
+        // if (false) {
+        if (last != null && (((calls >> 3) & 1) > 0) && (myLocation.distanceSquaredTo(last) <= 4)) { // just completed
+                                                                                                     // your 8th, 16th,
+                                                                                                     // etc, call last
+                                                                                                     // turn
+            // you're stagnating
             for (int i = 0; i < dirs.length; i++) {
                 MapLocation newLocation = myLocation.add(dirs[i]);
                 // Movement invalid, set higher cost than starting value
                 if (!rc.onTheMap(newLocation)) {
                     costs[i] = 999999;
-                }
-                else {
+                } else {
                     int cost = 0;
                     // Preference tier for moving towards target
-                    if (i >=1){
-                        cost+=5;
+                    if (i >= 1) {
+                        cost += 5;
                     }
                     if (i >= 3) {
                         cost += 50;
                     }
-                    if (i >=5 ){
-                        cost+=30;
+                    if (i >= 5) {
+                        cost += 30;
                     }
                     costs[i] = cost;
                 }
-                
-                
+
             }
             int cost = 99999;
             Direction optimalDir = null;
@@ -312,38 +374,36 @@ public class Unit{
                 }
             }
             return optimalDir;
-        }
-        else {
+        } else {
             // Ignore repel factor in beginning and when close to target
             for (int i = 0; i < dirs.length; i++) {
                 MapLocation newLocation = myLocation.add(dirs[i]);
                 // Movement invalid, set higher cost than starting value
                 if (!validCoords(newLocation.x, newLocation.y)) {
                     costs[i] = 999999;
-                }
-                else {
+                } else {
                     int cost = (int) (rubbleWeight * Math.pow((double) rc.senseRubble(newLocation), 2.0));
                     // Preference tier for moving towards target
-                    if (i >=1){
-                        cost+=5;
+                    if (i >= 1) {
+                        cost += 5;
                     }
                     if (i >= 3) {
                         cost += 30;
                     }
-                    if (i >=5){
-                        cost+=30;
+                    if (i >= 5) {
+                        cost += 30;
                     }
-                    costs[i] = cost+ rng.nextInt(10); //some randomness
+                    costs[i] = cost + rng.nextInt(10); // some randomness
                 }
-                
+
             }
-            
+
             String s = "";
-            for (int i= 0; i < dirs.length;i++){
-                s+=String.valueOf(costs[i])+ " ";
+            for (int i = 0; i < dirs.length; i++) {
+                s += String.valueOf(costs[i]) + " ";
             }
-            s+=String.valueOf(rc.canMove(toDest));
-            rc.setIndicatorString(s);
+            s += String.valueOf(rc.canMove(toDest));
+            // rc.setIndicatorString(s);
             int cost = 99999;
             Direction optimalDir = null;
             for (int i = 0; i < dirs.length; i++) {
@@ -358,74 +418,69 @@ public class Unit{
             return optimalDir;
         }
     }
-    
-    public int cooldown(MapLocation loc) throws GameActionException{
-        //returns cooldown of movement
-        return (int) Math.floor((1+rc.senseRubble(loc)/10.0)*rc.getType().movementCooldown);
+
+    public int cooldown(MapLocation loc) throws GameActionException {
+        // returns cooldown of movement
+        return (int) Math.floor((1 + rc.senseRubble(loc) / 10.0) * rc.getType().movementCooldown);
     }
 
     public int[] getExploratoryDir() {
-        return getExploratoryDir(5, new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
+        return getExploratoryDir(5, new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2));
     }
 
     public int[] getExploratoryDir(int span) {
-        return getExploratoryDir(span, new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2));
+        return getExploratoryDir(span, new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2));
     }
 
-    public int[] getExploratoryDir(int span, MapLocation loc) {
+    public int[] getExploratoryDir(int span, MapLocation exploreTarget) {
         // presumes span is odd.
-        int[] dir;
-        MapLocation cur = rc.getLocation();
-        if (loc.x - cur.x > 0) {
-            if (loc.y - cur.y > 0) {
-                dir = new int[]{8,8};
-            } else {
-                dir = new int[]{8,-8};
-            }
-        } else {
-            if (loc.y - cur.y > 0) {
-                dir = new int[]{-8,8};
-            } else {
-                dir = new int[]{-8,-8};
-            }
-        }
-        int[][] dirs = new int[span][2];
+        MapLocation location = rc.getLocation();
+        int[] direction = new int[] {
+                exploreTarget.x > location.x ? 8 : -8,
+                exploreTarget.y > location.y ? 8 : -8
+        };
+        int[][] directions = new int[span][2];
         int counter = 0;
 
         int increment;
         int init_val;
-        if (dir[0] < 0) {
+        if (direction[0] < 0) {
             increment = -4;
-            init_val = -8 + ((((span + 1 ) / 2) - 1) * -increment);
+            init_val = -8 + ((((span + 1) / 2) - 1) * -increment);
         } else {
             increment = 4;
-            init_val = 8 + ((((span + 1 ) / 2) - 1) * -increment);
+            init_val = 8 + ((((span + 1) / 2) - 1) * -increment);
         }
 
-        for (int i = init_val; i != dir[0]; i+= increment) {
-            dirs[counter] = new int[]{i, dir[1]};
+        for (int i = init_val; i != direction[0]; i += increment) {
+            directions[counter] = new int[] { i, direction[1] };
             counter += 1;
         }
 
-        if (dir[1] < 0) {
+        if (direction[1] < 0) {
             increment = -4;
-            init_val = -8 + ((((span + 1 ) / 2) - 1) * -increment);;
+            init_val = -8 + ((((span + 1) / 2) - 1) * -increment);
+            ;
         } else {
             increment = 4;
-            init_val = 8 + ((((span + 1 ) / 2) - 1) * -increment);;
+            init_val = 8 + ((((span + 1) / 2) - 1) * -increment);
+            ;
         }
 
-
-        for (int i = init_val; i != dir[1]; i+= increment) {
-            dirs[counter] = new int[]{dir[0], i};
+        for (int i = init_val; i != direction[1]; i += increment) {
+            directions[counter] = new int[] { direction[0], i };
             counter += 1;
         }
 
-        dirs[dirs.length - 1] = dir;
+        directions[directions.length - 1] = direction;
         // print directions
-        // rc.setIndicatorString("dirs: " + dirs[0][0] + " " + dirs[0][1] + " " + dirs[1][0] + " " + dirs[1][1] + " " + dirs[2][0] + " " + dirs[2][1] + " " + dirs[3][0] + " " + dirs[3][1] + " " + dirs[4][0] + " " + dirs[4][1] + " | " + (center.x - cur.x) + " " + (center.y - cur.y) + " | " + center.x + " " + center.y + " | " + cur.x + " " + cur.y);
+        // rc.setIndicatorString("dirs: " + dirs[0][0] + " " + dirs[0][1] + " " +
+        // dirs[1][0] + " " + dirs[1][1] + " " + dirs[2][0] + " " + dirs[2][1] + " " +
+        // dirs[3][0] + " " + dirs[3][1] + " " + dirs[4][0] + " " + dirs[4][1] + " | " +
+        // (center.x - cur.x) + " " + (center.y - cur.y) + " | " + center.x + " " +
+        // center.y + " | " + cur.x + " " + cur.y);
 
-        return dirs[rng.nextInt(dirs.length)];
+        return directions[rng.nextInt(directions.length)];
     }
 
     public boolean adjacentToEdge() throws GameActionException {
@@ -478,8 +533,7 @@ public class Unit{
         for (int i = 0; i < 2; i++) {
             if (i == 0) {
                 data = rc.readSharedArray(CHANNEL.SEND_RANKS1.getValue());
-            }
-            else {
+            } else {
                 data = rc.readSharedArray(CHANNEL.SEND_RANKS2.getValue());
             }
 
@@ -514,7 +568,7 @@ public class Unit{
                 rc.writeSharedArray(CHANNEL.BUILDERS_ALIVE.getValue(), num + 1);
             default:
                 break;
-            
+
         }
     }
 }

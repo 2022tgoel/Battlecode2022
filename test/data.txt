@@ -17,15 +17,16 @@
 
 > Task :run
 [server:debug] Awaiting match
-[server:debug] Running: barbary_gleb (D:\CalebArulandu\Interests\Computer_Science\Battlecode\2022\Battlecode2022\build\classes)  vs barbaryfig (D:\CalebArulandu\Interests\Computer_Science\Battlecode\2022\Battlecode2022\build\classes)  on [explore]
+[server:debug] Running: rebutia_transitions (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs peyote_old (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [explore]
 [server] -------------------- Match Starting --------------------
-[server] barbary_gleb vs. barbaryfig on explore
-[server]                   barbaryfig (B) wins (round 184)
+[server] rebutia_transitions vs. peyote_old on explore
+[server]                   peyote_old (B) wins (round 121)
 [server] Reason: The winning team won by annihilating the enemy team's Archons.
 [server] -------------------- Match Finished --------------------
-[server:debug] match completed in 1.785 seconds
+[server:debug] match completed in 1.742 seconds
 [server:debug] Awaiting match
 [server:debug] Shutting down server
+Closed: /0:0:0:0:0:0:0:1:53806 for null
 
 BUILD SUCCESSFUL in 3s
 9 actionable tasks: 2 executed, 7 up-to-date

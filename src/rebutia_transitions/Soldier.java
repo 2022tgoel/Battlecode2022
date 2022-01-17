@@ -1,4 +1,4 @@
-package peyote;
+package rebutia_transitions;
 
 import battlecode.common.*;
 
@@ -14,7 +14,7 @@ public class Soldier extends Unit {
         LOW_HEALTH,
         DEFENSIVE_RUSH,
         WAITING,
-        CONVOY
+        CONVOY, HEALING
         ;
     }
 
@@ -44,45 +44,103 @@ public class Soldier extends Unit {
         updateCount();
         attacked = attemptAttack(false);
         findTargets();
-        mode = determineMode();
+        mode = switchMode(mode);
         switch (mode) {
             case EXPLORATORY:
                 moveInDirection(exploratoryDir);
                 break;
             case ARCHON_RUSH:
                 approachArchon();
-                target = null;
                 break;
             case HUNTING:
                 huntTarget();
-                target = null;
                 break;
             case DEFENSIVE_RUSH:
                 defensiveMove();
             case FLEE:
                 moveInDirection(fleeDirection);
                 break;
+            case LOW_HEALTH:
+                fuzzyMove(homeArchon);
+                break;
+            case HEALING:
+                break;
             default:
                 break;
         }
         if (!attacked) attemptAttack(true);
-        if (adjacentToEdge()) {
-            exploratoryDir = getExploratoryDir(5);
-        }
+        if (adjacentToEdge()) exploratoryDir = getExploratoryDir(5);
+
         senseMiningArea();
-        visualizeTarget();
-        if (round_num % 3 == 0){
-            target = null;
+        visualize();
+        target = null;
+    }
+
+    public MODE switchMode(MODE m) throws GameActionException {
+
+        if (shouldDefend()) return MODE.DEFENSIVE_RUSH;
+
+        if (isLowHealth()) return MODE.LOW_HEALTH;
+
+        int[] potFleeDir = fleeDirection();
+        boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
+        if (validFlee) {
+            fleeDirection = potFleeDir;
+            stopFleeingRound = round_num + 4;
+            return MODE.FLEE;
+        }
+
+        switch (m) {
+            case EXPLORATORY:
+                if (target != null) return MODE.HUNTING;
+                else return MODE.EXPLORATORY;
+            case HUNTING:
+                if (target != null) return MODE.HUNTING;
+                else return MODE.EXPLORATORY;
+            case ARCHON_RUSH:
+                if (target != null) return MODE.ARCHON_RUSH;
+                else return MODE.EXPLORATORY;
+            case FLEE:
+                if (stopFleeingRound == round_num) {
+                    exploratoryDir = getExploratoryDir(5);
+                    return MODE.EXPLORATORY;
+                }
+                else return MODE.FLEE;
+            case LOW_HEALTH:
+                if (rc.getLocation().distanceSquaredTo(homeArchon) <= 9) return MODE.HEALING;
+                else return MODE.LOW_HEALTH;
+            case HEALING:
+                if (rc.getHealth() < rc.getType().health - 1) return MODE.HEALING;
+                else return MODE.EXPLORATORY;
+            case DEFENSIVE_RUSH:
+                return MODE.EXPLORATORY;
+            default:
+                return MODE.EXPLORATORY;
         }
     }
 
-    public void visualizeTarget() throws GameActionException {
+    public boolean shouldDefend() throws GameActionException {
+        // Priority 1 - Defend.
+        threatenedArchons = findThreatenedArchons();
+        if (threatenedArchons != null) {
+            for (MapLocation archon: threatenedArchons) {
+                if (rc.getLocation().distanceSquaredTo(archon) <= DRUSH_RSQR) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public void visualize() throws GameActionException {
         if (target != null) {
-            rc.setIndicatorString("TARGET: " + target.toString() + " MODE: " + mode.toString());
-            rc.setIndicatorLine(rc.getLocation(), target, 100, 0, 0);
+            if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: " + target.toString() + " MODE: " + mode.toString());
+            else rc.setIndicatorString("TARGET: " + target.toString() + " MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
+            rc.setIndicatorLine(rc.getLocation(), target, 0, 100, 0);
         }
         else {
-            rc.setIndicatorString("TARGET: null MODE: " + mode.toString());
+            if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: null MODE: " + mode.toString());
+            else rc.setIndicatorString("TARGET: null MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
         }
     }
 
@@ -149,21 +207,11 @@ public class Soldier extends Unit {
         }
     }
 
-    public void broadcastTarget(MapLocation enemy) throws GameActionException {
-        int data;
-        int loc = 64 * enemy.x + enemy.y;
-        for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
-            data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
-            if (data == 0) {
-                rc.writeSharedArray(CHANNEL.TARGET.getValue() + i, loc);
-                System.out.println("I broadcasted an enemy at " + enemy.toString());
-            }
-        }
-    }
-
     public void findTargets() throws GameActionException {
         int data;
+        int closestDist = 100000;
         MapLocation cur = rc.getLocation();
+        MapLocation closestTarget = null;
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
             data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             if (data != 0) {
@@ -172,12 +220,19 @@ public class Soldier extends Unit {
                 int y = data % 64;
                 System.out.println("I received an enemy at " + x + " " + y + " on round " + round_num);
                 MapLocation potentialTarget = new MapLocation(x, y);
-                exploratoryDir = new int[]{potentialTarget.x - cur.x, potentialTarget.y - cur.y};
-                if (rc.getLocation().distanceSquaredTo(potentialTarget) <= mapArea / 16) {
-                    target = potentialTarget;
-                    // wanders in direction of target
-                    break;
+                if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
+                    closestDist = cur.distanceSquaredTo(potentialTarget);
+                    closestTarget = potentialTarget;
                 }
+            }
+        }
+
+        // finds closest target, and advances towards it.
+        if (closestTarget != null) {
+            if (cur.distanceSquaredTo(closestTarget) <= mapArea / 16) {
+                target = closestTarget;
+                exploratoryDir = new int[]{closestTarget.x - cur.x, closestTarget.y - cur.y};
+                // wanders in direction of target
             }
         }
     }
@@ -212,46 +267,6 @@ public class Soldier extends Unit {
         else moveInDirection(dir);
     }
 
-    public MODE determineMode() throws GameActionException {
-
-        // Priority 1 - Defend.
-        threatenedArchons = findThreatenedArchons();
-        if (threatenedArchons != null) {
-            for (MapLocation archon: threatenedArchons) {
-                if (rc.getLocation().distanceSquaredTo(archon) <= DRUSH_RSQR) {
-                    return MODE.DEFENSIVE_RUSH;
-                }
-            }
-        }
-
-        // Priority 2 - Don't die.
-        int[] potFleeDir = fleeDirection();
-        boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
-        if (!validFlee && stopFleeingRound == round_num) {
-            exploratoryDir = getExploratoryDir(5);
-        }
-        if (validFlee || stopFleeingRound <= round_num) {
-            if (validFlee) fleeDirection = potFleeDir;
-            // keep fleeing for two moves (2 rounds per move)
-            if (stopFleeingRound <= round_num) {
-                stopFleeingRound = round_num + 4;
-            }
-            return MODE.FLEE;
-        }
-        // Priority 3 - Kill Archons.
-        boolean archonDetected = detectArchon() || senseArchon();
-        if (archonDetected) {
-            if (rc.getLocation().distanceSquaredTo(archon_target) <= ARUSH_RSQR)
-                return MODE.ARCHON_RUSH;
-        }
-        // Priority 4 - Hunt enemies.
-        if (target != null) {
-            return MODE.HUNTING;
-        }
-
-        return MODE.EXPLORATORY;
-    }
-
     public void defensiveMove() throws GameActionException{
         MapLocation closest = threatenedArchons[0];
         int min_dist = Integer.MAX_VALUE;
@@ -264,7 +279,13 @@ public class Soldier extends Unit {
                 }
             }
         }
-        fuzzyMove(closest);
+        // if you don't see the enemy, and you're not close to the archon, move towards it
+        if (rc.getLocation().distanceSquaredTo(closest) > 36 || target == null) {
+            fuzzyMove(closest);
+        }
+        else {
+            huntTarget();
+        }
     }
 
     public boolean archonDied() throws GameActionException{
@@ -342,9 +363,8 @@ public class Soldier extends Unit {
             // rc.writeSharedArray(, value);
             data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
             // go through channels until you find an empty one to communicate with.
-            int w = data / 4096;
-            if (w != 0) {
-                int x = (data - w * 4096) / 64;
+            if (data != 0) {
+                int x = data / 64;
                 int y = data % 64;
                 if (validCoords(x, y)) {
                     archons[numThreatenedArchons] = new MapLocation(x, y);
@@ -383,12 +403,8 @@ public class Soldier extends Unit {
     }
 
     public boolean isLowHealth() throws GameActionException {
-        if (rc.getHealth() < 20) {
-            return true;
-        }
-        else {
-            return false;
-        }
+        if (rc.getHealth() < 20) return true;
+        else return false;
     }
 
     public Direction usefulDir() throws GameActionException {
@@ -458,6 +474,7 @@ public class Soldier extends Unit {
             else if (archon != null) {
                 if (rc.canAttack(archon.location)) {
                     rc.attack(archon.location);
+                    broadcastTarget(archon.location);
                     return true;
                 }
             }

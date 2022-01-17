@@ -1,4 +1,4 @@
-package echinocereus;
+package lophophora;
 
 import battlecode.common.*;
 import java.util.*;
@@ -10,7 +10,7 @@ public class Unit{
     RANK[] rank_map = initializeRankMap();
     final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
-    static final int minerToLeadRate = 50;
+    static final int minerToLeadRate = 100;
     int seed_increment = 4;
     MapLocation homeArchon;
     public MapLocation archon_target;
@@ -151,6 +151,7 @@ public class Unit{
         return c;
     }
 
+
     public boolean senseMiningArea() throws GameActionException {
         int value = 0;
         int cx = 0;
@@ -169,10 +170,10 @@ public class Unit{
         }
         if (value >=25){
             MapLocation dest = new MapLocation(cx/value, cy/value);
+            // demand disabled for now
             int demand = value/minerToLeadRate - numFriendlyMiners();
-         //   System.out.println(dest);
             if (demand > 0) {
-                broadcastMiningArea(dest, Math.min(demand, 7)); // seven is current cap for demand
+                broadcastMiningArea(dest, demand); 
                 return true;
             }
         }
@@ -180,7 +181,6 @@ public class Unit{
     }
     
     public void broadcastMiningArea(MapLocation loc, int demand) throws GameActionException{
-        assert(demand < 8);
         int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
         //fuzzy location
         int x_loc= Math.min( (int)Math.round((double)loc.x/4.0) , 15);
@@ -197,7 +197,8 @@ public class Unit{
             }
         }
         int value = (demand << 8) + (x_loc << 4) + y_loc; 
-       // System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 + " " + demand + " " + rc.getRoundNum());
+        rc.setIndicatorDot(new MapLocation(x_loc*4, y_loc*4), 255, 0, 0);
+        System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 + " " + demand + " " + rc.getRoundNum());
         rc.writeSharedArray(CHANNEL.MINING1.getValue() +indToPut, value);
     }
     /**
@@ -290,7 +291,7 @@ public class Unit{
                         cost+=5;
                     }
                     if (i >= 3) {
-                        cost += 50;
+                        cost += 30;
                     }
                     if (i >=5 ){
                         cost+=30;
@@ -340,7 +341,7 @@ public class Unit{
             
             String s = "";
             for (int i= 0; i < dirs.length;i++){
-                s+=String.valueOf(costs[i])+ " ";
+                s+=dirs[i] + " " + String.valueOf(costs[i])+ " ";
             }
             s+=String.valueOf(rc.canMove(toDest));
             rc.setIndicatorString(s);

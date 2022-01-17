@@ -1,4 +1,4 @@
-package peyote;
+package lophophora;
 
 import battlecode.common.*;
 
@@ -19,7 +19,14 @@ public class Soldier extends Unit {
     }
 
     boolean attacked = false;
+    boolean convoy_found = false;
+    int counter = 0;
+    int exploratoryDirUpdateRound = 0;
+    int threatDetectedRound = 10000;
     int round_num = 0;
+    int dRushChannel = -1;
+
+    int convoyDeployRound = 10000;
 
     RANK rank;
     MODE mode = MODE.EXPLORATORY;
@@ -43,7 +50,6 @@ public class Soldier extends Unit {
         round_num = rc.getRoundNum();
         updateCount();
         attacked = attemptAttack(false);
-        findTargets();
         mode = determineMode();
         switch (mode) {
             case EXPLORATORY:
@@ -70,20 +76,7 @@ public class Soldier extends Unit {
             exploratoryDir = getExploratoryDir(5);
         }
         senseMiningArea();
-        visualizeTarget();
-        if (round_num % 3 == 0){
-            target = null;
-        }
-    }
-
-    public void visualizeTarget() throws GameActionException {
-        if (target != null) {
-            rc.setIndicatorString("TARGET: " + target.toString() + " MODE: " + mode.toString());
-            rc.setIndicatorLine(rc.getLocation(), target, 100, 0, 0);
-        }
-        else {
-            rc.setIndicatorString("TARGET: null MODE: " + mode.toString());
-        }
+        rc.setIndicatorString("MODE: " + mode.toString());
     }
 
     public int[] fleeDirection() throws GameActionException{
@@ -149,39 +142,6 @@ public class Soldier extends Unit {
         }
     }
 
-    public void broadcastTarget(MapLocation enemy) throws GameActionException {
-        int data;
-        int loc = 64 * enemy.x + enemy.y;
-        for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
-            data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
-            if (data == 0) {
-                rc.writeSharedArray(CHANNEL.TARGET.getValue() + i, loc);
-                System.out.println("I broadcasted an enemy at " + enemy.toString());
-            }
-        }
-    }
-
-    public void findTargets() throws GameActionException {
-        int data;
-        MapLocation cur = rc.getLocation();
-        for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
-            data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
-            if (data != 0) {
-                int w = data / 4096;
-                int x = (data - w * 4096) / 64;
-                int y = data % 64;
-                System.out.println("I received an enemy at " + x + " " + y + " on round " + round_num);
-                MapLocation potentialTarget = new MapLocation(x, y);
-                exploratoryDir = new int[]{potentialTarget.x - cur.x, potentialTarget.y - cur.y};
-                if (rc.getLocation().distanceSquaredTo(potentialTarget) <= mapArea / 16) {
-                    target = potentialTarget;
-                    // wanders in direction of target
-                    break;
-                }
-            }
-        }
-    }
-
     public void huntTarget() throws GameActionException {
         // if target is within 3 tiles, do not move closer, otherwise move closer
         MapLocation cur = rc.getLocation();
@@ -214,7 +174,7 @@ public class Soldier extends Unit {
 
     public MODE determineMode() throws GameActionException {
 
-        // Priority 1 - Defend.
+        // Priority 2 - Defend.
         threatenedArchons = findThreatenedArchons();
         if (threatenedArchons != null) {
             for (MapLocation archon: threatenedArchons) {
@@ -224,7 +184,7 @@ public class Soldier extends Unit {
             }
         }
 
-        // Priority 2 - Don't die.
+        // Priority 1 - Don't die.
         int[] potFleeDir = fleeDirection();
         boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
         if (!validFlee && stopFleeingRound == round_num) {
@@ -245,7 +205,7 @@ public class Soldier extends Unit {
                 return MODE.ARCHON_RUSH;
         }
         // Priority 4 - Hunt enemies.
-        if (target != null) {
+        else if (target != null) {
             return MODE.HUNTING;
         }
 
@@ -342,9 +302,8 @@ public class Soldier extends Unit {
             // rc.writeSharedArray(, value);
             data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
             // go through channels until you find an empty one to communicate with.
-            int w = data / 4096;
-            if (w != 0) {
-                int x = (data - w * 4096) / 64;
+            if (data != 0) {
+                int x = data / 64;
                 int y = data % 64;
                 if (validCoords(x, y)) {
                     archons[numThreatenedArchons] = new MapLocation(x, y);
@@ -442,16 +401,12 @@ public class Soldier extends Unit {
             if (weakestSoldier != null) {
                 if (rc.canAttack(weakestSoldier.location)) {
                     rc.attack(weakestSoldier.location);
-                    target = weakestSoldier.location;
-                    broadcastTarget(weakestSoldier.location);
                     return true;
                 }
             }
             else if (weakestMiner != null && attackMiners) {
                 if (rc.canAttack(weakestMiner.location)) {
                     rc.attack(weakestMiner.location);
-                    target = weakestMiner.location;
-                    broadcastTarget(weakestMiner.location);
                     return true;
                 }
             }
