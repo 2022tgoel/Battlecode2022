@@ -25,6 +25,7 @@ public class Miner extends Unit {
     }
     @Override
     public void run() throws GameActionException {
+        super.run();
         round_num = rc.getRoundNum();
         radio.updateCounter();
         int amountMined = mine();

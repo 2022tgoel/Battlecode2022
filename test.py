@@ -6,24 +6,34 @@ JDK_PATH = 'C:/Program Files/Java/jdk1.8.0_311' # set to None if u don't care / 
 
 def main():
     print("Starting Tests!")
+
     playerA = sys.argv[1].strip() if len(sys.argv) >= 3 else "pathfindingplayer_OLD_v3"
     playerB = sys.argv[2].strip() if len(sys.argv) >= 3 else "triangle"
-    playAllMaps(playerA, playerB)
 
-def playAllMaps(playerA: str, playerB: str):
+    init(playerA, playerB)
+
+    maps = sys.argv[3:] if len(sys.argv) >= 4 else None
+    if maps is None:
+        listMaps()
+        maps = getMaps()
+
+    play(playerA, playerB, maps)
+
+def init(playerA, playerB):
     changeGame(playerA, playerB, 'other') # init gradle.properties before running any commands
-    listMaps()
-    maps = getMaps()
+
+def play(playerA, playerB, maps):
     winsA = 0
     winsB = 0
     dataList = []
-    print(f"{playerA} wins: 0 | {playerB} wins: 0", end="\r")
+
     for map in maps:
+        print(f"{playerA} wins: {winsA} | {playerB} wins: {winsB} | running: {map}" + ' '*25, end="\r")
         updateA, updateB = runMatch(playerA, playerB, map)
         winsA += updateA
         winsB += updateB
         dataList.append((map, updateA, updateB))
-        print(f"{playerA} wins: {winsA} | {playerB} wins: {winsB}", end="\r")
+
     print(f"{playerA} wins: {winsA} | {playerB} wins: {winsB}", end="\n")
     printData(playerA, playerB, dataList)
 

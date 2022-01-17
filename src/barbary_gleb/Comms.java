@@ -79,7 +79,7 @@ public class Comms {
     public void updateCounter(BiCHANNEL bich) throws GameActionException {
         CHANNEL channel = getCounterChannel(bich, false);
         int num = wasFirstConnection ? 0 : rc.readSharedArray(channel.getValue());
-        rc.writeSharedArray(channel.getValue(), num + 1);
+        rc.writeSharedArray(channel.getValue(), num+1);
     }
 
     public int readCounter(RobotType rt) throws GameActionException {

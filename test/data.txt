@@ -20,10 +20,10 @@
 [server:debug] Running: barbary_gleb (D:\CalebArulandu\Interests\Computer_Science\Battlecode\2022\Battlecode2022\build\classes)  vs barbaryfig (D:\CalebArulandu\Interests\Computer_Science\Battlecode\2022\Battlecode2022\build\classes)  on [explore]
 [server] -------------------- Match Starting --------------------
 [server] barbary_gleb vs. barbaryfig on explore
-[server]                   barbaryfig (B) wins (round 179)
+[server]                   barbaryfig (B) wins (round 184)
 [server] Reason: The winning team won by annihilating the enemy team's Archons.
 [server] -------------------- Match Finished --------------------
-[server:debug] match completed in 1.796 seconds
+[server:debug] match completed in 1.785 seconds
 [server:debug] Awaiting match
 [server:debug] Shutting down server
 
