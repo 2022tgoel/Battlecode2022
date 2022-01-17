@@ -201,8 +201,13 @@ public class Comms {
         return intToLocation(rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + i));
     }
 
-    public int locationToInt(MapLocation loc) {
+    public static int locationToInt(MapLocation loc) {
         return 64 * loc.x + loc.y;
+    }
+
+    public static MapLocation getTarget(RobotController rc, int i) throws GameActionException {
+        int data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
+        return intToLocation(data);
     }
 
     public static MapLocation intToLocation(int loc_int) {

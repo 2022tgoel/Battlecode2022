@@ -44,6 +44,8 @@ public class Miner extends Unit {
                     case FLEEING:
                         moveInDirection(fleeDirection);
                         break;
+                    default:
+                        break;
                 }
                 if (adjacentToEdge()) {
                     exploratoryDir = getExploratoryDir(7);
@@ -54,7 +56,7 @@ public class Miner extends Unit {
         }
         amountMined += mine();
         senseMiningArea();
-        rc.setIndicatorString(" " + mode + " " + amountMined + " " + target);
+        rc.setIndicatorString(mode + " " + amountMined + " " + target);
     }
 
     public RANK findRankMiner() throws GameActionException {
@@ -62,6 +64,12 @@ public class Miner extends Unit {
     }
 
     public MODE getMode(int amountMined) throws GameActionException {
+        /**
+         * Modes:
+         * - Mining
+         * - Exploring
+         * - Travelling
+         */
         int[] potFleeDirection = enemiesDetected();
         // if you just escaped an enemy, explore in a new direction
         if (potFleeDirection == null && stopFleeingRound == round_num)

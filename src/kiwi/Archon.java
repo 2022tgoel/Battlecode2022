@@ -10,8 +10,6 @@ public class Archon extends Unit {
         DEFAULT,
         THREATENED,
         OTHER_THREATENED,
-        AGGRO,
-        OTHER_AGGRO,
         ;
     }
 
@@ -36,10 +34,6 @@ public class Archon extends Unit {
     private int total_soldier_count = 0;
     private int total_miner_count = 0;
 
-    public boolean foundOtherArchon() throws GameActionException {
-        return rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION.getValue()) != 0;
-    }
-
     Comms radio;
 
     public Archon(RobotController rc) throws GameActionException {
@@ -60,24 +54,11 @@ public class Archon extends Unit {
         radio.clearThreat();
         radio.clearMiningAreas();
         radio.clearTargetAreas();
-
-        boolean foundEnemyArchon = false;
-        for (int i = 0; i < 4; i++) {
-            MapLocation al = radio.getEnemyArchonLocation(i);
-            if (al != null) {
-                foundEnemyArchon = true;
-                System.out.println("enemy archon @ " + al);
-            }
-        }
-        if (!foundEnemyArchon) {
-            // System.out.println("no enemy archon");
-        }
-
         num_archons_alive = rc.getArchonCount();
         total_miner_count = radio.getMiners();
         total_builder_count = radio.getBuilders();
         total_soldier_count = radio.getSoldiers();
-        if (round_num % num_archons_alive == 0) {
+        if (round_num % num_archons_alive == archonNumber) {
             radio.clearCounts();
         }
         MODE mode = determineMode();
@@ -111,21 +92,10 @@ public class Archon extends Unit {
                 if (rc.getTeamLeadAmount(rc.getTeam()) < 600) {
                     break; // save for attacked archon
                 }
-                break;
-            case AGGRO:
-                rc.setIndicatorDot(rc.getLocation(), 255, 0, 0);
-                // Soldier, soldier, miner cycle
-                build(new int[] { 2, 2, 1 });
-                break;
-            case OTHER_AGGRO:
-                rc.setIndicatorDot(rc.getLocation(), 0, 0, 255);
-                // Save for other archon
-                break;
             case DEFAULT:
                 if (round_num % num_archons_alive != archonNumber) {
                     return;
                 }
-                build(defaultBuildOrder);
                 /*
                  * if (rc.getHealth() < RobotType.ARCHON.health && !builderInRange()){
                  * for (int i = dirs.length -1; i>=0; i--){ //reverse
@@ -133,14 +103,11 @@ public class Archon extends Unit {
                  * }
                  * }
                  */
-                // build(foundOtherArchon() ? BUILD_ORDER_CLOSEST_TO_ENEMY :
-                // BUILD_ORDER_FOUND_NO_OTHER_ARCHON);
+                build(defaultBuildOrder);
                 break;
         }
-        // rc.setIndicatorString("Number of miners: " + total_miner_count);
-        // rc.setIndicatorString("mode: " + mode.toString() + " " +
-        // radio.totalUnderThreat());
-        System.out.println("MODE: " + mode.toString());
+        rc.setIndicatorString("Number of miners: " + total_miner_count);
+        rc.setIndicatorString("mode: " + mode.toString() + " " + radio.totalUnderThreat());
     }
 
     public void build(int[] build_order) throws GameActionException {
@@ -189,46 +156,16 @@ public class Archon extends Unit {
         radio.postBuild(BOT.NONE);
     }
 
-    public int closestArchonToLocation(MapLocation targetLocation) throws GameActionException {
-        int closestID = -1;
-        int closestDistance = Integer.MAX_VALUE;
-        for (int i = 0; i < num_archons_alive; i++) {
-            MapLocation archonLocation = Comms.getFriendlyArchonLocation(rc, i);
-            int dist = archonLocation.distanceSquaredTo(targetLocation);
-            if (dist < closestDistance) {
-                closestDistance = dist;
-                closestID = i;
-            }
-        }
-        return closestID;
-    }
-
     public MODE determineMode() throws GameActionException {
         int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
-        if (underThreat()) {
+        if (underThreat())
             return MODE.THREATENED;
-        }
-        if (radio.totalUnderThreat() > 0) {
+        else if (radio.totalUnderThreat() > 0)
             return MODE.OTHER_THREATENED;
-        }
-        if (num_miners < (sizeBracket * 3) / num_archons_init) {
+        else if (num_miners < (sizeBracket * 3) / num_archons_init)
             return MODE.INITIAL;
-        }
-
-        MapLocation enemyArchonLocation = null;
-        for (int i = 0; i < 4; i++) {
-            enemyArchonLocation = radio.getEnemyArchonLocation(i);
-            if (enemyArchonLocation != null) {
-                int closestArchonID = closestArchonToLocation(enemyArchonLocation);
-                if (closestArchonID == archonNumber) {
-                    return MODE.AGGRO;
-                }
-
-                return MODE.OTHER_AGGRO;
-            }
-        }
-
-        return MODE.DEFAULT;
+        else
+            return MODE.DEFAULT;
     }
 
     public boolean underThreat() {
@@ -328,11 +265,11 @@ public class Archon extends Unit {
 
     public int[] chooseBuildOrder() {
         if (mapArea < 1400) {
-            return new int[] { 1, 2, 3 }; // miners, soldiers, builders
+            return new int[] { 1, 6, 0 }; // miners, soldiers, builders
         } else if (mapArea < 2200) {
-            return new int[] { 1, 2, 3 }; // miners, soldiers, builders
+            return new int[] { 1, 6, 0 }; // miners, soldiers, builders
         } else {
-            return new int[] { 1, 2, 3 }; // miners, soldiers, builders
+            return new int[] { 1, 6, 0 }; // miners, soldiers, builders
         }
     }
 

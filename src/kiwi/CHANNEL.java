@@ -1,5 +1,9 @@
 package kiwi;
 
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
+
 public enum CHANNEL {
     // channels 0 - 3
     ENEMY_ARCHON_LOCATION(0),
@@ -16,6 +20,12 @@ public enum CHANNEL {
     TARGET(20),
     // channels 25 - 28
     FRIENDLY_ARCHON_LOCATION(25),
+    // channels 29 - 33
+    DISTRESS(29),
+    DISTRESS1(30),
+    DISTRESS2(31),
+    DISTRESS3(32),
+    DISTRESS4(33),
     ORDERS(61),
     SEND_RANKS1(62),
     SEND_RANKS2(63),
@@ -25,8 +35,32 @@ public enum CHANNEL {
 
     private final int id;
 
+    public static final CHANNEL[] byID = new CHANNEL[64];
+
     CHANNEL(int id) {
         this.id = id;
+    }
+
+    static {
+        for (CHANNEL c : CHANNEL.values()) {
+            byID[c.id] = c;
+        }
+    }
+
+    public int readInt(RobotController rc) throws GameActionException {
+        return rc.readSharedArray(id);
+    }
+
+    public void writeInt(RobotController rc, int value) throws GameActionException {
+        rc.writeSharedArray(id, value);
+    }
+
+    public MapLocation readLocation(RobotController rc) throws GameActionException {
+        return Comms.intToLocation(rc.readSharedArray(this.id));
+    }
+
+    public void writeLocation(RobotController rc, MapLocation location) throws GameActionException {
+        rc.writeSharedArray(this.id, Comms.locationToInt(location));
     }
 
     public int getValue() {

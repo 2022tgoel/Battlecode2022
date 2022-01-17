@@ -375,29 +375,19 @@ public class Unit {
         return getExploratoryDir(span, new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2));
     }
 
-    public int[] getExploratoryDir(int span, MapLocation loc) {
+    public int[] getExploratoryDir(int span, MapLocation exploreTarget) {
         // presumes span is odd.
-        int[] dir;
-        MapLocation cur = rc.getLocation();
-        if (loc.x - cur.x > 0) {
-            if (loc.y - cur.y > 0) {
-                dir = new int[] { 8, 8 };
-            } else {
-                dir = new int[] { 8, -8 };
-            }
-        } else {
-            if (loc.y - cur.y > 0) {
-                dir = new int[] { -8, 8 };
-            } else {
-                dir = new int[] { -8, -8 };
-            }
-        }
-        int[][] dirs = new int[span][2];
+        MapLocation location = rc.getLocation();
+        int[] direction = new int[] {
+                exploreTarget.x > location.x ? 8 : -8,
+                exploreTarget.y > location.y ? 8 : -8
+        };
+        int[][] directions = new int[span][2];
         int counter = 0;
 
         int increment;
         int init_val;
-        if (dir[0] < 0) {
+        if (direction[0] < 0) {
             increment = -4;
             init_val = -8 + ((((span + 1) / 2) - 1) * -increment);
         } else {
@@ -405,12 +395,12 @@ public class Unit {
             init_val = 8 + ((((span + 1) / 2) - 1) * -increment);
         }
 
-        for (int i = init_val; i != dir[0]; i += increment) {
-            dirs[counter] = new int[] { i, dir[1] };
+        for (int i = init_val; i != direction[0]; i += increment) {
+            directions[counter] = new int[] { i, direction[1] };
             counter += 1;
         }
 
-        if (dir[1] < 0) {
+        if (direction[1] < 0) {
             increment = -4;
             init_val = -8 + ((((span + 1) / 2) - 1) * -increment);
             ;
@@ -420,12 +410,12 @@ public class Unit {
             ;
         }
 
-        for (int i = init_val; i != dir[1]; i += increment) {
-            dirs[counter] = new int[] { dir[0], i };
+        for (int i = init_val; i != direction[1]; i += increment) {
+            directions[counter] = new int[] { direction[0], i };
             counter += 1;
         }
 
-        dirs[dirs.length - 1] = dir;
+        directions[directions.length - 1] = direction;
         // print directions
         // rc.setIndicatorString("dirs: " + dirs[0][0] + " " + dirs[0][1] + " " +
         // dirs[1][0] + " " + dirs[1][1] + " " + dirs[2][0] + " " + dirs[2][1] + " " +
@@ -433,7 +423,7 @@ public class Unit {
         // (center.x - cur.x) + " " + (center.y - cur.y) + " | " + center.x + " " +
         // center.y + " | " + cur.x + " " + cur.y);
 
-        return dirs[rng.nextInt(dirs.length)];
+        return directions[rng.nextInt(directions.length)];
     }
 
     public boolean adjacentToEdge() throws GameActionException {

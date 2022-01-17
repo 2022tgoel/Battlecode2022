@@ -12,6 +12,7 @@ public class Soldier extends Unit {
     enum MODE {
         EXPLORATORY,
         HUNTING,
+        SUPPORT,
         ARCHON_RUSH,
         FLEE,
         LOW_HEALTH,
@@ -20,7 +21,7 @@ public class Soldier extends Unit {
         CONVOY;
     }
 
-    boolean attacked = false;
+    boolean didAttemptAttack = false;
     int round_num = 0;
 
     RANK rank;
@@ -34,6 +35,8 @@ public class Soldier extends Unit {
     private int stopFleeingRound = 10000;
     private int DRUSH_RSQR = 400;
     private int ARUSH_RSQR = 900;
+    private CHANNEL stressChannel = null;
+    private MapLocation stressLocation = null;
 
     public Soldier(RobotController rc) throws GameActionException {
         super(rc);
@@ -41,12 +44,68 @@ public class Soldier extends Unit {
         initialize();
     }
 
+    public void broadcastDistress(MapLocation stressLocation) throws GameActionException {
+        for (int i = 0; i < 4; i++) {
+            stressChannel = CHANNEL.byID[CHANNEL.DISTRESS.getValue() + i];
+            if (stressChannel.readInt(rc) == 0) {
+                stressChannel.writeLocation(rc, stressLocation);
+            }
+        }
+    }
+
+    public boolean hasStressfulEnvironment() throws GameActionException {
+        // Returns whether there are more than 2 enemy robots
+        int numEnemies = 0;
+        for (RobotInfo ri : rc.senseNearbyRobots(9, rc.getTeam().opponent())) {
+            if (ri.type == RobotType.SOLDIER) {
+                if (++numEnemies > 2) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 
+     * @return whether there is a new stressful situation
+     * @throws GameActionException
+     */
+    public boolean detectNewStressfulSituation() throws GameActionException {
+        if (stressLocation != null) {
+            if (rc.getLocation().distanceSquaredTo(stressLocation) < 9) {
+                if (!hasStressfulEnvironment()) {
+                    int stressLocationInt = Comms.locationToInt(stressLocation);
+                    // Clear the existing distress signal
+                    if (stressChannel.readInt(rc) == stressLocationInt) {
+                        stressChannel.writeInt(rc, 0);
+                    }
+                    stressChannel = null;
+                    stressLocation = null;
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        if (hasStressfulEnvironment()) {
+            stressLocation = rc.getLocation();
+            return true;
+        }
+
+        return false;
+    }
+
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
         updateCount();
-        attacked = attemptAttack(false);
+        didAttemptAttack = attemptAttack(false);
         findTargets();
+        if (detectNewStressfulSituation()) {
+            broadcastDistress(stressLocation);
+        }
         mode = determineMode();
         switch (mode) {
             case EXPLORATORY:
@@ -54,11 +113,12 @@ public class Soldier extends Unit {
                 break;
             case ARCHON_RUSH:
                 approachArchon();
-                target = null;
+                // target = null;
                 break;
             case HUNTING:
+            case SUPPORT:
                 huntTarget();
-                target = null;
+                // target = null;
                 break;
             case DEFENSIVE_RUSH:
                 defensiveMove();
@@ -68,13 +128,12 @@ public class Soldier extends Unit {
             default:
                 break;
         }
-        if (!attacked)
+        if (!didAttemptAttack)
             attemptAttack(true);
         if (adjacentToEdge()) {
             exploratoryDir = getExploratoryDir(5);
         }
         senseMiningArea();
-        rc.setIndicatorString("MODE: " + mode.toString());
         if (target != null) {
             rc.setIndicatorString("TARGET: " + target.toString() + " MODE: " + mode.toString());
             rc.setIndicatorLine(rc.getLocation(), target, 100, 0, 0);
@@ -83,38 +142,38 @@ public class Soldier extends Unit {
         }
     }
 
-    public int[] fleeDirection() throws GameActionException {
+    public int[] getPotentialFleeDirection() throws GameActionException {
         MapLocation cur = rc.getLocation();
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1);
-        double cxsf = 0;
-        double cysf = 0;
-        double cxse = 0;
-        double cyse = 0;
+        double friendCenterX = 0;
+        double friendCenterY = 0;
+        double enemyCenterX = 0;
+        double enemyCenterY = 0;
         int numEnemies = 0;
         int maxHealthEnemy = 0;
         int numFriends = 0;
         for (RobotInfo bot : nearbyBots) {
             if (bot.team == rc.getTeam()) {
                 if (bot.type == RobotType.SOLDIER) {
-                    cxsf += bot.location.x;
-                    cysf += bot.location.y;
+                    friendCenterX += bot.location.x;
+                    friendCenterY += bot.location.y;
                     numFriends++;
                 }
             } else if (bot.team == rc.getTeam().opponent())
                 if (bot.type == RobotType.SOLDIER) {
-                    cxse += bot.location.x;
-                    cyse += bot.location.y;
+                    enemyCenterX += bot.location.x;
+                    enemyCenterY += bot.location.y;
                     maxHealthEnemy = Math.max(maxHealthEnemy, bot.health);
                     numEnemies++;
                 }
         }
         if (numEnemies > 0) {
-            cxse /= numEnemies;
-            cyse /= numEnemies;
+            enemyCenterX /= numEnemies;
+            enemyCenterY /= numEnemies;
         }
         if (numFriends > 0) {
-            cxsf /= numFriends;
-            cysf /= numFriends;
+            friendCenterX /= numFriends;
+            friendCenterY /= numFriends;
         }
         // for example, if soldier has 7,8, or 9 health this expression spits out 3, as
         // the soldier can only survive 3 hits.
@@ -122,14 +181,15 @@ public class Soldier extends Unit {
         int enemyHitsLeft = (maxHealthEnemy + 2) / 3;
         boolean winsInteraction = false;
         // soldier strikes second, so must have more hits remaining
-        if (attacked)
+        if (rc.isActionReady()) {
             winsInteraction = (soldierHitsLeft > enemyHitsLeft);
-        else
+        } else {
             winsInteraction = (soldierHitsLeft >= enemyHitsLeft);
+        }
         // count yourself
         if (numEnemies > (numFriends + 1) || (numEnemies == 1 && !winsInteraction)) {
-            double dx = -(cxse - cur.x);
-            double dy = -(cyse - cur.y);
+            double dx = -(enemyCenterX - cur.x);
+            double dy = -(enemyCenterY - cur.y);
             // more attracted
             // dx = 0.7 * dx + 0.3 * (cxsf - cur.x);
             // dy = 0.7 * dx + 0.3 * (cysf - cur.y);
@@ -149,12 +209,12 @@ public class Soldier extends Unit {
 
     public void broadcastTarget(MapLocation enemy) throws GameActionException {
         int data;
-        int loc = 64 * enemy.x + enemy.y;
+        int loc = Comms.locationToInt(enemy);
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
             data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             if (data == 0) {
                 rc.writeSharedArray(CHANNEL.TARGET.getValue() + i, loc);
-                // System.out.println("I broadcasted an enemy at " + enemy.toString());
+                break;
             }
         }
     }
@@ -180,7 +240,34 @@ public class Soldier extends Unit {
         }
     }
 
+    public void forgetDistantTargets() {
+        // If too far away from the target, forget about it
+        if (target != null && rc.getLocation().distanceSquaredTo(target) > 100) {
+            target = null;
+            return;
+        }
+    }
+
+    public void forgetStaleSupportCalls() {
+        if (mode == MODE.SUPPORT) {
+            if (target != null && rc.getLocation().isWithinDistanceSquared(target, 36)) {
+                int soldierCount = 0;
+                for (RobotInfo ri : rc.senseNearbyRobots(-1, rc.getTeam().opponent())) {
+                    if (ri.type == RobotType.SOLDIER) {
+                        soldierCount++;
+                    }
+                }
+                if (soldierCount == 0) {
+                    target = null;
+                    mode = MODE.EXPLORATORY;
+                }
+            }
+        }
+    }
+
     public void huntTarget() throws GameActionException {
+        forgetDistantTargets();
+
         // if target is within 3 tiles, do not move closer, otherwise move closer
         MapLocation cur = rc.getLocation();
         RobotInfo[] friendlySoldiers = rc.senseNearbyRobots(-1, rc.getTeam());
@@ -214,7 +301,6 @@ public class Soldier extends Unit {
     }
 
     public MODE determineMode() throws GameActionException {
-
         // Priority 1 - Defend.
         threatenedArchons = findThreatenedArchons();
         if (threatenedArchons != null) {
@@ -225,8 +311,23 @@ public class Soldier extends Unit {
             }
         }
 
+        forgetStaleSupportCalls();
+
+        // read distress signals
+        for (int i = 0; i < 4; i++) {
+            int chan = CHANNEL.DISTRESS.getValue() + i;
+            MapLocation distressLocation = Comms.intToLocation(rc.readSharedArray(chan));
+            if (distressLocation == null)
+                continue;
+
+            if (rc.getLocation().distanceSquaredTo(distressLocation) <= 225) {
+                target = distressLocation;
+                return MODE.SUPPORT;
+            }
+        }
+
         // Priority 2 - Don't die.
-        int[] potFleeDir = fleeDirection();
+        int[] potFleeDir = getPotentialFleeDirection();
         boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
         if (!validFlee && stopFleeingRound == round_num) {
             exploratoryDir = getExploratoryDir(5);
@@ -246,6 +347,32 @@ public class Soldier extends Unit {
             if (rc.getLocation().distanceSquaredTo(archon_target) <= ARUSH_RSQR)
                 return MODE.ARCHON_RUSH;
         }
+
+        // If there's a nearby target, and we have enough ppl nearby, swarm it.
+        if (target == null) {
+            RobotInfo[] nearby = rc.senseNearbyRobots(-1, rc.getTeam());
+            int soldierCount = 0;
+            if (nearby != null) {
+                for (RobotInfo robot : nearby) {
+                    if (robot.type == RobotType.SOLDIER) {
+                        soldierCount++;
+                        if (soldierCount > 3)
+                            break;
+                    }
+                }
+            }
+            if (soldierCount > 3)
+                for (int i = 0; i < 4; i++) {
+                    MapLocation tgt = Comms.getTarget(rc, i);
+                    if (tgt == null)
+                        continue;
+                    if (rc.getLocation().distanceSquaredTo(tgt) < 100) {
+                        target = tgt;
+                        return MODE.HUNTING;
+                    }
+                }
+        }
+
         // Priority 4 - Hunt enemies.
         if (target != null) {
             return MODE.HUNTING;
