@@ -2,13 +2,13 @@ import os
 import sys
 import platform
 
-JDK_PATH = 'C:/Program Files/Java/jdk1.8.0_311' # set to None if u don't care / old test.py was working
+JDK_PATH = None # set to None if u don't care / old test.py was working
 
 def main():
     print("Starting Tests!")
 
-    playerA = sys.argv[1].strip() if len(sys.argv) >= 3 else "pathfindingplayer_OLD_v3"
-    playerB = sys.argv[2].strip() if len(sys.argv) >= 3 else "triangle"
+    playerA = sys.argv[1].strip() if len(sys.argv) >= 3 else "rebutia_gleb"
+    playerB = sys.argv[2].strip() if len(sys.argv) >= 3 else "peyote_old"
 
     init(playerA, playerB)
 

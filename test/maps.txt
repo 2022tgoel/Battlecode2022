@@ -14,7 +14,6 @@ MAP: squer
 MAP: uncomfortable
 MAP: underground
 MAP: valley
-MAP: custom_cliff
 MAP: explore
 
 BUILD SUCCESSFUL in 1s
