@@ -23,7 +23,7 @@
 [server]                    rebutia (B) wins (round 175)
 [server] Reason: The winning team won by annihilating the enemy team's Archons.
 [server] -------------------- Match Finished --------------------
-[server:debug] match completed in 2.113 seconds
+[server:debug] match completed in 2.104 seconds
 [server:debug] Awaiting match
 [server:debug] Shutting down server
 
