@@ -51,7 +51,6 @@ public class Archon extends Unit {
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
         radio.update();
-        radio.clearThreat();
         radio.clearMiningAreas();
         radio.clearTargetAreas();
         num_archons_alive = rc.getArchonCount();
@@ -61,6 +60,7 @@ public class Archon extends Unit {
         if (round_num % num_archons_alive == archonNumber) {
             radio.clearCounts();
         }
+        radio.clearThreatAlert(rc.getLocation());
         MODE mode = determineMode();
         switch (mode) {
             case THREATENED:
@@ -74,7 +74,7 @@ public class Archon extends Unit {
                 for (Direction dir : enemyDirs) {
                     buildSoldier(dir);
                 }
-                return;
+                break;
             case INITIAL:
                 if (round_num % num_archons_alive != archonNumber) {
                     return;

@@ -1,12 +1,11 @@
 import os
-import sys
 import platform
 
 
 def main():
     print("Starting Tests!")
-    playerA = "peyote_old"
-    playerB = "rebutia"
+    playerA = "barbaryfig"
+    playerB = "kiwi"
     playAllMaps(playerA, playerB)
 
 def playAllMaps(playerA: str, playerB: str):

@@ -78,12 +78,14 @@ public class Unit {
                 continue;
             }
 
-            if (archon == null || me.distanceSquaredTo(nextArchon) < me.distanceSquaredTo(archon)) {
+            if (archon == null || (me.distanceSquaredTo(nextArchon) < me.distanceSquaredTo(archon))) {
                 archon = nextArchon;
                 archonIndex = i;
             }
         }
-
+        if (archon != null) {
+            // System.out.println("Ack: Broadcasted Archon");
+        }
         return archon;
     }
 
@@ -91,7 +93,7 @@ public class Unit {
         for (int i = 0; i < 4; i++) {
             int chan = CHANNEL.ENEMY_ARCHON_LOCATION.getValue() + i;
             MapLocation enemy = readMapLocation(chan);
-            if (rc.canSenseLocation(enemy)) {
+            if (enemy != null && rc.canSenseLocation(enemy)) {
                 RobotInfo existing = rc.senseRobotAtLocation(enemy);
                 if (existing != null) {
                     boolean isArchon = existing.getType() == RobotType.ARCHON;
@@ -107,9 +109,11 @@ public class Unit {
     public void broadcastNearbyArchons(RobotInfo[] allNearbyRobots) throws GameActionException {
         for (RobotInfo ri : allNearbyRobots) {
             if (ri.type == RobotType.ARCHON && ri.getTeam() == rc.getTeam().opponent()) {
-                System.out.println("Sensed new archon at " + ri.location);
-                archonIndex = broadcastArchon(ri.location);
-                nearestEnemyArchon = ri.location;
+                if (!ri.location.equals(this.nearestEnemyArchon)) {
+                    System.out.println("Sensed new archon at " + ri.location);
+                    archonIndex = broadcastArchon(ri.location);
+                    nearestEnemyArchon = ri.location;
+                }
             }
         }
     }

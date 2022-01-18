@@ -85,14 +85,6 @@ public class Comms {
         }
     }
 
-    public void clearThreat() throws GameActionException {
-        if (round_num % 15 == 0) {
-            for (int i = 0; i < 4; i++) {
-                rc.writeSharedArray(CHANNEL.FRIENDLY_ARCHON_STATUS.getValue() + i, 0);
-            }
-        }
-    }
-
     public void clearTargetAreas() throws GameActionException {
         if (round_num % 3 == 0) {
             for (int i = 0; i < 5; i++) {
@@ -109,28 +101,26 @@ public class Comms {
         }
     }
 
-    public int sendThreatAlert() throws GameActionException {
-        MapLocation my = rc.getLocation();
-        int threatChannel = -1;
+    public void clearThreatAlert(MapLocation location) throws GameActionException {
         for (int i = 0; i < 4; i++) {
-            // rc.writeSharedArray(, value);
-            int data = rc.readSharedArray(CHANNEL.FRIENDLY_ARCHON_STATUS.getValue() + i);
-            // go through channels until you find an empty one to communicate with.
-            int x = data / 64;
-            int y = data % 64;
-            // already alerted.
-            if (x == my.x && y == my.y) {
-                threatChannel = i;
-                return threatChannel;
-            }
-            if (data == 0 && threatChannel == -1) {
-                threatChannel = i;
+            int chan = CHANNEL.FRIENDLY_ARCHON_STATUS.getValue() + i;
+            MapLocation loc = Comms.intToLocation(rc.readSharedArray(chan));
+            if (loc != null && loc.equals(location)) {
+                rc.writeSharedArray(chan, 0);
             }
         }
-        if (threatChannel == -1)
-            threatChannel = 4; // override
-        rc.writeSharedArray(CHANNEL.FRIENDLY_ARCHON_STATUS.getValue() + threatChannel, locationToInt(my));
-        return threatChannel;
+    }
+
+    public int sendThreatAlert() throws GameActionException {
+        MapLocation my = rc.getLocation();
+        for (int i = 0; i < 4; i++) {
+            int chan = CHANNEL.FRIENDLY_ARCHON_STATUS.getValue() + i;
+            if (rc.readSharedArray(chan) == 0) {
+                rc.writeSharedArray(chan, locationToInt(my));
+                return i;
+            }
+        }
+        return -1;
     }
 
     public int totalUnderThreat() throws GameActionException {

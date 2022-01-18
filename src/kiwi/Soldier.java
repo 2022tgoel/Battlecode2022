@@ -37,8 +37,7 @@ public class Soldier extends Unit {
         return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
     }
 
-    public double getSquareQValue(MapLocation location, RobotInfo[] allNearbyRobots, MapLocation[] threatenedArchons,
-            MapLocation nearestEnemyArchon)
+    public double getSquareQValue(MapLocation location, RobotInfo[] allNearbyRobots, MapLocation[] threatenedArchons)
             throws GameActionException {
         double Q = 0;
 
@@ -47,13 +46,18 @@ public class Soldier extends Unit {
         MapLocation nearbyFriendlyArchon = null;
         Team team = rc.getTeam();
 
-        if (false) {
+        if (true) {
             for (RobotInfo robot : allNearbyRobots) {
                 int r2 = location.distanceSquaredTo(robot.location);
                 int manhattan = Math.abs(location.x - robot.location.x) + Math.abs(location.y - robot.location.y);
                 double levelDistance = Math.pow(r2, 1 / 4);
 
                 switch (robot.type) {
+                    case MINER:
+                        if (robot.team != team) {
+                            // Get attracted to miners
+                            Q += -Math.pow(r2, 1 / 4);
+                        }
                     case SOLDIER:
                         int hitsUntilDeath = (robot.health + 2) / 3;
                         // 1.0 casts to double
@@ -68,10 +72,6 @@ public class Soldier extends Unit {
                     case ARCHON:
                         if (robot.team == team) {
                             nearbyFriendlyArchon = robot.location;
-                        } else {
-                            System.out.println("Detected nearby Archon at a distance of " + r2);
-                            // There's an archon nearby, we BETTER get it.
-                            Q -= manhattan * 1000;
                         }
                         break;
                     default:
@@ -80,27 +80,40 @@ public class Soldier extends Unit {
             }
         }
 
-        // MapLocation nearestEnemyArchon = getNearestBroadcastedEnemyArchon();
-        if (nearestEnemyArchon != null) {
-            Q -= location.distanceSquaredTo(nearestEnemyArchon);
-        }
+        if (threatenedArchons.length > 0) {
+            // Defensive.
+            // Fall towards closest threatened Archon.
+            // Don't be indecisive!!
+            int closestThreatenedArchonDistance = Integer.MAX_VALUE;
+            for (MapLocation threatenedArchonLocation : threatenedArchons) {
+                int distance = location.distanceSquaredTo(threatenedArchonLocation);
+                if (distance < closestThreatenedArchonDistance) {
+                    closestThreatenedArchonDistance = distance;
+                }
+            }
 
-        // Fall towards threatened Archons
-        for (MapLocation threatenedArchonLocation : threatenedArchons) {
-            Q -= location.distanceSquaredTo(threatenedArchonLocation);
-        }
+            Q -= closestThreatenedArchonDistance;
+        } else {
+            // Offensive.
+            // Encourage exploration.
+            // Fall away from nearby Archon, but only to an extent.
+            if (nearbyFriendlyArchon != null) {
+                Q -= -Math.min(2, Math.pow(location.distanceSquaredTo(nearbyFriendlyArchon), 1 / 4));
+            }
 
-        // Fall away from nearby Archon
-        // if (nearbyFriendlyArchon != null) {
-        // Q += Math.pow(location.distanceSquaredTo(nearbyFriendlyArchon), 1 / 4);
-        // }
+            // Fall towards enemy Archon
+            if (nearestEnemyArchon != null) {
+                Q += -Math.pow(location.distanceSquaredTo(nearestEnemyArchon), 1 / 2);
+            }
+        }
 
         // Discourage moving into rubble when there are enemies.
-        // int delayTurns = rc.senseRubble(location) / 10;
-        // Q -= delayTurns * enemySoldiers;
+        int delayTurns = rc.senseRubble(location) / 10;
+        Q -= delayTurns;
 
-        // // Introduce some noise :)
-        // // Why? Because we can.
+        // Introduce a very slight tug towards the center.
+        MapLocation mapCenter = new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2);
+        Q -= Math.pow(location.distanceSquaredTo(mapCenter), 1 / 4);
         // Q += rng.nextDouble() * 0.01;
 
         return Q;
@@ -126,21 +139,26 @@ public class Soldier extends Unit {
         if (rc.isMovementReady()) {
             double qMax = -Double.MAX_VALUE;
             Direction qMaxDirection = null;
+            MapLocation me = rc.getLocation();
 
             // Choose the best location to move to.
             for (int i = 0; i < allDirections.length; i++) {
                 Direction direction = allDirections[i];
                 if (rc.canMove(direction)) {
-                    MapLocation location = rc.getLocation().add(direction);
-                    double Q = getSquareQValue(location, allNearbyRobots, threatenedArchons, nearestEnemyArchon);
+                    MapLocation location = me.add(direction);
+                    double Q = getSquareQValue(location, allNearbyRobots, threatenedArchons);
+                    // System.out.println(direction.toString() + " has Q value " + Q + "; qMax=" +
+                    // qMax);
                     q[i] = Q;
                     if (Q > qMax) {
+                        qMax = Q; // how tf am I such a dummy
                         qMaxDirection = direction;
                     }
                 }
             }
 
-            if (qMaxDirection != null && qMaxDirection != Direction.CENTER) {
+            if (qMaxDirection != null && qMaxDirection != Direction.CENTER && rc.canMove(qMaxDirection)) {
+                // rc.setIndicatorLine(me, me.add(qMaxDirection), 0, 100, 0);
                 rc.move(qMaxDirection);
                 moved = true;
             }
@@ -150,33 +168,42 @@ public class Soldier extends Unit {
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         RobotInfo weakestEnemy = null;
         for (RobotInfo enemy : enemies) {
-            if (enemy.type == RobotType.SOLDIER) {
-                if ((weakestEnemy == null || enemy.health < weakestEnemy.health) && rc.canAttack(enemy.location)) {
-                    weakestEnemy = enemy;
-                }
-            } else if (enemy.type == RobotType.ARCHON) {
+            if (!rc.canAttack(enemy.location)) {
+                continue;
+            }
+            if (enemy.type == RobotType.ARCHON) {
                 weakestEnemy = enemy;
                 break;
+            }
+            if (weakestEnemy == null) {
+                weakestEnemy = enemy;
+            }
+            if (weakestEnemy.type == RobotType.MINER && enemy.type == RobotType.SOLDIER) {
+                weakestEnemy = enemy;
+            }
+            if (weakestEnemy.type == enemy.type && weakestEnemy.health < enemy.health) {
+                weakestEnemy = enemy;
             }
         }
         if (weakestEnemy != null) {
             // rc.setIndicatorString("Attacking " + weakestEnemy.location.toString());
-            rc.setIndicatorLine(rc.getLocation(), weakestEnemy.getLocation(), 100, 0, 0);
+            // rc.setIndicatorLine(rc.getLocation(), weakestEnemy.getLocation(), 100, 0, 0);
             while (rc.canAttack(weakestEnemy.location)) {
                 rc.attack(weakestEnemy.location);
             }
         }
 
-        String qString = "";
-        if (moved) {
-            for (int i = 0; i < q.length; i++) {
-                qString += q[i] + " ";
-            }
-        } else {
-            qString = "No move";
-        }
+        // String qString = "" + nearestEnemyArchon;
+        // if (moved) {
+        // for (int i = 0; i < q.length; i++) {
+        // qString += " " + q[i];
+        // }
+        // } else {
+        // qString += " No move";
+        // }
+        String qString = "t.len: " + threatenedArchons.length + "; enemy: " + nearestEnemyArchon;
 
-        rc.setIndicatorString("Q: " + qString);
+        rc.setIndicatorString(qString);
     }
 
     public double[] getHealthGradient() throws GameActionException {
