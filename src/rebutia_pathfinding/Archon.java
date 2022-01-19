@@ -29,10 +29,6 @@ public class Archon extends Unit {
 
     int[] defaultBuildOrder;
     int threatChannel = -1;
-    private int total_sage_count = 0;
-    private int total_builder_count = 0;
-    private int total_soldier_count= 0;
-    private int total_miner_count = 0;
 
     Comms radio;
 
@@ -57,9 +53,6 @@ public class Archon extends Unit {
 
         archonNumber = radio.getArchonNum(num_archons_init, num_archons_alive, archonNumber);
         num_archons_alive = rc.getArchonCount();
-        total_miner_count = radio.getMiners();
-        total_builder_count = radio.getBuilders();
-        total_soldier_count = radio.getSoldiers();
         if (round_num % num_archons_alive == archonNumber) {
             radio.clearCounts();
         }
@@ -106,7 +99,6 @@ public class Archon extends Unit {
                 build(defaultBuildOrder);
                 break;
         }
-        rc.setIndicatorString("Number of miners: " + total_miner_count);
         rc.setIndicatorString("mode: " + mode.toString() + " " +radio.totalUnderThreat());
     }
 
@@ -171,7 +163,6 @@ public class Archon extends Unit {
             rc.buildRobot(RobotType.MINER, dir);
             built_units++;
             num_miners++;
-            total_miner_count++;
             return true;
         }
         return false;
@@ -182,7 +173,6 @@ public class Archon extends Unit {
             rc.buildRobot(RobotType.SOLDIER, dir);
             built_units++;
             num_soldiers++;
-            total_soldier_count++;
             return true;
         }
         return false;
@@ -194,7 +184,6 @@ public class Archon extends Unit {
             rc.buildRobot(RobotType.BUILDER, dir);
             built_units++;
             num_builders++;
-            total_builder_count++;
             return true;
         }
         return false;
@@ -244,7 +233,6 @@ public class Archon extends Unit {
     }
 
     public Direction[] sortedDirections() {
-        
         Direction[] dirs = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
         Arrays.sort(dirs, (a,b) -> distToWall(b) - distToWall(a));
         return dirs;

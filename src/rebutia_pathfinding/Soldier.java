@@ -233,11 +233,11 @@ public class Soldier extends Unit {
             return MODE.FLEE;
         }
         // Priority 3 - Kill Archons.
-        boolean archonDetected = detectArchon() || senseArchon();
+        /* boolean archonDetected = detectArchon() || senseArchon();
         if (archonDetected) {
             if (rc.getLocation().distanceSquaredTo(archon_target) <= ARUSH_RSQR)
                 return MODE.ARCHON_RUSH;
-        }
+        } */
         // Priority 4 - Hunt enemies.
         if (target != null) {
             return MODE.HUNTING;
@@ -457,6 +457,7 @@ public class Soldier extends Unit {
             else if (archon != null) {
                 if (rc.canAttack(archon.location)) {
                     rc.attack(archon.location);
+                    broadcastTarget(archon.location);
                     return true;
                 }
             }
