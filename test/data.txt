@@ -12,7 +12,7 @@
 > Task :check UP-TO-DATE
 > Task :checkForUpdate
 > Task :unpackClient UP-TO-DATE
-> Task :unpackClient32 SKIPPED
+> Task :unpackClient32 UP-TO-DATE
 > Task :build UP-TO-DATE
 
 > Task :run
