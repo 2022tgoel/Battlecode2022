@@ -27,12 +27,15 @@ public class Unit{
         Direction.NORTHWEST,
     };
 
+    static Navigation mover;
+
     public Unit(RobotController robotController) throws GameActionException {
         rc = robotController;
         rng.setSeed((long) rc.getID() + seed_increment);
         homeArchon = findHomeArchon();
         initializeRankMap();
         mapArea = getMapArea();
+        mover = new Navigation(rc);
     }
 
     /**
@@ -236,13 +239,23 @@ public class Unit{
      * @param loc is where to go
      **/
     public void moveToLocation(MapLocation loc) throws GameActionException{
-        fuzzyMove(loc); // best pathfinding strat 
+        Direction d= mover.getBestDir(loc);
+        System.out.println(d);
+        if (d!=null && rc.canMove(d)){
+            rc.move(d);
+        }
+       // fuzzyMove(loc); // best pathfinding strat 
     }
 
     public void moveInDirection(int[] toDest) throws GameActionException{
         MapLocation loc = rc.getLocation();
         MapLocation dest = new MapLocation(loc.x + toDest[0], loc.y + toDest[1]);
-        fuzzyMove(dest);
+        Direction d= mover.getBestDir(dest);
+        System.out.println(d);
+        if (d!=null && rc.canMove(d)){
+            rc.move(d);
+        }
+      //  fuzzyMove(dest);
         // rc.setIndicatorString("I JUST MOVED TO " + toDest[0] + " " + toDest[1]);
     }
     /**

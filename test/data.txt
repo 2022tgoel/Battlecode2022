@@ -12,11 +12,21 @@
 > Task :check UP-TO-DATE
 > Task :checkForUpdate
 > Task :unpackClient UP-TO-DATE
-> Task :unpackClient32 UP-TO-DATE
+> Task :unpackClient32 SKIPPED
 > Task :build UP-TO-DATE
 
 > Task :run
 [server:debug] Awaiting match
-[server:debug] Running: rebutia (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs peyote_old (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [eckleburg]
+[server:debug] Running: rebutia_pathfinding (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs rebutia (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [explore]
 [server] -------------------- Match Starting --------------------
-[server] rebutia vs. peyote_old on eckleburg
+[server] rebutia_pathfinding vs. rebutia on explore
+[server]              rebutia_pathfinding (A) wins (round 493)
+[server] Reason: The winning team won by annihilating the enemy team's Archons.
+[server] -------------------- Match Finished --------------------
+[server:debug] match completed in 5.131 seconds
+[server:debug] Awaiting match
+[server:debug] Shutting down server
+Closed: /0:0:0:0:0:0:0:1:59060 for null
+
+BUILD SUCCESSFUL in 6s
+9 actionable tasks: 2 executed, 7 up-to-date
