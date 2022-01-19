@@ -17,6 +17,6 @@
 
 > Task :run
 [server:debug] Awaiting match
-[server:debug] Running: peyote_old (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs rebutia_gleb (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [underground]
+[server:debug] Running: rebutia (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs peyote_old (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [eckleburg]
 [server] -------------------- Match Starting --------------------
-[server] peyote_old vs. rebutia_gleb on underground
+[server] rebutia vs. peyote_old on eckleburg
