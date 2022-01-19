@@ -550,7 +550,7 @@ public class Unit{
             }
         }
     }
-
+    /*
     public Direction getBestDirBFS(MapLocation target) throws GameActionException {
         MapLocation cur = rc.getLocation();
 
@@ -679,4 +679,5 @@ public class Unit{
         }
         return inc;
     }
+    */
 }

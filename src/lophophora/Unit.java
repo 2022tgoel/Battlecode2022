@@ -27,12 +27,15 @@ public class Unit{
         Direction.NORTHWEST,
     };
 
+    static Navigation mover;
+
     public Unit(RobotController robotController) throws GameActionException {
         rc = robotController;
         rng.setSeed((long) rc.getID() + seed_increment);
         homeArchon = findHomeArchon();
         initializeRankMap();
         mapArea = getMapArea();
+        mover = new Navigation(rc);
     }
 
     /**
@@ -133,7 +136,7 @@ public class Unit{
                 }
                 
             }
-            fuzzyMove(target);
+            moveToLocation(target);
             return true;
         }
         else {
@@ -216,15 +219,26 @@ public class Unit{
      * @param loc is where to go
      **/
     public void moveToLocation(MapLocation loc) throws GameActionException{
-        fuzzyMove(loc); // best pathfinding strat 
+        Direction d= mover.getBestDir(loc);
+        System.out.println(d);
+        if (d!=null && rc.canMove(d)){
+            rc.move(d);
+        }
+       // fuzzyMove(loc); // best pathfinding strat 
     }
 
     public void moveInDirection(int[] toDest) throws GameActionException{
         MapLocation loc = rc.getLocation();
         MapLocation dest = new MapLocation(loc.x + toDest[0], loc.y + toDest[1]);
-        fuzzyMove(dest);
+        Direction d= mover.getBestDir(dest);
+        System.out.println(d);
+        if (d!=null && rc.canMove(d)){
+            rc.move(d);
+        }
+      //  fuzzyMove(dest);
         // rc.setIndicatorString("I JUST MOVED TO " + toDest[0] + " " + toDest[1]);
     }
+
     /**
      * fuzzyMove() is the method that moves to a location using a weight of how within the correct direction you are
      *             how much rubble is in a square (rather that just thresholding rubbles)
@@ -233,6 +247,7 @@ public class Unit{
      *            
      **/
     //keep updating this so that you can see stagnation
+    /*
     static int calls = 0; //# of fuzzy move calls
     static MapLocation last = null;
     static MapLocation cur =null;
@@ -325,7 +340,7 @@ public class Unit{
         }
         return optimalDir;
     }
-    
+    */
     public int cooldown(MapLocation loc) throws GameActionException{
         //returns cooldown of movement
         return (int) Math.floor((1+rc.senseRubble(loc)/10.0)*rc.getType().movementCooldown);

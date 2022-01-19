@@ -50,7 +50,7 @@ deltaToDir= {1 : "Direction.EAST",
 			1-GRID : "Direction.SOUTHEAST" ,
 			-1-GRID : "Direction.SOUTHWEST" ,}
 
-with open("Navigation.java", "w") as f:
+with open("src/lophophora/Navigation.java", "w") as f:
 	def writeInstantiations(f, indent=1):
 		s = "\t"*indent
 		for n in nodes:
@@ -66,7 +66,7 @@ with open("Navigation.java", "w") as f:
 		for n in nodes:
 			if (n == CENTER):
 				f.write(f"{s}l{n} = rc.getLocation();\n")
-				f.write(f"{s}v{n} = 1000000;\n")
+				f.write(f"{s}v{n} = 0;\n")
 			else:
 				for prev in visited:
 					if (n - prev) in deltas:
@@ -94,7 +94,7 @@ with open("Navigation.java", "w") as f:
 		f.write(f"{s}if (rc.onTheMap(l{node})) {'{'}\n")
 		if (node - CENTER in deltas): 
 			f.write(f"{s}\tif (!rc.isLocationOccupied(l{node})) {'{'}\n")
-		f.write(f"{s}\t\tp{node} = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)\n")
+		f.write(f"{s}\t\tp{node} = Math.floor((1.0 + (double)rc.senseRubble(l{node})/10.0)*cooldown);\n")
 		for prev in visited:
 			if (node - prev) in deltas:
 				writeEdgeRelaxation(node, prev)
@@ -131,7 +131,7 @@ with open("Navigation.java", "w") as f:
 				if not numWithinRange(n+d):
 					isEdge = True
 			if isEdge:
-				f.write(f"{s}double dist{n} = initialDist - Math.sqrt(l{n}.distanceSquaredTo(target) / v{n};\n")
+				f.write(f"{s}double dist{n} = (initialDist - Math.sqrt(l{n}.distanceSquaredTo(target))) / v{n};\n")
 				f.write(f"{s}if (dist{n} > bestEstimation) {'{'}\n")
 				f.write(f"{s}\tbestEstimation = dist{n};\n")
 				f.write(f"{s}\tans = d{n};\n")
@@ -150,9 +150,7 @@ with open("Navigation.java", "w") as f:
 		f.write("\t}\n")
 
 
-	lines = ["import battlecode.common.Direction;",
-			"import battlecode.common.MapLocation;",
-			"import battlecode.common.RobotController;",
+	lines = ["import battlecode.common.*;",
 			"public class Navigation {", 
 			"\tstatic RobotController rc;",
 			"\tstatic int cooldown;",

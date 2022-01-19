@@ -224,7 +224,7 @@ public class Soldier extends Unit {
                 }
             }
         }
-        fuzzyMove(closest);
+        moveToLocation(closest);
     }
 
     public boolean archonDied() throws GameActionException{
@@ -337,8 +337,8 @@ public class Soldier extends Unit {
                 num_enemies += 1;
             }
         }
-        if (num_enemies ==0) fuzzyMove(homeArchon);
-        else fuzzyMove(new MapLocation((int) (cx / num_enemies), (int) (cy / num_enemies)));
+        if (num_enemies ==0) moveToLocation(homeArchon);
+        else moveToLocation(new MapLocation((int) (cx / num_enemies), (int) (cy / num_enemies)));
     }
 
     public boolean isLowHealth() throws GameActionException {

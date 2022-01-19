@@ -1,6 +1,5 @@
-import battlecode.common.Direction;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
+package lophophora;
+import battlecode.common.*;
 public class Navigation {
 	static RobotController rc;
 	static int cooldown;
@@ -357,7 +356,7 @@ public class Navigation {
 
 	Direction getBestDir(MapLocation target) throws GameActionException{
 		l84 = rc.getLocation();
-		v84 = 1000000;
+		v84 = 0;
 		l71 = l84.add(Direction.SOUTH);
 		v71 = 1000000;
 		d71 = null;
@@ -564,7 +563,7 @@ public class Navigation {
 		d138 = null;
 		if (rc.onTheMap(l71)) {
 			if (!rc.isLocationOccupied(l71)) {
-				p71 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p71 = Math.floor((1.0 + (double)rc.senseRubble(l71)/10.0)*cooldown);
 				if (v71 > v84 + p71) {
 					v71 = v84 + p71;
 					d71 = Direction.SOUTH;
@@ -573,7 +572,7 @@ public class Navigation {
 		}
 		if (rc.onTheMap(l83)) {
 			if (!rc.isLocationOccupied(l83)) {
-				p83 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p83 = Math.floor((1.0 + (double)rc.senseRubble(l83)/10.0)*cooldown);
 				if (v83 > v84 + p83) {
 					v83 = v84 + p83;
 					d83 = Direction.WEST;
@@ -586,7 +585,7 @@ public class Navigation {
 		}
 		if (rc.onTheMap(l85)) {
 			if (!rc.isLocationOccupied(l85)) {
-				p85 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p85 = Math.floor((1.0 + (double)rc.senseRubble(l85)/10.0)*cooldown);
 				if (v85 > v84 + p85) {
 					v85 = v84 + p85;
 					d85 = Direction.EAST;
@@ -599,7 +598,7 @@ public class Navigation {
 		}
 		if (rc.onTheMap(l97)) {
 			if (!rc.isLocationOccupied(l97)) {
-				p97 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p97 = Math.floor((1.0 + (double)rc.senseRubble(l97)/10.0)*cooldown);
 				if (v97 > v84 + p97) {
 					v97 = v84 + p97;
 					d97 = Direction.NORTH;
@@ -616,7 +615,7 @@ public class Navigation {
 		}
 		if (rc.onTheMap(l70)) {
 			if (!rc.isLocationOccupied(l70)) {
-				p70 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p70 = Math.floor((1.0 + (double)rc.senseRubble(l70)/10.0)*cooldown);
 				if (v70 > v84 + p70) {
 					v70 = v84 + p70;
 					d70 = Direction.SOUTHWEST;
@@ -633,7 +632,7 @@ public class Navigation {
 		}
 		if (rc.onTheMap(l72)) {
 			if (!rc.isLocationOccupied(l72)) {
-				p72 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p72 = Math.floor((1.0 + (double)rc.senseRubble(l72)/10.0)*cooldown);
 				if (v72 > v84 + p72) {
 					v72 = v84 + p72;
 					d72 = Direction.SOUTHEAST;
@@ -650,7 +649,7 @@ public class Navigation {
 		}
 		if (rc.onTheMap(l96)) {
 			if (!rc.isLocationOccupied(l96)) {
-				p96 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p96 = Math.floor((1.0 + (double)rc.senseRubble(l96)/10.0)*cooldown);
 				if (v96 > v84 + p96) {
 					v96 = v84 + p96;
 					d96 = Direction.NORTHWEST;
@@ -667,7 +666,7 @@ public class Navigation {
 		}
 		if (rc.onTheMap(l98)) {
 			if (!rc.isLocationOccupied(l98)) {
-				p98 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p98 = Math.floor((1.0 + (double)rc.senseRubble(l98)/10.0)*cooldown);
 				if (v98 > v84 + p98) {
 					v98 = v84 + p98;
 					d98 = Direction.NORTHEAST;
@@ -683,7 +682,7 @@ public class Navigation {
 			}
 		}
 		if (rc.onTheMap(l58)) {
-				p58 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p58 = Math.floor((1.0 + (double)rc.senseRubble(l58)/10.0)*cooldown);
 				if (v58 > v71 + p58) {
 					v58 = v71 + p58;
 					d58 = d71;
@@ -698,7 +697,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l82)) {
-				p82 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p82 = Math.floor((1.0 + (double)rc.senseRubble(l82)/10.0)*cooldown);
 				if (v82 > v83 + p82) {
 					v82 = v83 + p82;
 					d82 = d83;
@@ -713,7 +712,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l86)) {
-				p86 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p86 = Math.floor((1.0 + (double)rc.senseRubble(l86)/10.0)*cooldown);
 				if (v86 > v85 + p86) {
 					v86 = v85 + p86;
 					d86 = d85;
@@ -728,7 +727,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l110)) {
-				p110 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p110 = Math.floor((1.0 + (double)rc.senseRubble(l110)/10.0)*cooldown);
 				if (v110 > v97 + p110) {
 					v110 = v97 + p110;
 					d110 = d97;
@@ -743,7 +742,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l57)) {
-				p57 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p57 = Math.floor((1.0 + (double)rc.senseRubble(l57)/10.0)*cooldown);
 				if (v57 > v71 + p57) {
 					v57 = v71 + p57;
 					d57 = d71;
@@ -758,7 +757,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l59)) {
-				p59 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p59 = Math.floor((1.0 + (double)rc.senseRubble(l59)/10.0)*cooldown);
 				if (v59 > v71 + p59) {
 					v59 = v71 + p59;
 					d59 = d71;
@@ -773,7 +772,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l69)) {
-				p69 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p69 = Math.floor((1.0 + (double)rc.senseRubble(l69)/10.0)*cooldown);
 				if (v69 > v83 + p69) {
 					v69 = v83 + p69;
 					d69 = d83;
@@ -792,7 +791,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l73)) {
-				p73 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p73 = Math.floor((1.0 + (double)rc.senseRubble(l73)/10.0)*cooldown);
 				if (v73 > v85 + p73) {
 					v73 = v85 + p73;
 					d73 = d85;
@@ -811,7 +810,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l95)) {
-				p95 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p95 = Math.floor((1.0 + (double)rc.senseRubble(l95)/10.0)*cooldown);
 				if (v95 > v83 + p95) {
 					v95 = v83 + p95;
 					d95 = d83;
@@ -826,7 +825,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l99)) {
-				p99 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p99 = Math.floor((1.0 + (double)rc.senseRubble(l99)/10.0)*cooldown);
 				if (v99 > v85 + p99) {
 					v99 = v85 + p99;
 					d99 = d85;
@@ -841,7 +840,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l109)) {
-				p109 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p109 = Math.floor((1.0 + (double)rc.senseRubble(l109)/10.0)*cooldown);
 				if (v109 > v97 + p109) {
 					v109 = v97 + p109;
 					d109 = d97;
@@ -860,7 +859,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l111)) {
-				p111 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p111 = Math.floor((1.0 + (double)rc.senseRubble(l111)/10.0)*cooldown);
 				if (v111 > v97 + p111) {
 					v111 = v97 + p111;
 					d111 = d97;
@@ -879,7 +878,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l56)) {
-				p56 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p56 = Math.floor((1.0 + (double)rc.senseRubble(l56)/10.0)*cooldown);
 				if (v56 > v70 + p56) {
 					v56 = v70 + p56;
 					d56 = d70;
@@ -894,7 +893,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l60)) {
-				p60 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p60 = Math.floor((1.0 + (double)rc.senseRubble(l60)/10.0)*cooldown);
 				if (v60 > v72 + p60) {
 					v60 = v72 + p60;
 					d60 = d72;
@@ -909,7 +908,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l108)) {
-				p108 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p108 = Math.floor((1.0 + (double)rc.senseRubble(l108)/10.0)*cooldown);
 				if (v108 > v96 + p108) {
 					v108 = v96 + p108;
 					d108 = d96;
@@ -924,7 +923,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l112)) {
-				p112 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p112 = Math.floor((1.0 + (double)rc.senseRubble(l112)/10.0)*cooldown);
 				if (v112 > v98 + p112) {
 					v112 = v98 + p112;
 					d112 = d98;
@@ -939,7 +938,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l45)) {
-				p45 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p45 = Math.floor((1.0 + (double)rc.senseRubble(l45)/10.0)*cooldown);
 				if (v45 > v58 + p45) {
 					v45 = v58 + p45;
 					d45 = d58;
@@ -954,7 +953,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l81)) {
-				p81 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p81 = Math.floor((1.0 + (double)rc.senseRubble(l81)/10.0)*cooldown);
 				if (v81 > v82 + p81) {
 					v81 = v82 + p81;
 					d81 = d82;
@@ -969,7 +968,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l87)) {
-				p87 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p87 = Math.floor((1.0 + (double)rc.senseRubble(l87)/10.0)*cooldown);
 				if (v87 > v86 + p87) {
 					v87 = v86 + p87;
 					d87 = d86;
@@ -984,7 +983,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l123)) {
-				p123 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p123 = Math.floor((1.0 + (double)rc.senseRubble(l123)/10.0)*cooldown);
 				if (v123 > v110 + p123) {
 					v123 = v110 + p123;
 					d123 = d110;
@@ -999,7 +998,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l44)) {
-				p44 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p44 = Math.floor((1.0 + (double)rc.senseRubble(l44)/10.0)*cooldown);
 				if (v44 > v58 + p44) {
 					v44 = v58 + p44;
 					d44 = d58;
@@ -1018,7 +1017,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l46)) {
-				p46 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p46 = Math.floor((1.0 + (double)rc.senseRubble(l46)/10.0)*cooldown);
 				if (v46 > v58 + p46) {
 					v46 = v58 + p46;
 					d46 = d58;
@@ -1037,7 +1036,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l68)) {
-				p68 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p68 = Math.floor((1.0 + (double)rc.senseRubble(l68)/10.0)*cooldown);
 				if (v68 > v82 + p68) {
 					v68 = v82 + p68;
 					d68 = d82;
@@ -1056,7 +1055,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l74)) {
-				p74 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p74 = Math.floor((1.0 + (double)rc.senseRubble(l74)/10.0)*cooldown);
 				if (v74 > v86 + p74) {
 					v74 = v86 + p74;
 					d74 = d86;
@@ -1075,7 +1074,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l94)) {
-				p94 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p94 = Math.floor((1.0 + (double)rc.senseRubble(l94)/10.0)*cooldown);
 				if (v94 > v82 + p94) {
 					v94 = v82 + p94;
 					d94 = d82;
@@ -1094,7 +1093,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l100)) {
-				p100 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p100 = Math.floor((1.0 + (double)rc.senseRubble(l100)/10.0)*cooldown);
 				if (v100 > v86 + p100) {
 					v100 = v86 + p100;
 					d100 = d86;
@@ -1113,7 +1112,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l122)) {
-				p122 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p122 = Math.floor((1.0 + (double)rc.senseRubble(l122)/10.0)*cooldown);
 				if (v122 > v110 + p122) {
 					v122 = v110 + p122;
 					d122 = d110;
@@ -1132,7 +1131,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l124)) {
-				p124 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p124 = Math.floor((1.0 + (double)rc.senseRubble(l124)/10.0)*cooldown);
 				if (v124 > v110 + p124) {
 					v124 = v110 + p124;
 					d124 = d110;
@@ -1151,7 +1150,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l43)) {
-				p43 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p43 = Math.floor((1.0 + (double)rc.senseRubble(l43)/10.0)*cooldown);
 				if (v43 > v57 + p43) {
 					v43 = v57 + p43;
 					d43 = d57;
@@ -1166,7 +1165,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l47)) {
-				p47 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p47 = Math.floor((1.0 + (double)rc.senseRubble(l47)/10.0)*cooldown);
 				if (v47 > v59 + p47) {
 					v47 = v59 + p47;
 					d47 = d59;
@@ -1181,7 +1180,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l55)) {
-				p55 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p55 = Math.floor((1.0 + (double)rc.senseRubble(l55)/10.0)*cooldown);
 				if (v55 > v69 + p55) {
 					v55 = v69 + p55;
 					d55 = d69;
@@ -1200,7 +1199,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l61)) {
-				p61 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p61 = Math.floor((1.0 + (double)rc.senseRubble(l61)/10.0)*cooldown);
 				if (v61 > v73 + p61) {
 					v61 = v73 + p61;
 					d61 = d73;
@@ -1219,7 +1218,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l107)) {
-				p107 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p107 = Math.floor((1.0 + (double)rc.senseRubble(l107)/10.0)*cooldown);
 				if (v107 > v95 + p107) {
 					v107 = v95 + p107;
 					d107 = d95;
@@ -1234,7 +1233,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l113)) {
-				p113 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p113 = Math.floor((1.0 + (double)rc.senseRubble(l113)/10.0)*cooldown);
 				if (v113 > v99 + p113) {
 					v113 = v99 + p113;
 					d113 = d99;
@@ -1249,7 +1248,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l121)) {
-				p121 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p121 = Math.floor((1.0 + (double)rc.senseRubble(l121)/10.0)*cooldown);
 				if (v121 > v109 + p121) {
 					v121 = v109 + p121;
 					d121 = d109;
@@ -1268,7 +1267,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l125)) {
-				p125 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p125 = Math.floor((1.0 + (double)rc.senseRubble(l125)/10.0)*cooldown);
 				if (v125 > v111 + p125) {
 					v125 = v111 + p125;
 					d125 = d111;
@@ -1287,7 +1286,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l32)) {
-				p32 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p32 = Math.floor((1.0 + (double)rc.senseRubble(l32)/10.0)*cooldown);
 				if (v32 > v45 + p32) {
 					v32 = v45 + p32;
 					d32 = d45;
@@ -1302,7 +1301,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l80)) {
-				p80 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p80 = Math.floor((1.0 + (double)rc.senseRubble(l80)/10.0)*cooldown);
 				if (v80 > v81 + p80) {
 					v80 = v81 + p80;
 					d80 = d81;
@@ -1317,7 +1316,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l88)) {
-				p88 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p88 = Math.floor((1.0 + (double)rc.senseRubble(l88)/10.0)*cooldown);
 				if (v88 > v87 + p88) {
 					v88 = v87 + p88;
 					d88 = d87;
@@ -1332,7 +1331,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l136)) {
-				p136 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p136 = Math.floor((1.0 + (double)rc.senseRubble(l136)/10.0)*cooldown);
 				if (v136 > v123 + p136) {
 					v136 = v123 + p136;
 					d136 = d123;
@@ -1347,7 +1346,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l31)) {
-				p31 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p31 = Math.floor((1.0 + (double)rc.senseRubble(l31)/10.0)*cooldown);
 				if (v31 > v45 + p31) {
 					v31 = v45 + p31;
 					d31 = d45;
@@ -1366,7 +1365,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l33)) {
-				p33 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p33 = Math.floor((1.0 + (double)rc.senseRubble(l33)/10.0)*cooldown);
 				if (v33 > v45 + p33) {
 					v33 = v45 + p33;
 					d33 = d45;
@@ -1385,7 +1384,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l67)) {
-				p67 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p67 = Math.floor((1.0 + (double)rc.senseRubble(l67)/10.0)*cooldown);
 				if (v67 > v81 + p67) {
 					v67 = v81 + p67;
 					d67 = d81;
@@ -1404,7 +1403,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l75)) {
-				p75 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p75 = Math.floor((1.0 + (double)rc.senseRubble(l75)/10.0)*cooldown);
 				if (v75 > v87 + p75) {
 					v75 = v87 + p75;
 					d75 = d87;
@@ -1423,7 +1422,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l93)) {
-				p93 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p93 = Math.floor((1.0 + (double)rc.senseRubble(l93)/10.0)*cooldown);
 				if (v93 > v81 + p93) {
 					v93 = v81 + p93;
 					d93 = d81;
@@ -1442,7 +1441,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l101)) {
-				p101 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p101 = Math.floor((1.0 + (double)rc.senseRubble(l101)/10.0)*cooldown);
 				if (v101 > v87 + p101) {
 					v101 = v87 + p101;
 					d101 = d87;
@@ -1461,7 +1460,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l135)) {
-				p135 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p135 = Math.floor((1.0 + (double)rc.senseRubble(l135)/10.0)*cooldown);
 				if (v135 > v123 + p135) {
 					v135 = v123 + p135;
 					d135 = d123;
@@ -1480,7 +1479,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l137)) {
-				p137 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p137 = Math.floor((1.0 + (double)rc.senseRubble(l137)/10.0)*cooldown);
 				if (v137 > v123 + p137) {
 					v137 = v123 + p137;
 					d137 = d123;
@@ -1499,7 +1498,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l42)) {
-				p42 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p42 = Math.floor((1.0 + (double)rc.senseRubble(l42)/10.0)*cooldown);
 				if (v42 > v56 + p42) {
 					v42 = v56 + p42;
 					d42 = d56;
@@ -1514,7 +1513,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l48)) {
-				p48 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p48 = Math.floor((1.0 + (double)rc.senseRubble(l48)/10.0)*cooldown);
 				if (v48 > v60 + p48) {
 					v48 = v60 + p48;
 					d48 = d60;
@@ -1529,7 +1528,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l120)) {
-				p120 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p120 = Math.floor((1.0 + (double)rc.senseRubble(l120)/10.0)*cooldown);
 				if (v120 > v108 + p120) {
 					v120 = v108 + p120;
 					d120 = d108;
@@ -1544,7 +1543,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l126)) {
-				p126 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p126 = Math.floor((1.0 + (double)rc.senseRubble(l126)/10.0)*cooldown);
 				if (v126 > v112 + p126) {
 					v126 = v112 + p126;
 					d126 = d112;
@@ -1559,7 +1558,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l30)) {
-				p30 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p30 = Math.floor((1.0 + (double)rc.senseRubble(l30)/10.0)*cooldown);
 				if (v30 > v44 + p30) {
 					v30 = v44 + p30;
 					d30 = d44;
@@ -1578,7 +1577,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l34)) {
-				p34 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p34 = Math.floor((1.0 + (double)rc.senseRubble(l34)/10.0)*cooldown);
 				if (v34 > v46 + p34) {
 					v34 = v46 + p34;
 					d34 = d46;
@@ -1597,7 +1596,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l54)) {
-				p54 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p54 = Math.floor((1.0 + (double)rc.senseRubble(l54)/10.0)*cooldown);
 				if (v54 > v68 + p54) {
 					v54 = v68 + p54;
 					d54 = d68;
@@ -1616,7 +1615,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l62)) {
-				p62 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p62 = Math.floor((1.0 + (double)rc.senseRubble(l62)/10.0)*cooldown);
 				if (v62 > v74 + p62) {
 					v62 = v74 + p62;
 					d62 = d74;
@@ -1635,7 +1634,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l106)) {
-				p106 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p106 = Math.floor((1.0 + (double)rc.senseRubble(l106)/10.0)*cooldown);
 				if (v106 > v94 + p106) {
 					v106 = v94 + p106;
 					d106 = d94;
@@ -1654,7 +1653,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l114)) {
-				p114 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p114 = Math.floor((1.0 + (double)rc.senseRubble(l114)/10.0)*cooldown);
 				if (v114 > v100 + p114) {
 					v114 = v100 + p114;
 					d114 = d100;
@@ -1673,7 +1672,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l134)) {
-				p134 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p134 = Math.floor((1.0 + (double)rc.senseRubble(l134)/10.0)*cooldown);
 				if (v134 > v122 + p134) {
 					v134 = v122 + p134;
 					d134 = d122;
@@ -1692,7 +1691,7 @@ public class Navigation {
 				}
 		}
 		if (rc.onTheMap(l138)) {
-				p138 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
+				p138 = Math.floor((1.0 + (double)rc.senseRubble(l138)/10.0)*cooldown);
 				if (v138 > v124 + p138) {
 					v138 = v124 + p138;
 					d138 = d124;
@@ -1891,122 +1890,122 @@ public class Navigation {
 		Direction ans = null;
 		double bestEstimation = 0;
 		double initialDist = Math.sqrt(l84.distanceSquaredTo(target));
-		double dist32 = initialDist - Math.sqrt(l32.distanceSquaredTo(target) / v32;
+		double dist32 = (initialDist - Math.sqrt(l32.distanceSquaredTo(target))) / v32;
 		if (dist32 > bestEstimation) {
 			bestEstimation = dist32;
 			ans = d32;
 		}
-		double dist80 = initialDist - Math.sqrt(l80.distanceSquaredTo(target) / v80;
+		double dist80 = (initialDist - Math.sqrt(l80.distanceSquaredTo(target))) / v80;
 		if (dist80 > bestEstimation) {
 			bestEstimation = dist80;
 			ans = d80;
 		}
-		double dist88 = initialDist - Math.sqrt(l88.distanceSquaredTo(target) / v88;
+		double dist88 = (initialDist - Math.sqrt(l88.distanceSquaredTo(target))) / v88;
 		if (dist88 > bestEstimation) {
 			bestEstimation = dist88;
 			ans = d88;
 		}
-		double dist136 = initialDist - Math.sqrt(l136.distanceSquaredTo(target) / v136;
+		double dist136 = (initialDist - Math.sqrt(l136.distanceSquaredTo(target))) / v136;
 		if (dist136 > bestEstimation) {
 			bestEstimation = dist136;
 			ans = d136;
 		}
-		double dist31 = initialDist - Math.sqrt(l31.distanceSquaredTo(target) / v31;
+		double dist31 = (initialDist - Math.sqrt(l31.distanceSquaredTo(target))) / v31;
 		if (dist31 > bestEstimation) {
 			bestEstimation = dist31;
 			ans = d31;
 		}
-		double dist33 = initialDist - Math.sqrt(l33.distanceSquaredTo(target) / v33;
+		double dist33 = (initialDist - Math.sqrt(l33.distanceSquaredTo(target))) / v33;
 		if (dist33 > bestEstimation) {
 			bestEstimation = dist33;
 			ans = d33;
 		}
-		double dist67 = initialDist - Math.sqrt(l67.distanceSquaredTo(target) / v67;
+		double dist67 = (initialDist - Math.sqrt(l67.distanceSquaredTo(target))) / v67;
 		if (dist67 > bestEstimation) {
 			bestEstimation = dist67;
 			ans = d67;
 		}
-		double dist75 = initialDist - Math.sqrt(l75.distanceSquaredTo(target) / v75;
+		double dist75 = (initialDist - Math.sqrt(l75.distanceSquaredTo(target))) / v75;
 		if (dist75 > bestEstimation) {
 			bestEstimation = dist75;
 			ans = d75;
 		}
-		double dist93 = initialDist - Math.sqrt(l93.distanceSquaredTo(target) / v93;
+		double dist93 = (initialDist - Math.sqrt(l93.distanceSquaredTo(target))) / v93;
 		if (dist93 > bestEstimation) {
 			bestEstimation = dist93;
 			ans = d93;
 		}
-		double dist101 = initialDist - Math.sqrt(l101.distanceSquaredTo(target) / v101;
+		double dist101 = (initialDist - Math.sqrt(l101.distanceSquaredTo(target))) / v101;
 		if (dist101 > bestEstimation) {
 			bestEstimation = dist101;
 			ans = d101;
 		}
-		double dist135 = initialDist - Math.sqrt(l135.distanceSquaredTo(target) / v135;
+		double dist135 = (initialDist - Math.sqrt(l135.distanceSquaredTo(target))) / v135;
 		if (dist135 > bestEstimation) {
 			bestEstimation = dist135;
 			ans = d135;
 		}
-		double dist137 = initialDist - Math.sqrt(l137.distanceSquaredTo(target) / v137;
+		double dist137 = (initialDist - Math.sqrt(l137.distanceSquaredTo(target))) / v137;
 		if (dist137 > bestEstimation) {
 			bestEstimation = dist137;
 			ans = d137;
 		}
-		double dist42 = initialDist - Math.sqrt(l42.distanceSquaredTo(target) / v42;
+		double dist42 = (initialDist - Math.sqrt(l42.distanceSquaredTo(target))) / v42;
 		if (dist42 > bestEstimation) {
 			bestEstimation = dist42;
 			ans = d42;
 		}
-		double dist48 = initialDist - Math.sqrt(l48.distanceSquaredTo(target) / v48;
+		double dist48 = (initialDist - Math.sqrt(l48.distanceSquaredTo(target))) / v48;
 		if (dist48 > bestEstimation) {
 			bestEstimation = dist48;
 			ans = d48;
 		}
-		double dist120 = initialDist - Math.sqrt(l120.distanceSquaredTo(target) / v120;
+		double dist120 = (initialDist - Math.sqrt(l120.distanceSquaredTo(target))) / v120;
 		if (dist120 > bestEstimation) {
 			bestEstimation = dist120;
 			ans = d120;
 		}
-		double dist126 = initialDist - Math.sqrt(l126.distanceSquaredTo(target) / v126;
+		double dist126 = (initialDist - Math.sqrt(l126.distanceSquaredTo(target))) / v126;
 		if (dist126 > bestEstimation) {
 			bestEstimation = dist126;
 			ans = d126;
 		}
-		double dist30 = initialDist - Math.sqrt(l30.distanceSquaredTo(target) / v30;
+		double dist30 = (initialDist - Math.sqrt(l30.distanceSquaredTo(target))) / v30;
 		if (dist30 > bestEstimation) {
 			bestEstimation = dist30;
 			ans = d30;
 		}
-		double dist34 = initialDist - Math.sqrt(l34.distanceSquaredTo(target) / v34;
+		double dist34 = (initialDist - Math.sqrt(l34.distanceSquaredTo(target))) / v34;
 		if (dist34 > bestEstimation) {
 			bestEstimation = dist34;
 			ans = d34;
 		}
-		double dist54 = initialDist - Math.sqrt(l54.distanceSquaredTo(target) / v54;
+		double dist54 = (initialDist - Math.sqrt(l54.distanceSquaredTo(target))) / v54;
 		if (dist54 > bestEstimation) {
 			bestEstimation = dist54;
 			ans = d54;
 		}
-		double dist62 = initialDist - Math.sqrt(l62.distanceSquaredTo(target) / v62;
+		double dist62 = (initialDist - Math.sqrt(l62.distanceSquaredTo(target))) / v62;
 		if (dist62 > bestEstimation) {
 			bestEstimation = dist62;
 			ans = d62;
 		}
-		double dist106 = initialDist - Math.sqrt(l106.distanceSquaredTo(target) / v106;
+		double dist106 = (initialDist - Math.sqrt(l106.distanceSquaredTo(target))) / v106;
 		if (dist106 > bestEstimation) {
 			bestEstimation = dist106;
 			ans = d106;
 		}
-		double dist114 = initialDist - Math.sqrt(l114.distanceSquaredTo(target) / v114;
+		double dist114 = (initialDist - Math.sqrt(l114.distanceSquaredTo(target))) / v114;
 		if (dist114 > bestEstimation) {
 			bestEstimation = dist114;
 			ans = d114;
 		}
-		double dist134 = initialDist - Math.sqrt(l134.distanceSquaredTo(target) / v134;
+		double dist134 = (initialDist - Math.sqrt(l134.distanceSquaredTo(target))) / v134;
 		if (dist134 > bestEstimation) {
 			bestEstimation = dist134;
 			ans = d134;
 		}
-		double dist138 = initialDist - Math.sqrt(l138.distanceSquaredTo(target) / v138;
+		double dist138 = (initialDist - Math.sqrt(l138.distanceSquaredTo(target))) / v138;
 		if (dist138 > bestEstimation) {
 			bestEstimation = dist138;
 			ans = d138;

@@ -39,7 +39,7 @@ public class Miner extends Unit {
                         break;
                     case MINE_DISCOVERED:
                         rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 255);
-                        fuzzyMove(target);
+                        moveToLocation(target);
                         break;
                     case FLEEING:
                         moveInDirection(fleeDirection);
