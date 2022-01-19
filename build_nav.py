@@ -1,6 +1,6 @@
 # Source: https://github.com/IvanGeffner/battlecode2021/blob/master/thirtyone/BFSMuckraker.java
 # also in Nav.java
-# his grid is flipped wrt to mine
+# his grid is flipped wrt mine
 
 # changes
 # 1. cooldown calculation: instead of 1/passability
@@ -51,7 +51,7 @@ deltaToDir= {1 : "Direction.EAST",
 			-1-GRID : "Direction.SOUTHWEST" ,}
 
 with open("src/lophophora/Navigation.java", "w") as f:
-	def writeInstantiations(f, indent=1):
+	def writeInstantiations(indent=1):
 		s = "\t"*indent
 		for n in nodes:
 			f.write(f"{s}static MapLocation l{n};\n")
@@ -60,7 +60,7 @@ with open("src/lophophora/Navigation.java", "w") as f:
 			f.write(f"{s}static double p{n};\n")
 			f.write("\n")
 
-	def writeValueSetting(f, indent=2):
+	def writeValueSetting(indent=2):
 		s = "\t"*indent
 		visited = []
 		for n in nodes:
@@ -87,7 +87,7 @@ with open("src/lophophora/Navigation.java", "w") as f:
 		f.write(f"{s}{'}'}\n")
 		return; # temporary
 
-	def writeNodeCalculation(f, node, visited, indent=2):
+	def writeNodeCalculation(node, visited, indent=2):
 		if (node == CENTER):
 			return
 		s = "\t"*indent
@@ -102,7 +102,7 @@ with open("src/lophophora/Navigation.java", "w") as f:
 			f.write(f"{s}\t{'}'}\n")
 		f.write(f"{s}{'}'}\n")
 
-	def writeCasework(f, indent=2):
+	def writeCasework(indent=2):
 		s = "\t"*indent
 		f.write(f"{s}int dx = target.x - l84.x;\n")
 		f.write(f"{s}int dy = target.y - l84.y;\n")
@@ -120,7 +120,7 @@ with open("src/lophophora/Navigation.java", "w") as f:
 			f.write(f"{s}\t\tbreak;\n")
 		f.write(f"{s}{'}'}\n")
 
-	def writeHeuristicEstimation(f, indent=2):
+	def writeHeuristicEstimation(indent=2):
 		s = "\t"*indent
 		f.write(f"{s}Direction ans = null;\n")
 		f.write(f"{s}double bestEstimation = 0;\n")
@@ -138,15 +138,15 @@ with open("src/lophophora/Navigation.java", "w") as f:
 				f.write(f"{s}{'}'}\n")
 		f.write(f"{s}return ans;\n")
 
-	def writeFunction(f):
+	def writeFunction():
 		f.write("\tDirection getBestDir(MapLocation target) throws GameActionException{\n")
-		writeValueSetting(f)
+		writeValueSetting()
 		visited = []
 		for n in nodes:
-			writeNodeCalculation(f, n, visited)
+			writeNodeCalculation(n, visited)
 			visited.append(n)
-		writeCasework(f)
-		writeHeuristicEstimation(f)
+		writeCasework()
+		writeHeuristicEstimation()
 		f.write("\t}\n")
 
 
@@ -162,10 +162,10 @@ with open("src/lophophora/Navigation.java", "w") as f:
 		f.write(line+"\n")
 	f.write("\n")
 
-	writeInstantiations(f)
+	writeInstantiations()
 	f.write("\n")
 
-	writeFunction(f)
+	writeFunction()
 	f.write("\n")
 
 	f.write("}")
