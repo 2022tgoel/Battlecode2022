@@ -683,7 +683,6 @@ public class Navigation {
 			}
 		}
 		if (rc.onTheMap(l58)) {
-			if (!rc.isLocationOccupied(l58)) {
 				p58 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v58 > v71 + p58) {
 					v58 = v71 + p58;
@@ -697,10 +696,8 @@ public class Navigation {
 					v58 = v72 + p58;
 					d58 = d72;
 				}
-			}
 		}
 		if (rc.onTheMap(l82)) {
-			if (!rc.isLocationOccupied(l82)) {
 				p82 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v82 > v83 + p82) {
 					v82 = v83 + p82;
@@ -714,10 +711,8 @@ public class Navigation {
 					v82 = v96 + p82;
 					d82 = d96;
 				}
-			}
 		}
 		if (rc.onTheMap(l86)) {
-			if (!rc.isLocationOccupied(l86)) {
 				p86 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v86 > v85 + p86) {
 					v86 = v85 + p86;
@@ -731,10 +726,8 @@ public class Navigation {
 					v86 = v98 + p86;
 					d86 = d98;
 				}
-			}
 		}
 		if (rc.onTheMap(l110)) {
-			if (!rc.isLocationOccupied(l110)) {
 				p110 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v110 > v97 + p110) {
 					v110 = v97 + p110;
@@ -748,10 +741,8 @@ public class Navigation {
 					v110 = v98 + p110;
 					d110 = d98;
 				}
-			}
 		}
 		if (rc.onTheMap(l57)) {
-			if (!rc.isLocationOccupied(l57)) {
 				p57 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v57 > v71 + p57) {
 					v57 = v71 + p57;
@@ -765,10 +756,8 @@ public class Navigation {
 					v57 = v58 + p57;
 					d57 = d58;
 				}
-			}
 		}
 		if (rc.onTheMap(l59)) {
-			if (!rc.isLocationOccupied(l59)) {
 				p59 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v59 > v71 + p59) {
 					v59 = v71 + p59;
@@ -782,10 +771,8 @@ public class Navigation {
 					v59 = v58 + p59;
 					d59 = d58;
 				}
-			}
 		}
 		if (rc.onTheMap(l69)) {
-			if (!rc.isLocationOccupied(l69)) {
 				p69 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v69 > v83 + p69) {
 					v69 = v83 + p69;
@@ -803,10 +790,8 @@ public class Navigation {
 					v69 = v57 + p69;
 					d69 = d57;
 				}
-			}
 		}
 		if (rc.onTheMap(l73)) {
-			if (!rc.isLocationOccupied(l73)) {
 				p73 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v73 > v85 + p73) {
 					v73 = v85 + p73;
@@ -824,10 +809,8 @@ public class Navigation {
 					v73 = v59 + p73;
 					d73 = d59;
 				}
-			}
 		}
 		if (rc.onTheMap(l95)) {
-			if (!rc.isLocationOccupied(l95)) {
 				p95 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v95 > v83 + p95) {
 					v95 = v83 + p95;
@@ -841,10 +824,8 @@ public class Navigation {
 					v95 = v82 + p95;
 					d95 = d82;
 				}
-			}
 		}
 		if (rc.onTheMap(l99)) {
-			if (!rc.isLocationOccupied(l99)) {
 				p99 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v99 > v85 + p99) {
 					v99 = v85 + p99;
@@ -858,10 +839,8 @@ public class Navigation {
 					v99 = v86 + p99;
 					d99 = d86;
 				}
-			}
 		}
 		if (rc.onTheMap(l109)) {
-			if (!rc.isLocationOccupied(l109)) {
 				p109 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v109 > v97 + p109) {
 					v109 = v97 + p109;
@@ -879,10 +858,8 @@ public class Navigation {
 					v109 = v95 + p109;
 					d109 = d95;
 				}
-			}
 		}
 		if (rc.onTheMap(l111)) {
-			if (!rc.isLocationOccupied(l111)) {
 				p111 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v111 > v97 + p111) {
 					v111 = v97 + p111;
@@ -900,10 +877,8 @@ public class Navigation {
 					v111 = v99 + p111;
 					d111 = d99;
 				}
-			}
 		}
 		if (rc.onTheMap(l56)) {
-			if (!rc.isLocationOccupied(l56)) {
 				p56 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v56 > v70 + p56) {
 					v56 = v70 + p56;
@@ -917,10 +892,8 @@ public class Navigation {
 					v56 = v69 + p56;
 					d56 = d69;
 				}
-			}
 		}
 		if (rc.onTheMap(l60)) {
-			if (!rc.isLocationOccupied(l60)) {
 				p60 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v60 > v72 + p60) {
 					v60 = v72 + p60;
@@ -934,10 +907,8 @@ public class Navigation {
 					v60 = v73 + p60;
 					d60 = d73;
 				}
-			}
 		}
 		if (rc.onTheMap(l108)) {
-			if (!rc.isLocationOccupied(l108)) {
 				p108 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v108 > v96 + p108) {
 					v108 = v96 + p108;
@@ -951,10 +922,8 @@ public class Navigation {
 					v108 = v109 + p108;
 					d108 = d109;
 				}
-			}
 		}
 		if (rc.onTheMap(l112)) {
-			if (!rc.isLocationOccupied(l112)) {
 				p112 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v112 > v98 + p112) {
 					v112 = v98 + p112;
@@ -968,10 +937,8 @@ public class Navigation {
 					v112 = v111 + p112;
 					d112 = d111;
 				}
-			}
 		}
 		if (rc.onTheMap(l45)) {
-			if (!rc.isLocationOccupied(l45)) {
 				p45 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v45 > v58 + p45) {
 					v45 = v58 + p45;
@@ -985,10 +952,8 @@ public class Navigation {
 					v45 = v59 + p45;
 					d45 = d59;
 				}
-			}
 		}
 		if (rc.onTheMap(l81)) {
-			if (!rc.isLocationOccupied(l81)) {
 				p81 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v81 > v82 + p81) {
 					v81 = v82 + p81;
@@ -1002,10 +967,8 @@ public class Navigation {
 					v81 = v95 + p81;
 					d81 = d95;
 				}
-			}
 		}
 		if (rc.onTheMap(l87)) {
-			if (!rc.isLocationOccupied(l87)) {
 				p87 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v87 > v86 + p87) {
 					v87 = v86 + p87;
@@ -1019,10 +982,8 @@ public class Navigation {
 					v87 = v99 + p87;
 					d87 = d99;
 				}
-			}
 		}
 		if (rc.onTheMap(l123)) {
-			if (!rc.isLocationOccupied(l123)) {
 				p123 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v123 > v110 + p123) {
 					v123 = v110 + p123;
@@ -1036,10 +997,8 @@ public class Navigation {
 					v123 = v111 + p123;
 					d123 = d111;
 				}
-			}
 		}
 		if (rc.onTheMap(l44)) {
-			if (!rc.isLocationOccupied(l44)) {
 				p44 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v44 > v58 + p44) {
 					v44 = v58 + p44;
@@ -1057,10 +1016,8 @@ public class Navigation {
 					v44 = v45 + p44;
 					d44 = d45;
 				}
-			}
 		}
 		if (rc.onTheMap(l46)) {
-			if (!rc.isLocationOccupied(l46)) {
 				p46 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v46 > v58 + p46) {
 					v46 = v58 + p46;
@@ -1078,10 +1035,8 @@ public class Navigation {
 					v46 = v45 + p46;
 					d46 = d45;
 				}
-			}
 		}
 		if (rc.onTheMap(l68)) {
-			if (!rc.isLocationOccupied(l68)) {
 				p68 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v68 > v82 + p68) {
 					v68 = v82 + p68;
@@ -1099,10 +1054,8 @@ public class Navigation {
 					v68 = v81 + p68;
 					d68 = d81;
 				}
-			}
 		}
 		if (rc.onTheMap(l74)) {
-			if (!rc.isLocationOccupied(l74)) {
 				p74 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v74 > v86 + p74) {
 					v74 = v86 + p74;
@@ -1120,10 +1073,8 @@ public class Navigation {
 					v74 = v87 + p74;
 					d74 = d87;
 				}
-			}
 		}
 		if (rc.onTheMap(l94)) {
-			if (!rc.isLocationOccupied(l94)) {
 				p94 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v94 > v82 + p94) {
 					v94 = v82 + p94;
@@ -1141,10 +1092,8 @@ public class Navigation {
 					v94 = v81 + p94;
 					d94 = d81;
 				}
-			}
 		}
 		if (rc.onTheMap(l100)) {
-			if (!rc.isLocationOccupied(l100)) {
 				p100 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v100 > v86 + p100) {
 					v100 = v86 + p100;
@@ -1162,10 +1111,8 @@ public class Navigation {
 					v100 = v87 + p100;
 					d100 = d87;
 				}
-			}
 		}
 		if (rc.onTheMap(l122)) {
-			if (!rc.isLocationOccupied(l122)) {
 				p122 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v122 > v110 + p122) {
 					v122 = v110 + p122;
@@ -1183,10 +1130,8 @@ public class Navigation {
 					v122 = v123 + p122;
 					d122 = d123;
 				}
-			}
 		}
 		if (rc.onTheMap(l124)) {
-			if (!rc.isLocationOccupied(l124)) {
 				p124 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v124 > v110 + p124) {
 					v124 = v110 + p124;
@@ -1204,10 +1149,8 @@ public class Navigation {
 					v124 = v123 + p124;
 					d124 = d123;
 				}
-			}
 		}
 		if (rc.onTheMap(l43)) {
-			if (!rc.isLocationOccupied(l43)) {
 				p43 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v43 > v57 + p43) {
 					v43 = v57 + p43;
@@ -1221,10 +1164,8 @@ public class Navigation {
 					v43 = v44 + p43;
 					d43 = d44;
 				}
-			}
 		}
 		if (rc.onTheMap(l47)) {
-			if (!rc.isLocationOccupied(l47)) {
 				p47 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v47 > v59 + p47) {
 					v47 = v59 + p47;
@@ -1238,10 +1179,8 @@ public class Navigation {
 					v47 = v46 + p47;
 					d47 = d46;
 				}
-			}
 		}
 		if (rc.onTheMap(l55)) {
-			if (!rc.isLocationOccupied(l55)) {
 				p55 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v55 > v69 + p55) {
 					v55 = v69 + p55;
@@ -1259,10 +1198,8 @@ public class Navigation {
 					v55 = v43 + p55;
 					d55 = d43;
 				}
-			}
 		}
 		if (rc.onTheMap(l61)) {
-			if (!rc.isLocationOccupied(l61)) {
 				p61 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v61 > v73 + p61) {
 					v61 = v73 + p61;
@@ -1280,10 +1217,8 @@ public class Navigation {
 					v61 = v47 + p61;
 					d61 = d47;
 				}
-			}
 		}
 		if (rc.onTheMap(l107)) {
-			if (!rc.isLocationOccupied(l107)) {
 				p107 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v107 > v95 + p107) {
 					v107 = v95 + p107;
@@ -1297,10 +1232,8 @@ public class Navigation {
 					v107 = v94 + p107;
 					d107 = d94;
 				}
-			}
 		}
 		if (rc.onTheMap(l113)) {
-			if (!rc.isLocationOccupied(l113)) {
 				p113 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v113 > v99 + p113) {
 					v113 = v99 + p113;
@@ -1314,10 +1247,8 @@ public class Navigation {
 					v113 = v100 + p113;
 					d113 = d100;
 				}
-			}
 		}
 		if (rc.onTheMap(l121)) {
-			if (!rc.isLocationOccupied(l121)) {
 				p121 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v121 > v109 + p121) {
 					v121 = v109 + p121;
@@ -1335,10 +1266,8 @@ public class Navigation {
 					v121 = v107 + p121;
 					d121 = d107;
 				}
-			}
 		}
 		if (rc.onTheMap(l125)) {
-			if (!rc.isLocationOccupied(l125)) {
 				p125 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v125 > v111 + p125) {
 					v125 = v111 + p125;
@@ -1356,10 +1285,8 @@ public class Navigation {
 					v125 = v113 + p125;
 					d125 = d113;
 				}
-			}
 		}
 		if (rc.onTheMap(l32)) {
-			if (!rc.isLocationOccupied(l32)) {
 				p32 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v32 > v45 + p32) {
 					v32 = v45 + p32;
@@ -1373,10 +1300,8 @@ public class Navigation {
 					v32 = v46 + p32;
 					d32 = d46;
 				}
-			}
 		}
 		if (rc.onTheMap(l80)) {
-			if (!rc.isLocationOccupied(l80)) {
 				p80 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v80 > v81 + p80) {
 					v80 = v81 + p80;
@@ -1390,10 +1315,8 @@ public class Navigation {
 					v80 = v94 + p80;
 					d80 = d94;
 				}
-			}
 		}
 		if (rc.onTheMap(l88)) {
-			if (!rc.isLocationOccupied(l88)) {
 				p88 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v88 > v87 + p88) {
 					v88 = v87 + p88;
@@ -1407,10 +1330,8 @@ public class Navigation {
 					v88 = v100 + p88;
 					d88 = d100;
 				}
-			}
 		}
 		if (rc.onTheMap(l136)) {
-			if (!rc.isLocationOccupied(l136)) {
 				p136 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v136 > v123 + p136) {
 					v136 = v123 + p136;
@@ -1424,10 +1345,8 @@ public class Navigation {
 					v136 = v124 + p136;
 					d136 = d124;
 				}
-			}
 		}
 		if (rc.onTheMap(l31)) {
-			if (!rc.isLocationOccupied(l31)) {
 				p31 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v31 > v45 + p31) {
 					v31 = v45 + p31;
@@ -1445,10 +1364,8 @@ public class Navigation {
 					v31 = v32 + p31;
 					d31 = d32;
 				}
-			}
 		}
 		if (rc.onTheMap(l33)) {
-			if (!rc.isLocationOccupied(l33)) {
 				p33 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v33 > v45 + p33) {
 					v33 = v45 + p33;
@@ -1466,10 +1383,8 @@ public class Navigation {
 					v33 = v32 + p33;
 					d33 = d32;
 				}
-			}
 		}
 		if (rc.onTheMap(l67)) {
-			if (!rc.isLocationOccupied(l67)) {
 				p67 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v67 > v81 + p67) {
 					v67 = v81 + p67;
@@ -1487,10 +1402,8 @@ public class Navigation {
 					v67 = v80 + p67;
 					d67 = d80;
 				}
-			}
 		}
 		if (rc.onTheMap(l75)) {
-			if (!rc.isLocationOccupied(l75)) {
 				p75 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v75 > v87 + p75) {
 					v75 = v87 + p75;
@@ -1508,10 +1421,8 @@ public class Navigation {
 					v75 = v88 + p75;
 					d75 = d88;
 				}
-			}
 		}
 		if (rc.onTheMap(l93)) {
-			if (!rc.isLocationOccupied(l93)) {
 				p93 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v93 > v81 + p93) {
 					v93 = v81 + p93;
@@ -1529,10 +1440,8 @@ public class Navigation {
 					v93 = v80 + p93;
 					d93 = d80;
 				}
-			}
 		}
 		if (rc.onTheMap(l101)) {
-			if (!rc.isLocationOccupied(l101)) {
 				p101 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v101 > v87 + p101) {
 					v101 = v87 + p101;
@@ -1550,10 +1459,8 @@ public class Navigation {
 					v101 = v88 + p101;
 					d101 = d88;
 				}
-			}
 		}
 		if (rc.onTheMap(l135)) {
-			if (!rc.isLocationOccupied(l135)) {
 				p135 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v135 > v123 + p135) {
 					v135 = v123 + p135;
@@ -1571,10 +1478,8 @@ public class Navigation {
 					v135 = v136 + p135;
 					d135 = d136;
 				}
-			}
 		}
 		if (rc.onTheMap(l137)) {
-			if (!rc.isLocationOccupied(l137)) {
 				p137 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v137 > v123 + p137) {
 					v137 = v123 + p137;
@@ -1592,10 +1497,8 @@ public class Navigation {
 					v137 = v136 + p137;
 					d137 = d136;
 				}
-			}
 		}
 		if (rc.onTheMap(l42)) {
-			if (!rc.isLocationOccupied(l42)) {
 				p42 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v42 > v56 + p42) {
 					v42 = v56 + p42;
@@ -1609,10 +1512,8 @@ public class Navigation {
 					v42 = v55 + p42;
 					d42 = d55;
 				}
-			}
 		}
 		if (rc.onTheMap(l48)) {
-			if (!rc.isLocationOccupied(l48)) {
 				p48 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v48 > v60 + p48) {
 					v48 = v60 + p48;
@@ -1626,10 +1527,8 @@ public class Navigation {
 					v48 = v61 + p48;
 					d48 = d61;
 				}
-			}
 		}
 		if (rc.onTheMap(l120)) {
-			if (!rc.isLocationOccupied(l120)) {
 				p120 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v120 > v108 + p120) {
 					v120 = v108 + p120;
@@ -1643,10 +1542,8 @@ public class Navigation {
 					v120 = v121 + p120;
 					d120 = d121;
 				}
-			}
 		}
 		if (rc.onTheMap(l126)) {
-			if (!rc.isLocationOccupied(l126)) {
 				p126 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v126 > v112 + p126) {
 					v126 = v112 + p126;
@@ -1660,10 +1557,8 @@ public class Navigation {
 					v126 = v125 + p126;
 					d126 = d125;
 				}
-			}
 		}
 		if (rc.onTheMap(l30)) {
-			if (!rc.isLocationOccupied(l30)) {
 				p30 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v30 > v44 + p30) {
 					v30 = v44 + p30;
@@ -1681,10 +1576,8 @@ public class Navigation {
 					v30 = v42 + p30;
 					d30 = d42;
 				}
-			}
 		}
 		if (rc.onTheMap(l34)) {
-			if (!rc.isLocationOccupied(l34)) {
 				p34 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v34 > v46 + p34) {
 					v34 = v46 + p34;
@@ -1702,10 +1595,8 @@ public class Navigation {
 					v34 = v48 + p34;
 					d34 = d48;
 				}
-			}
 		}
 		if (rc.onTheMap(l54)) {
-			if (!rc.isLocationOccupied(l54)) {
 				p54 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v54 > v68 + p54) {
 					v54 = v68 + p54;
@@ -1723,10 +1614,8 @@ public class Navigation {
 					v54 = v42 + p54;
 					d54 = d42;
 				}
-			}
 		}
 		if (rc.onTheMap(l62)) {
-			if (!rc.isLocationOccupied(l62)) {
 				p62 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v62 > v74 + p62) {
 					v62 = v74 + p62;
@@ -1744,10 +1633,8 @@ public class Navigation {
 					v62 = v48 + p62;
 					d62 = d48;
 				}
-			}
 		}
 		if (rc.onTheMap(l106)) {
-			if (!rc.isLocationOccupied(l106)) {
 				p106 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v106 > v94 + p106) {
 					v106 = v94 + p106;
@@ -1765,10 +1652,8 @@ public class Navigation {
 					v106 = v120 + p106;
 					d106 = d120;
 				}
-			}
 		}
 		if (rc.onTheMap(l114)) {
-			if (!rc.isLocationOccupied(l114)) {
 				p114 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v114 > v100 + p114) {
 					v114 = v100 + p114;
@@ -1786,10 +1671,8 @@ public class Navigation {
 					v114 = v126 + p114;
 					d114 = d126;
 				}
-			}
 		}
 		if (rc.onTheMap(l134)) {
-			if (!rc.isLocationOccupied(l134)) {
 				p134 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v134 > v122 + p134) {
 					v134 = v122 + p134;
@@ -1807,10 +1690,8 @@ public class Navigation {
 					v134 = v120 + p134;
 					d134 = d120;
 				}
-			}
 		}
 		if (rc.onTheMap(l138)) {
-			if (!rc.isLocationOccupied(l138)) {
 				p138 = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)
 				if (v138 > v124 + p138) {
 					v138 = v124 + p138;
@@ -1828,7 +1709,6 @@ public class Navigation {
 					v138 = v126 + p138;
 					d138 = d126;
 				}
-			}
 		}
 		int dx = target.x - l84.x;
 		int dy = target.y - l84.y;
@@ -1836,178 +1716,302 @@ public class Navigation {
 			case -4:
 				switch (dy) {
 					case -2:
-						return d54
+						return d54;
 					case -1:
-						return d67
+						return d67;
 					case 0:
-						return d80
+						return d80;
 					case 1:
-						return d93
+						return d93;
 					case 2:
-						return d106
+						return d106;
 				}
 				break;
 			case -3:
 				switch (dy) {
 					case -3:
-						return d42
+						return d42;
 					case -2:
-						return d55
+						return d55;
 					case -1:
-						return d68
+						return d68;
 					case 0:
-						return d81
+						return d81;
 					case 1:
-						return d94
+						return d94;
 					case 2:
-						return d107
+						return d107;
 					case 3:
-						return d120
+						return d120;
 				}
 				break;
 			case -2:
 				switch (dy) {
 					case -4:
-						return d30
+						return d30;
 					case -3:
-						return d43
+						return d43;
 					case -2:
-						return d56
+						return d56;
 					case -1:
-						return d69
+						return d69;
 					case 0:
-						return d82
+						return d82;
 					case 1:
-						return d95
+						return d95;
 					case 2:
-						return d108
+						return d108;
 					case 3:
-						return d121
+						return d121;
 					case 4:
-						return d134
+						return d134;
 				}
 				break;
 			case -1:
 				switch (dy) {
 					case -4:
-						return d31
+						return d31;
 					case -3:
-						return d44
+						return d44;
 					case -2:
-						return d57
+						return d57;
 					case -1:
-						return d70
+						return d70;
 					case 0:
-						return d83
+						return d83;
 					case 1:
-						return d96
+						return d96;
 					case 2:
-						return d109
+						return d109;
 					case 3:
-						return d122
+						return d122;
 					case 4:
-						return d135
+						return d135;
 				}
 				break;
 			case 0:
 				switch (dy) {
 					case -4:
-						return d32
+						return d32;
 					case -3:
-						return d45
+						return d45;
 					case -2:
-						return d58
+						return d58;
 					case -1:
-						return d71
+						return d71;
 					case 0:
-						return d84
+						return d84;
 					case 1:
-						return d97
+						return d97;
 					case 2:
-						return d110
+						return d110;
 					case 3:
-						return d123
+						return d123;
 					case 4:
-						return d136
+						return d136;
 				}
 				break;
 			case 1:
 				switch (dy) {
 					case -4:
-						return d33
+						return d33;
 					case -3:
-						return d46
+						return d46;
 					case -2:
-						return d59
+						return d59;
 					case -1:
-						return d72
+						return d72;
 					case 0:
-						return d85
+						return d85;
 					case 1:
-						return d98
+						return d98;
 					case 2:
-						return d111
+						return d111;
 					case 3:
-						return d124
+						return d124;
 					case 4:
-						return d137
+						return d137;
 				}
 				break;
 			case 2:
 				switch (dy) {
 					case -4:
-						return d34
+						return d34;
 					case -3:
-						return d47
+						return d47;
 					case -2:
-						return d60
+						return d60;
 					case -1:
-						return d73
+						return d73;
 					case 0:
-						return d86
+						return d86;
 					case 1:
-						return d99
+						return d99;
 					case 2:
-						return d112
+						return d112;
 					case 3:
-						return d125
+						return d125;
 					case 4:
-						return d138
+						return d138;
 				}
 				break;
 			case 3:
 				switch (dy) {
 					case -3:
-						return d48
+						return d48;
 					case -2:
-						return d61
+						return d61;
 					case -1:
-						return d74
+						return d74;
 					case 0:
-						return d87
+						return d87;
 					case 1:
-						return d100
+						return d100;
 					case 2:
-						return d113
+						return d113;
 					case 3:
-						return d126
+						return d126;
 				}
 				break;
 			case 4:
 				switch (dy) {
 					case -2:
-						return d62
+						return d62;
 					case -1:
-						return d75
+						return d75;
 					case 0:
-						return d88
+						return d88;
 					case 1:
-						return d101
+						return d101;
 					case 2:
-						return d114
+						return d114;
 				}
 				break;
 		}
+		Direction ans = null;
+		double bestEstimation = 0;
+		double initialDist = Math.sqrt(l84.distanceSquaredTo(target));
+		double dist32 = initialDist - Math.sqrt(l32.distanceSquaredTo(target) / v32;
+		if (dist32 > bestEstimation) {
+			bestEstimation = dist32;
+			ans = d32;
+		}
+		double dist80 = initialDist - Math.sqrt(l80.distanceSquaredTo(target) / v80;
+		if (dist80 > bestEstimation) {
+			bestEstimation = dist80;
+			ans = d80;
+		}
+		double dist88 = initialDist - Math.sqrt(l88.distanceSquaredTo(target) / v88;
+		if (dist88 > bestEstimation) {
+			bestEstimation = dist88;
+			ans = d88;
+		}
+		double dist136 = initialDist - Math.sqrt(l136.distanceSquaredTo(target) / v136;
+		if (dist136 > bestEstimation) {
+			bestEstimation = dist136;
+			ans = d136;
+		}
+		double dist31 = initialDist - Math.sqrt(l31.distanceSquaredTo(target) / v31;
+		if (dist31 > bestEstimation) {
+			bestEstimation = dist31;
+			ans = d31;
+		}
+		double dist33 = initialDist - Math.sqrt(l33.distanceSquaredTo(target) / v33;
+		if (dist33 > bestEstimation) {
+			bestEstimation = dist33;
+			ans = d33;
+		}
+		double dist67 = initialDist - Math.sqrt(l67.distanceSquaredTo(target) / v67;
+		if (dist67 > bestEstimation) {
+			bestEstimation = dist67;
+			ans = d67;
+		}
+		double dist75 = initialDist - Math.sqrt(l75.distanceSquaredTo(target) / v75;
+		if (dist75 > bestEstimation) {
+			bestEstimation = dist75;
+			ans = d75;
+		}
+		double dist93 = initialDist - Math.sqrt(l93.distanceSquaredTo(target) / v93;
+		if (dist93 > bestEstimation) {
+			bestEstimation = dist93;
+			ans = d93;
+		}
+		double dist101 = initialDist - Math.sqrt(l101.distanceSquaredTo(target) / v101;
+		if (dist101 > bestEstimation) {
+			bestEstimation = dist101;
+			ans = d101;
+		}
+		double dist135 = initialDist - Math.sqrt(l135.distanceSquaredTo(target) / v135;
+		if (dist135 > bestEstimation) {
+			bestEstimation = dist135;
+			ans = d135;
+		}
+		double dist137 = initialDist - Math.sqrt(l137.distanceSquaredTo(target) / v137;
+		if (dist137 > bestEstimation) {
+			bestEstimation = dist137;
+			ans = d137;
+		}
+		double dist42 = initialDist - Math.sqrt(l42.distanceSquaredTo(target) / v42;
+		if (dist42 > bestEstimation) {
+			bestEstimation = dist42;
+			ans = d42;
+		}
+		double dist48 = initialDist - Math.sqrt(l48.distanceSquaredTo(target) / v48;
+		if (dist48 > bestEstimation) {
+			bestEstimation = dist48;
+			ans = d48;
+		}
+		double dist120 = initialDist - Math.sqrt(l120.distanceSquaredTo(target) / v120;
+		if (dist120 > bestEstimation) {
+			bestEstimation = dist120;
+			ans = d120;
+		}
+		double dist126 = initialDist - Math.sqrt(l126.distanceSquaredTo(target) / v126;
+		if (dist126 > bestEstimation) {
+			bestEstimation = dist126;
+			ans = d126;
+		}
+		double dist30 = initialDist - Math.sqrt(l30.distanceSquaredTo(target) / v30;
+		if (dist30 > bestEstimation) {
+			bestEstimation = dist30;
+			ans = d30;
+		}
+		double dist34 = initialDist - Math.sqrt(l34.distanceSquaredTo(target) / v34;
+		if (dist34 > bestEstimation) {
+			bestEstimation = dist34;
+			ans = d34;
+		}
+		double dist54 = initialDist - Math.sqrt(l54.distanceSquaredTo(target) / v54;
+		if (dist54 > bestEstimation) {
+			bestEstimation = dist54;
+			ans = d54;
+		}
+		double dist62 = initialDist - Math.sqrt(l62.distanceSquaredTo(target) / v62;
+		if (dist62 > bestEstimation) {
+			bestEstimation = dist62;
+			ans = d62;
+		}
+		double dist106 = initialDist - Math.sqrt(l106.distanceSquaredTo(target) / v106;
+		if (dist106 > bestEstimation) {
+			bestEstimation = dist106;
+			ans = d106;
+		}
+		double dist114 = initialDist - Math.sqrt(l114.distanceSquaredTo(target) / v114;
+		if (dist114 > bestEstimation) {
+			bestEstimation = dist114;
+			ans = d114;
+		}
+		double dist134 = initialDist - Math.sqrt(l134.distanceSquaredTo(target) / v134;
+		if (dist134 > bestEstimation) {
+			bestEstimation = dist134;
+			ans = d134;
+		}
+		double dist138 = initialDist - Math.sqrt(l138.distanceSquaredTo(target) / v138;
+		if (dist138 > bestEstimation) {
+			bestEstimation = dist138;
+			ans = d138;
+		}
+		return ans;
 	}
 
 }

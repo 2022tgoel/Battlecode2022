@@ -20,7 +20,7 @@ print(MAX)
 assert((GRID//2) >= MAX) # grid is large enough to incorporate entire vision radius
 
 def numToLoc(num):
- return num%GRID, num//GRID
+	return num%GRID, num//GRID
 
 def distFromDroid(num):
 	center = (GRID//2)
@@ -92,12 +92,14 @@ with open("Navigation.java", "w") as f:
 			return
 		s = "\t"*indent
 		f.write(f"{s}if (rc.onTheMap(l{node})) {'{'}\n")
-		f.write(f"{s}\tif (!rc.isLocationOccupied(l{node})) {'{'}\n")
+		if (node - CENTER in deltas): 
+			f.write(f"{s}\tif (!rc.isLocationOccupied(l{node})) {'{'}\n")
 		f.write(f"{s}\t\tp{node} = Math.floor((1.0 + (double)rc.senseRubble(loc)/10.0)*cooldown)\n")
 		for prev in visited:
 			if (node - prev) in deltas:
 				writeEdgeRelaxation(node, prev)
-		f.write(f"{s}\t{'}'}\n")
+		if (node - CENTER in deltas):
+			f.write(f"{s}\t{'}'}\n")
 		f.write(f"{s}{'}'}\n")
 
 	def writeCasework(f, indent=2):
@@ -112,11 +114,29 @@ with open("Navigation.java", "w") as f:
 				num = (y + GRID//2)*GRID + (x+GRID//2)
 				if (numWithinRange(num)):
 					f.write(f"{s}\t\t\tcase {y}:\n")
-					f.write(f"{s}\t\t\t\treturn d{num}\n")
+					f.write(f"{s}\t\t\t\treturn d{num};\n")
 					continue
 			f.write(f"{s}\t\t{'}'}\n")
 			f.write(f"{s}\t\tbreak;\n")
 		f.write(f"{s}{'}'}\n")
+
+	def writeHeuristicEstimation(f, indent=2):
+		s = "\t"*indent
+		f.write(f"{s}Direction ans = null;\n")
+		f.write(f"{s}double bestEstimation = 0;\n")
+		f.write(f"{s}double initialDist = Math.sqrt(l84.distanceSquaredTo(target));\n")
+		for n in nodes:
+			isEdge = False
+			for d in [1, -1, GRID, -1*GRID]:
+				if not numWithinRange(n+d):
+					isEdge = True
+			if isEdge:
+				f.write(f"{s}double dist{n} = initialDist - Math.sqrt(l{n}.distanceSquaredTo(target) / v{n};\n")
+				f.write(f"{s}if (dist{n} > bestEstimation) {'{'}\n")
+				f.write(f"{s}\tbestEstimation = dist{n};\n")
+				f.write(f"{s}\tans = d{n};\n")
+				f.write(f"{s}{'}'}\n")
+		f.write(f"{s}return ans;\n")
 
 	def writeFunction(f):
 		f.write("\tDirection getBestDir(MapLocation target) throws GameActionException{\n")
@@ -126,7 +146,9 @@ with open("Navigation.java", "w") as f:
 			writeNodeCalculation(f, n, visited)
 			visited.append(n)
 		writeCasework(f)
+		writeHeuristicEstimation(f)
 		f.write("\t}\n")
+
 
 	lines = ["import battlecode.common.Direction;",
 			"import battlecode.common.MapLocation;",
