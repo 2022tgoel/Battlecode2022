@@ -65,6 +65,7 @@ public class Soldier extends Unit {
                 break;
             case DEFENSIVE_RUSH:
                 defensiveMove();
+                break;
             case FLEE:
                 moveInDirection(fleeDirection);
                 break;
