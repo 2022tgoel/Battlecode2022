@@ -88,7 +88,11 @@ public class Miner extends Unit {
         }
         amountMined += mine();
         senseMiningArea();
-        rc.setIndicatorString(" " + mode + " " + amountMined + " " + target);
+        if (mode == MODE.MOVING_TO_EXPLORATION_ASSIGNMENT) {
+            rc.setIndicatorString("Moving to exploration assignment " + exploratoryGridSquare);
+        } else {
+            rc.setIndicatorString("" + mode + " " + amountMined + " " + target);
+        }
     }
 
     public RANK findRankMiner() throws GameActionException {
@@ -261,8 +265,9 @@ public class Miner extends Unit {
     static final int[] dx = { 0, 0, 0, 1, 1, 1, -1, -1, -1 };
     static final int[] dy = { 0, 1, -1, 0, 1, -1, 0, 1, -1 };
 
-    public MapLocation findMiningAreaWithSensingIntensive() throws GameActionException { // currently too bytecode
-                                                                                         // intensive
+    public MapLocation findMiningAreaWithSensingIntensive() throws GameActionException {
+        // currently too bytecode
+        // intensive
         int maxRes = 1;
         MapLocation bestLocation = null;
 
