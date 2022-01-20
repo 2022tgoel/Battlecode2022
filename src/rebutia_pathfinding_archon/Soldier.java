@@ -285,8 +285,25 @@ public class Soldier extends Unit {
             dir = new int[]{dx, dy};
             lastAttackDir = scaleToSize(dir);
         }
-        if (rc.getLocation().distanceSquaredTo(target) <= 9) return;
+        if (rc.getLocation().distanceSquaredTo(target) <= 9) {
+            // check for low rubble squares to move to
+            Direction lowRubble = findLowRubble();
+            if (lowRubble != null) rc.move(lowRubble);
+        }
         else moveInDirection(lastAttackDir);
+    }
+
+    public Direction findLowRubble() throws GameActionException {
+        MapLocation cur = rc.getLocation();
+        int cur_rubble = 1 + rc.senseRubble(cur) / 10;
+        int rubble;
+        for (int i = 0; i < 8; i++) {
+            rubble = rc.senseRubble(cur.add(directions[i]));
+            if (rubble < cur_rubble && rc.canMove(directions[i])) {
+                return directions[i];
+            }
+        }
+        return null;
     }
 
     public void defensiveMove() throws GameActionException{
