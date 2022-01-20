@@ -73,7 +73,7 @@ public class Watchtower extends Unit {
             default:
                 break;
         }
-        System.out.println("Watchtower mode: " + rc.getMode().toString());
+        // System.out.println("Watchtower mode: " + rc.getMode().toString());
     }
 
     public void visualize() throws GameActionException {
@@ -316,16 +316,17 @@ public class Watchtower extends Unit {
 
 
     public boolean attemptAttack(boolean attackMiners) throws GameActionException {
-        if (rc.getMode() == RobotMode.PORTABLE) return false;
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
         int weakestSoldierHealth = 100000;
         int weakestMinerHealth = 100000;
         int weakestSageHealth = 100000;
         int weakestTowerHealth = 100000;
+        int weakestBuilerHealth = 100000;
         RobotInfo weakestSoldier = null;
         RobotInfo weakestTower = null;
         RobotInfo weakestSage = null;
         RobotInfo weakestMiner = null;
+        RobotInfo weakestBuilder = null;
         RobotInfo archon = null;
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
@@ -352,6 +353,12 @@ public class Watchtower extends Unit {
                     if (bot.health < weakestSageHealth) {
                         weakestSage = bot;
                         weakestSageHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.BUILDER) {
+                    if (bot.health < weakestBuilerHealth) {
+                        weakestBuilder = bot;
+                        weakestBuilerHealth = bot.health;
                     }
                 }
                 if (bot.type == RobotType.ARCHON) {
@@ -391,6 +398,14 @@ public class Watchtower extends Unit {
                     return true;
                 }
             }
+            else if (weakestBuilder != null && attackMiners) {
+                if (rc.canAttack(weakestBuilder.location)) {
+                    rc.attack(weakestBuilder.location);
+                    target = weakestBuilder.location;
+                    broadcastTarget(weakestBuilder.location);
+                    return true;
+                }
+            }
             else if (archon != null) {
                 if (rc.canAttack(archon.location)) {
                     rc.attack(archon.location);
@@ -401,7 +416,6 @@ public class Watchtower extends Unit {
         }
         return false;
     }
-
     public void initialize() {
         DRUSH_RSQR = (int) ((double) mapArea / 9.0);
     }

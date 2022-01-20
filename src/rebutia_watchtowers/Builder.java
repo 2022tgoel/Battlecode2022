@@ -31,6 +31,8 @@ public class Builder extends Unit {
 
     @Override
     public void run() throws GameActionException {
+        super.run();
+        radio.updateCounter();
         build_order = getBuildOrder();
         switch (rank) {
             case MARTYR:

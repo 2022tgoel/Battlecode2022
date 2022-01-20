@@ -34,7 +34,7 @@ public class Archon extends Unit {
     int[] defaultBuildOrder;
     int threatChannel = -1;
 
-    private int[] troopCounter = {0, 0, 0, 0}; // miner, soldier, builder, sage
+    private int[] troopCounter = {0, 0, 0, 0, 0}; // miner, soldier, builder, sage, watchtower
 
 	public Archon(RobotController rc) throws GameActionException {
         super(rc);
@@ -55,7 +55,7 @@ public class Archon extends Unit {
         radio.clearTargetAreas();
 
         archonNumber = radio.getArchonNum();
-        troopCounter = new int[]{radio.readCounter(RobotType.MINER), radio.readCounter(RobotType.SOLDIER), radio.readCounter(RobotType.BUILDER), 0};
+        troopCounter = new int[]{radio.readCounter(RobotType.MINER), radio.readCounter(RobotType.SOLDIER), radio.readCounter(RobotType.BUILDER), 0, radio.readCounter(RobotType.WATCHTOWER)};
         // System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
         MODE mode = determineMode();
         switch (mode) {
@@ -76,9 +76,7 @@ public class Archon extends Unit {
                 build(chooseInitialBuildOrder());
                 break;
             case MAKE_BUILDER:
-                if (num_builders < 1) {
-                    build(new int[]{0,0,1});
-                }
+                build(new int[]{0,0,1});
                 break;
             case SOLDIER_HUB:
                 boolean soldier_built = build(new int[]{0, 1, 0});
@@ -97,6 +95,7 @@ public class Archon extends Unit {
         }
         num_archons_alive = rc.getArchonCount();
         rc.setIndicatorString("mode: " + mode.toString() + " " + num_soldiers_hub);
+        System.out.println("numTowers: " + troopCounter[4]);
     }
 
     public boolean build(int[] build_order) throws GameActionException{
@@ -140,8 +139,8 @@ public class Archon extends Unit {
         if (underThreat()) return MODE.THREATENED;
         else if (radio.totalUnderThreat() > 0) return MODE.OTHER_THREATENED;
         else if (num_miners < numMinersInitial) return MODE.INITIAL; 
-        else if (true) return MODE.MAKE_BUILDER;
-        else if (radio.getMode() == archonNumber) return MODE.SOLDIER_HUB;
+        else if (troopCounter[2] < 4) return MODE.MAKE_BUILDER;
+        else if (radio.getMode() == archonNumber && troopCounter[4] > 4 * troopCounter[2]) return MODE.SOLDIER_HUB;
         else return  MODE.DEFAULT;
     }
 
