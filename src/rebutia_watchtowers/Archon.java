@@ -139,7 +139,7 @@ public class Archon extends Unit {
         if (underThreat()) return MODE.THREATENED;
         else if (radio.totalUnderThreat() > 0) return MODE.OTHER_THREATENED;
         else if (num_miners < numMinersInitial) return MODE.INITIAL; 
-        else if (troopCounter[2] < 4) return MODE.MAKE_BUILDER;
+        else if (troopCounter[2] < 4 && num_builders < 1) return MODE.MAKE_BUILDER;
         else if (radio.getMode() == archonNumber && troopCounter[4] > 4 * troopCounter[2]) return MODE.SOLDIER_HUB;
         else return  MODE.DEFAULT;
     }
