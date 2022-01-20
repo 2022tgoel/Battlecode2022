@@ -472,7 +472,7 @@ public class Unit{
         int x_loc= Math.min( (int)Math.round((double)enemy.x/4.0) , 15);
         int y_loc= Math.min( (int)Math.round((double)enemy.y/4.0) , 15);
         for (int i= 0; i < CHANNEL.NUM_TARGETS; i++){
-            int data = rc.readSharedArray(CHANNEL.MINING1.getValue() + i);
+            int data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             int x = (data >> 4) & 15;
             int y = data & 15;
             if (x_loc == x && y_loc == y) {
