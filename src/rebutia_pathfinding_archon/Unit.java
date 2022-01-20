@@ -560,6 +560,7 @@ public class Unit{
             if (data == 0) {
                 rc.writeSharedArray(CHANNEL.TARGET.getValue() + i, loc);
                 System.out.println("I broadcasted an enemy at " + enemy.toString());
+                return;
             }
         }
     }

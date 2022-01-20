@@ -5,7 +5,7 @@ public enum CHANNEL {
     ARCHON_LOC_1(0),
     // channels 4 - 7
     fARCHON_STATUS1(4),
-    ARCHON_ALIVE(8),
+    ARCHON_NUMBER(8),
     UNIT_BUILT(9),
     MINERS_ALIVE(10),
     SOLDIERS_ALIVE(11),
@@ -14,6 +14,7 @@ public enum CHANNEL {
     MINING1(15),
     // channels 20 - 24
     TARGET(20),
+    ARCHON_MODE(26),
     ORDERS(61),
     SEND_RANKS1(62),
     SEND_RANKS2(63), 

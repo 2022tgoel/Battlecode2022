@@ -8,6 +8,7 @@ public class Archon extends Unit {
     enum MODE {
         INITIAL,
         DEFAULT,
+        SOLDIER_HUB,
         THREATENED,
         OTHER_THREATENED,
         ;
@@ -27,6 +28,8 @@ public class Archon extends Unit {
     int num_archons_init;
     int num_archons_alive;
 
+    int num_soldiers_hub = 0;
+
     int[] defaultBuildOrder;
     int threatChannel = -1;
 
@@ -40,7 +43,7 @@ public class Archon extends Unit {
         dirs = sortedDirections();
         defaultBuildOrder = chooseBuildOrder();
         radio = new Comms(rc);
-        archonNumber = radio.getArchonNumInit();
+        archonNumber = radio.getArchonNum();
     }
 
     @Override
@@ -51,11 +54,8 @@ public class Archon extends Unit {
         radio.clearMiningAreas();
         radio.clearTargetAreas();
 
-        archonNumber = radio.getArchonNum(num_archons_init, num_archons_alive, archonNumber);
-        num_archons_alive = rc.getArchonCount();
-        if (round_num % num_archons_alive == archonNumber) {
-            radio.clearCounts();
-        }
+        archonNumber = radio.getArchonNum();
+        System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
         MODE mode = determineMode();
         switch (mode) {
             case THREATENED:
@@ -71,38 +71,29 @@ public class Archon extends Unit {
                 }
                 break;
             case INITIAL:
-                if (round_num % num_archons_alive != archonNumber) {
-                    return;
-                }
-                /*
-                if (rc.getHealth() < RobotType.ARCHON.health && !builderInRange()){
-                    for (int i = dirs.length -1; i>=0; i--){ //reverse
-                        buildBuilder(dirs[i]);
-                    }
-                }*/
+                if (round_num % num_archons_alive != archonNumber) break;
                 build(chooseInitialBuildOrder());
                 break;
+            case SOLDIER_HUB:
+                boolean soldier_built = build(new int[]{0, 1, 0});
+                if (soldier_built) num_soldiers_hub++;
+                if (num_soldiers_hub > 20) {
+                    radio.broadcastMode((archonNumber + 1) % num_archons_alive);
+                    num_soldiers_hub = 0;
+                }
+                break;
             case OTHER_THREATENED: 
-                if (rc.getTeamLeadAmount(rc.getTeam()) < 600){
-                    break; //save for attacked archon
-                }
+                if (rc.getTeamLeadAmount(rc.getTeam()) < 600) break; //save for attacked archons
             case DEFAULT:
-                if (round_num % num_archons_alive != archonNumber) {
-                    return;
-                }
-                /*
-                if (rc.getHealth() < RobotType.ARCHON.health && !builderInRange()){
-                    for (int i = dirs.length -1; i>=0; i--){ //reverse
-                        buildBuilder(dirs[i]);
-                    }
-                }*/
-                build(defaultBuildOrder);
+                if (round_num % num_archons_alive != archonNumber || round_num % 4 != 0) break;
+                build(new int[]{4, 1, 0}); //defaultBuildOrder);
                 break;
         }
-        rc.setIndicatorString("mode: " + mode.toString() + " " +radio.totalUnderThreat());
+        num_archons_alive = rc.getArchonCount();
+        rc.setIndicatorString("mode: " + mode.toString() + " " + num_soldiers_hub);
     }
 
-    public void build(int[] build_order) throws GameActionException{
+    public boolean build(int[] build_order) throws GameActionException{
         boolean unit_built = false;
         for (Direction dir: dirs) {
             switch (counter % 3) {
@@ -135,9 +126,9 @@ public class Archon extends Unit {
                 counter++;
                 built_units = 0;
             }
-            if (unit_built) return;
+            if (unit_built) return true;
         }
-        radio.postBuild(BOT.NONE);
+        return false;
     }
 
     public MODE determineMode() throws GameActionException {
@@ -145,6 +136,7 @@ public class Archon extends Unit {
         if (underThreat()) return MODE.THREATENED;
         else if (radio.totalUnderThreat() > 0) return MODE.OTHER_THREATENED;
         else if (num_miners < (sizeBracket*3)/num_archons_init) return MODE.INITIAL; 
+        else if (radio.getMode() == archonNumber) return MODE.SOLDIER_HUB;
         else return  MODE.DEFAULT;
     }
 

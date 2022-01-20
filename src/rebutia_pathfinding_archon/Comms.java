@@ -106,6 +106,14 @@ public class Comms {
         }
     }
 
+    public int getMode() throws GameActionException {
+        return rc.readSharedArray(CHANNEL.ARCHON_MODE.getValue());
+    }
+
+    public void broadcastMode(int num) throws GameActionException {
+        rc.writeSharedArray(CHANNEL.ARCHON_MODE.getValue(), num);
+    }
+
     public int sendThreatAlert() throws GameActionException {
         MapLocation my = rc.getLocation();
         int threatChannel = -1;
@@ -139,7 +147,7 @@ public class Comms {
         return numThreatenedArchons;
     }
 
-    public int getArchonNum(int num_archons_init, int num_archons_alive, int archonNumber) throws GameActionException {
+    /* public int getArchonNum(int num_archons_init, int num_archons_alive, int archonNumber) throws GameActionException {
         // none dead
         int archonCount = rc.getArchonCount();
         if (archonCount >= num_archons_alive) {
@@ -167,30 +175,33 @@ public class Comms {
             // if 4 archons alive, binary sum is 3, if 3 archons alive, binary sum is 2...
             return binary_sum;
         }
-    }
+    } */
 
     public void clearArchonNumbers() throws GameActionException {
         // if you don't read all 0s for the first four numbers, set them to zero.
-        for (int i = 0; i < 4; i++) {
-            if ((rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + i)) != 0) {
-                rc.writeSharedArray(i, 0);
-            }
+        if (rc.readSharedArray(CHANNEL.ARCHON_NUMBER.getValue()) != 0) {
+            rc.writeSharedArray(CHANNEL.ARCHON_NUMBER.getValue(), 0);
         }
     }
 
-    public int getArchonNumInit() throws GameActionException {
-        int data;
-        for (int i = 0; i < 4; i++) {
-            data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + i);
-            if (data == 0){
-                rc.writeSharedArray(i, 1);
-                if (i == rc.getArchonCount() - 1) {
-                    clearArchonNumbers();
-                }
-                return i;
-            }
+    public int getArchonNum() throws GameActionException {
+        int data = rc.readSharedArray(CHANNEL.ARCHON_NUMBER.getValue());
+        int archonNumber = -1;
+        if (data == 0) {
+            rc.writeSharedArray(CHANNEL.ARCHON_NUMBER.getValue(), 1);
+            archonNumber = 0;
         }
-        return -1;
+        else if (data == 1) {
+            rc.writeSharedArray(CHANNEL.ARCHON_NUMBER.getValue(), 3);
+            archonNumber = 1;
+        }
+        else if (data == 3) {
+            rc.writeSharedArray(CHANNEL.ARCHON_NUMBER.getValue(), 7);
+            archonNumber = 2;
+        }
+        else archonNumber = 3;
+        if (archonNumber == rc.getArchonCount() - 1) clearArchonNumbers();
+        return archonNumber;
     }
 
     public void postRank(RANK rank) throws GameActionException {
