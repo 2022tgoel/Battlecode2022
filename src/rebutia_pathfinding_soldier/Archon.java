@@ -57,6 +57,8 @@ public class Archon extends Unit {
             radio.clearCounts();
         }
 
+        //attemptHeal();
+
         MODE mode = determineMode();
         switch (mode) {
             case THREATENED:
