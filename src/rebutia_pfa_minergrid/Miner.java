@@ -11,8 +11,7 @@ public class Miner extends Unit {
     enum MODE {
         EXPLORING,
         MOVING_TO_EXPLORATION_ASSIGNMENT,
-        MINE_DISCOVERED,
-        MINING,
+        MOVING_TO_TARGET,
         FLEEING;
     }
 
@@ -58,7 +57,7 @@ public class Miner extends Unit {
                     case EXPLORING:
                         moveInDirection(exploratoryDir);
                         break;
-                    case MINE_DISCOVERED:
+                    case MOVING_TO_TARGET:
                         rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 255);
                         moveToLocation(target);
                         break;
@@ -74,8 +73,6 @@ public class Miner extends Unit {
                             Direction d = rc.getLocation().directionTo(exploratoryMapLocation);
                             moveInDirection(new int[] { d.dx, d.dy });
                         }
-                        break;
-                    case MINING:
                         break;
                 }
                 senseArchon();
@@ -124,13 +121,17 @@ public class Miner extends Unit {
             return MODE.FLEEING;
         }
 
+        // Try moving to exploration assignment first thing
+        if (this.exploratoryGridSquare != -1) {
+            return MODE.MOVING_TO_EXPLORATION_ASSIGNMENT;
+        }
+
         // check that you should still pursue
         if (target != null) {
-            if ((!isBroadcast && rc.canSenseLocation(target))
-                    || (isBroadcast && rc.getLocation().distanceSquaredTo(target) <= 10)) {
-                // stricter distance
-                // requirements for a
-                // broadcast
+            boolean targetInRange = (!isBroadcast && rc.canSenseLocation(target));
+            boolean targetInRange2 = (isBroadcast && rc.getLocation().distanceSquaredTo(target) <= 10);
+            if (targetInRange || targetInRange2) {
+                // stricter distance requirements for a broadcast
                 if (getValue(target) <= 1 || occupiedWithMinerAlly(target)) {
                     rc.setIndicatorDot(target, 0, 255, 0);
                     target = null;
@@ -139,28 +140,23 @@ public class Miner extends Unit {
         }
         // choose location to pursue
         if (target != null) {
-            return MODE.MINE_DISCOVERED;
+            return MODE.MOVING_TO_TARGET;
         } else {
             MapLocation loc = findMiningAreaWithSensing();
             if (loc != null) {
                 target = loc;
                 isBroadcast = false;
-                return MODE.MINE_DISCOVERED;
+                return MODE.MOVING_TO_TARGET;
             }
             loc = findMiningAreaWithBroadcast();
             if (loc != null) {
                 target = loc;
                 isBroadcast = true;
-                return MODE.MINE_DISCOVERED;
+                return MODE.MOVING_TO_TARGET;
             }
         }
 
-        if (this.exploratoryGridSquare != -1) {
-            return MODE.MOVING_TO_EXPLORATION_ASSIGNMENT;
-        } else {
-            return MODE.EXPLORING;
-        }
-
+        return MODE.EXPLORING;
     }
 
     public int[] enemiesDetected() throws GameActionException {
