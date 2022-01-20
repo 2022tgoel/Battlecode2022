@@ -12,21 +12,21 @@
 > Task :check UP-TO-DATE
 > Task :checkForUpdate
 > Task :unpackClient UP-TO-DATE
-> Task :unpackClient32 SKIPPED
+> Task :unpackClient32 UP-TO-DATE
 > Task :build UP-TO-DATE
 
 > Task :run
 [server:debug] Awaiting match
-[server:debug] Running: rebutia (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs rebutia_pathfinding_archon (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [dodgeball]
+[server:debug] Running: rebutia (C:\Users\tishi\Documents\CS\Battlecode2022\build\classes)  vs rebutia_pathfinding_archon (C:\Users\tishi\Documents\CS\Battlecode2022\build\classes)  on [collaboration]
 [server] -------------------- Match Starting --------------------
-[server] rebutia vs. rebutia_pathfinding_archon on dodgeball
-[server]                    rebutia (A) wins (round 452)
+[server] rebutia vs. rebutia_pathfinding_archon on collaboration
+[server]           rebutia_pathfinding_archon (B) wins (round 296)
 [server] Reason: The winning team won by annihilating the enemy team's Archons.
 [server] -------------------- Match Finished --------------------
-[server:debug] match completed in 6.256 seconds
+[server:debug] match completed in 2.943 seconds
 [server:debug] Awaiting match
 [server:debug] Shutting down server
-Closed: /0:0:0:0:0:0:0:1:53513 for null
+Closed: /0:0:0:0:0:0:0:1:62119 for null
 
-BUILD SUCCESSFUL in 7s
-9 actionable tasks: 2 executed, 7 up-to-date
+BUILD SUCCESSFUL in 5s
+10 actionable tasks: 2 executed, 8 up-to-date
