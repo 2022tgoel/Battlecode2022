@@ -8,8 +8,7 @@ JDK_PATH = None # set to None if u don't care / old test.py was working
 def main():
     print("Starting Tests!")
 
-    playerA = sys.argv[1].strip() if len(sys.argv) >= 3 else "rebutia_pathfinding_archon"
-    playerB = sys.argv[2].strip() if len(sys.argv) >= 3 else "rebutia"
+    _, playerA, playerB = sys.argv
 
     init(playerA, playerB)
 
@@ -31,7 +30,7 @@ def play(playerA, playerB, maps):
     dataList = []
 
     for map in maps:
-        print(f"{playerA} wins: {winsA} | {playerB} wins: {winsB} | running: {map}" + ' '*25, end="\r")
+        print(f"{playerA} wins: {winsA} | {playerB} wins: {winsB} | running: {map}" + ' '*25, end="\r", flush=True)
         updateA, updateB = runMatch(playerA, playerB, map)
         winsA += updateA
         winsB += updateB
