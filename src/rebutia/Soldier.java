@@ -159,7 +159,7 @@ public class Soldier extends Unit {
                 int w = data / 4096;
                 int x = (data - w * 4096) / 64;
                 int y = data % 64;
-                System.out.println("I received an enemy at " + x + " " + y + " on round " + round_num);
+                // System.out.println("I received an enemy at " + x + " " + y + " on round " + round_num);
                 MapLocation potentialTarget = new MapLocation(x, y);
                 if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
                     closestDist = cur.distanceSquaredTo(potentialTarget);

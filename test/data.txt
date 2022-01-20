@@ -17,16 +17,16 @@
 
 > Task :run
 [server:debug] Awaiting match
-[server:debug] Running: rebutia_pathfinding (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs rebutia (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [explore]
+[server:debug] Running: rebutia (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  vs rebutia_pathfinding_archon (/Users/csharma/Downloads/CS/Battlecode2022/build/classes)  on [dodgeball]
 [server] -------------------- Match Starting --------------------
-[server] rebutia_pathfinding vs. rebutia on explore
-[server]              rebutia_pathfinding (A) wins (round 493)
+[server] rebutia vs. rebutia_pathfinding_archon on dodgeball
+[server]                    rebutia (A) wins (round 452)
 [server] Reason: The winning team won by annihilating the enemy team's Archons.
 [server] -------------------- Match Finished --------------------
-[server:debug] match completed in 5.131 seconds
+[server:debug] match completed in 6.256 seconds
 [server:debug] Awaiting match
 [server:debug] Shutting down server
-Closed: /0:0:0:0:0:0:0:1:59060 for null
+Closed: /0:0:0:0:0:0:0:1:53513 for null
 
-BUILD SUCCESSFUL in 6s
+BUILD SUCCESSFUL in 7s
 9 actionable tasks: 2 executed, 7 up-to-date

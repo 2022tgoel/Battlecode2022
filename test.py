@@ -1,14 +1,15 @@
 import os
 import sys
 import platform
+import random
 
 JDK_PATH = None # set to None if u don't care / old test.py was working
 
 def main():
     print("Starting Tests!")
 
-    playerA = sys.argv[1].strip() if len(sys.argv) >= 3 else "rebutia_gleb"
-    playerB = sys.argv[2].strip() if len(sys.argv) >= 3 else "peyote_old"
+    playerA = sys.argv[1].strip() if len(sys.argv) >= 3 else "rebutia_pathfinding_archon"
+    playerB = sys.argv[2].strip() if len(sys.argv) >= 3 else "rebutia"
 
     init(playerA, playerB)
 
@@ -16,6 +17,8 @@ def main():
     if maps is None:
         listMaps()
         maps = getMaps()
+        # select fiftenn random maps
+        maps = random.sample(maps, 15)
 
     play(playerA, playerB, maps)
 

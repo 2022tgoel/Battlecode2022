@@ -24,7 +24,7 @@ public class Soldier extends Unit {
     MapLocation[] threatenedArchons;
 
     private int[] fleeDirection = {Integer.MAX_VALUE, Integer.MAX_VALUE};
-    private int stopFleeingRound = 10000;
+    private int stopFleeingRound = -1;
     private int DRUSH_RSQR = 400;
     private int ARUSH_RSQR = 900;
 
@@ -77,13 +77,6 @@ public class Soldier extends Unit {
             case FLEE:
                 moveInDirection(fleeDirection);
                 break;
-            case DYING:
-                if (rc.getLocation().distanceSquaredTo(homeArchon) < 64) {
-                    if (rc.senseLead(rc.getLocation()) == 0) {
-                        rc.disintegrate();
-                    }
-                }
-                moveToLocation(homeArchon);
             default:
                 break;
         }
@@ -132,11 +125,11 @@ public class Soldier extends Unit {
             exploreLoc = getInitialExploratoryLocation(); 
             lastAttackDir = null;
         }
-        if (validFlee || stopFleeingRound <= round_num) {
+        if (validFlee || stopFleeingRound > round_num) {
             if (validFlee) fleeDirection = potFleeDir;
             // keep fleeing for two moves (2 rounds per move)
             if (stopFleeingRound <= round_num) {
-                stopFleeingRound = round_num + 4;
+                stopFleeingRound = round_num + 6;
             }
             return MODE.FLEE;
         }
@@ -171,18 +164,16 @@ public class Soldier extends Unit {
     public int[] fleeDirection() throws GameActionException{
         MapLocation cur = rc.getLocation();
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1);
-        double cxsf = 0;
-        double cysf = 0;
         double cxse = 0;
         double cyse = 0;
         int numEnemies = 0;
-        int maxHealthEnemy = 0;
+        int numEnemyHits = 0;
+        int numFriendHits = (rc.getHealth() + 2) / 3;
         int numFriends = 0;
         for (RobotInfo bot: nearbyBots) {
             if (bot.team == rc.getTeam()) {
                 if (bot.type == RobotType.SOLDIER) {
-                    cxsf += bot.location.x;
-                    cysf += bot.location.y;
+                    numFriendHits += ((bot.health + 2) / 3);
                     numFriends++;
                 }
             }
@@ -190,27 +181,33 @@ public class Soldier extends Unit {
                 if (bot.type == RobotType.SOLDIER) {
                     cxse += bot.location.x;
                     cyse += bot.location.y;
-                    maxHealthEnemy = Math.max(maxHealthEnemy, bot.health);
+                    numEnemyHits += ((bot.health + 2) / 3);
                     numEnemies++;
                 }
         }
+        if (numEnemies == 0) return new int[]{Integer.MAX_VALUE, Integer.MAX_VALUE};
+
         if (numEnemies > 0) {
             cxse /= numEnemies;
             cyse /= numEnemies;
         }
-        if (numFriends > 0) {
-            cxsf /= numFriends;
-            cysf /= numFriends;
+
+        double unit_difference = (double) (numFriends + 1 - numEnemies);
+        double ratio;
+
+        if (((numFriends + 1) / numEnemies) > 1) {
+            ratio = ((numFriends + 1) / numEnemies);
         }
-        // for example, if soldier has 7,8, or 9 health this expression spits out 3, as the soldier can only survive 3 hits.
-        int soldierHitsLeft = (rc.getHealth() + 2) / 3;
-        int enemyHitsLeft = (maxHealthEnemy + 2) / 3;
-        boolean winsInteraction = false;
-        // soldier strikes second, so must have more hits remaining
-        if (attacked) winsInteraction = (soldierHitsLeft > enemyHitsLeft);
-        else winsInteraction = (soldierHitsLeft >= enemyHitsLeft);
-        // count yourself
-        if (numEnemies > (numFriends + 1) || (numEnemies == 1 && !winsInteraction)) {
+        else {
+            ratio = numEnemies / (numFriends + 1);
+        }
+
+        double a = 6 * ratio;
+        int unit_advantage = (int) (a * Math.pow(unit_difference,2) * Math.signum(unit_difference));
+
+        // System.out.println("Unit advantage: " + unit_advantage + " Ratio: " + ratio + " numFriendHits " + numFriendHits + " numEnemyHits " + numEnemyHits + "round_num " + round_num + " id " + rc.getID());
+
+        if (numFriendHits + unit_advantage < numEnemyHits) {
             double dx = -(cxse - cur.x);
             double dy = -(cyse - cur.y);
             // more attracted
@@ -241,7 +238,7 @@ public class Soldier extends Unit {
             if (data != 0) {
                 int x = (data >> 4) & 15;
                 int y = data & 15;
-                System.out.println("I received an enemy at " + x*4 + " " + y*4 + " on round " + round_num);
+                // System.out.println("I received an enemy at " + x*4 + " " + y*4 + " on round " + round_num);
                 MapLocation potentialTarget = new MapLocation(x*4, y*4);
                 if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
                     closestDist = cur.distanceSquaredTo(potentialTarget);

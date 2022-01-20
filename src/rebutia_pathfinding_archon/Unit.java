@@ -201,7 +201,7 @@ public class Unit{
         }
         int value = (demand << 8) + (x_loc << 4) + y_loc; 
         rc.setIndicatorDot(new MapLocation(x_loc*4, y_loc*4), 255, 0, 0);
-        System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 + " " + demand + " " + rc.getRoundNum());
+        // System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 + " " + demand + " " + rc.getRoundNum());
         rc.writeSharedArray(CHANNEL.MINING1.getValue() +indToPut, value);
     }
 
@@ -240,7 +240,7 @@ public class Unit{
      **/
     public void moveToLocation(MapLocation loc) throws GameActionException{
         Direction d= mover.getBestDir(loc);
-        System.out.println(d);
+        // System.out.println(d);
         if (d!=null && rc.canMove(d)){
             rc.move(d);
         }
@@ -251,7 +251,7 @@ public class Unit{
         MapLocation loc = rc.getLocation();
         MapLocation dest = new MapLocation(loc.x + toDest[0], loc.y + toDest[1]);
         Direction d= mover.getBestDir(dest);
-        System.out.println(d);
+        // System.out.println(d);
         if (d!=null && rc.canMove(d)){
             rc.move(d);
         }
@@ -485,6 +485,6 @@ public class Unit{
         int value = (x_loc << 4) + y_loc; 
         rc.setIndicatorDot(new MapLocation(x_loc*4, y_loc*4), 0, 100, 0);
         rc.writeSharedArray(CHANNEL.TARGET.getValue() + indToPut, value);
-        System.out.println("I broadcasted an enemy at " + enemy.toString());
+        // System.out.println("I broadcasted an enemy at " + enemy.toString());
     }
 }

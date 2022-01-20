@@ -198,7 +198,7 @@ public class Unit{
         }
         int value = (demand << 8) + (x_loc << 4) + y_loc; 
         rc.setIndicatorDot(new MapLocation(x_loc*4, y_loc*4), 255, 0, 0);
-        System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 + " " + demand + " " + rc.getRoundNum());
+        // System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 + " " + demand + " " + rc.getRoundNum());
         rc.writeSharedArray(CHANNEL.MINING1.getValue() +indToPut, value);
     }
 
@@ -512,7 +512,7 @@ public class Unit{
             data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             if (data == 0) {
                 rc.writeSharedArray(CHANNEL.TARGET.getValue() + i, loc);
-                System.out.println("I broadcasted an enemy at " + enemy.toString());
+                // System.out.println("I broadcasted an enemy at " + enemy.toString());
             }
         }
     }
