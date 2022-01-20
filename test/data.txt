@@ -17,16 +17,16 @@
 
 > Task :run
 [server:debug] Awaiting match
-[server:debug] Running: rebutia (C:\Users\tishi\Documents\CS\Battlecode2022\build\classes)  vs rebutia_pathfinding_archon (C:\Users\tishi\Documents\CS\Battlecode2022\build\classes)  on [collaboration]
+[server:debug] Running: whitefleshedpitahaya (C:\Users\tishi\Documents\CS\Battlecode2022\build\classes)  vs rebutia_pathfinding_archon (C:\Users\tishi\Documents\CS\Battlecode2022\build\classes)  on [panda]
 [server] -------------------- Match Starting --------------------
-[server] rebutia vs. rebutia_pathfinding_archon on collaboration
-[server]           rebutia_pathfinding_archon (B) wins (round 296)
+[server] whitefleshedpitahaya vs. rebutia_pathfinding_archon on panda
+[server]           rebutia_pathfinding_archon (B) wins (round 588)
 [server] Reason: The winning team won by annihilating the enemy team's Archons.
 [server] -------------------- Match Finished --------------------
-[server:debug] match completed in 2.943 seconds
+[server:debug] match completed in 7.532 seconds
 [server:debug] Awaiting match
 [server:debug] Shutting down server
-Closed: /0:0:0:0:0:0:0:1:62119 for null
+Closed: /0:0:0:0:0:0:0:1:55319 for null
 
-BUILD SUCCESSFUL in 5s
+BUILD SUCCESSFUL in 10s
 10 actionable tasks: 2 executed, 8 up-to-date

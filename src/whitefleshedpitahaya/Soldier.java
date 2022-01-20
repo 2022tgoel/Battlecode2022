@@ -55,12 +55,14 @@ public class Soldier extends Unit {
         visualize();
         switch (mode) {
             case EXPLORATORY:
-                if (adjacentToEdge()){
-                    exploratoryDir = flip(exploratoryDir);
-                    exploreLoc = scaleToEdge(exploratoryDir);
+                if (soldierAheadOfMe()) {
+                    if (adjacentToEdge()){
+                        exploratoryDir = flip(exploratoryDir);
+                        exploreLoc = scaleToEdge(exploratoryDir);
+                    }
+                    moveToLocation(exploreLoc);
+                    break;
                 }
-                moveToLocation(exploreLoc);
-                break;
             case HUNTING:
                 huntTarget();
                 target = null;
@@ -161,6 +163,23 @@ public class Soldier extends Unit {
         }
     }
 
+    public boolean isAhead(MapLocation loc){
+        MapLocation my = rc.getLocation();
+        int[] v = new int[]{loc.x - my.x, loc.y - my.y};
+        int dotProduct = v[0]*exploratoryDir[0] + v[1]*exploratoryDir[1];
+        return (dotProduct > 0); 
+    }
+
+    public boolean soldierAheadOfMe(){
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(15, rc.getTeam());
+        for (RobotInfo r : nearbyBots){
+            if (r.type == RobotType.SOLDIER){
+                if (isAhead(r.location)) return true;
+            }
+        }
+        return false;
+    }
+
     public int[] fleeDirection() throws GameActionException{
         MapLocation cur = rc.getLocation();
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1);
@@ -236,10 +255,10 @@ public class Soldier extends Unit {
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
             data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             if (data != 0) {
-                int x = (data >> 4) & 15;
-                int y = data & 15;
+                int x = data/64;
+                int y = data%64;
                 // System.out.println("I received an enemy at " + x*4 + " " + y*4 + " on round " + round_num);
-                MapLocation potentialTarget = new MapLocation(x*4, y*4);
+                MapLocation potentialTarget = new MapLocation(x, y);
                 if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
                     closestDist = cur.distanceSquaredTo(potentialTarget);
                     closestTarget = potentialTarget;
@@ -285,7 +304,7 @@ public class Soldier extends Unit {
             dir = new int[]{dx, dy};
             lastAttackDir = scaleToSize(dir);
         }
-        if (rc.getLocation().distanceSquaredTo(target) <= 9) {
+        if (rc.getLocation().distanceSquaredTo(target) <= 13) {
             // check for low rubble squares to move to
             Direction lowRubble = findLowRubble();
             if (lowRubble != null) rc.move(lowRubble);
