@@ -285,6 +285,17 @@ public class Unit{
         return new MapLocation(nx, ny);
     }
 
+    public int[] scaleToSize(int[] toDest){
+        return scaleToSize(toDest, 12.0);
+    }
+
+    public int[] scaleToSize(int[] toDest, double desiredLength){
+        double len = Math.sqrt(Math.pow(toDest[0], 2)+ Math.pow(toDest[1], 2));
+        double scaleFactor = desiredLength / len;
+        int[] newDir = new int[]{(int)(toDest[0]*scaleFactor), (int)(toDest[1]*scaleFactor)};
+        return newDir;
+    }
+
     public int cooldown(MapLocation loc) throws GameActionException{
         //returns cooldown of movement
         return (int) Math.floor((1+rc.senseRubble(loc)/10.0)*rc.getType().movementCooldown);
