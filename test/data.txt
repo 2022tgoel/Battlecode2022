@@ -1,0 +1,32 @@
+> Task :compileJava UP-TO-DATE
+> Task :compileScala UP-TO-DATE
+> Task :processResources NO-SOURCE
+> Task :classes UP-TO-DATE
+> Task :jar UP-TO-DATE
+> Task :assemble UP-TO-DATE
+> Task :compileTestJava UP-TO-DATE
+> Task :compileTestScala UP-TO-DATE
+> Task :processTestResources NO-SOURCE
+> Task :testClasses UP-TO-DATE
+> Task :test UP-TO-DATE
+> Task :check UP-TO-DATE
+> Task :checkForUpdate
+> Task :unpackClient UP-TO-DATE
+> Task :unpackClient32 UP-TO-DATE
+> Task :build UP-TO-DATE
+
+> Task :run
+[server:debug] Awaiting match
+[server:debug] Running: whitefleshedpitahaya (C:\Users\tishi\Documents\CS\Battlecode2022\build\classes)  vs rebutia_pathfinding_archon (C:\Users\tishi\Documents\CS\Battlecode2022\build\classes)  on [tower]
+[server] -------------------- Match Starting --------------------
+[server] whitefleshedpitahaya vs. rebutia_pathfinding_archon on tower
+[server]           rebutia_pathfinding_archon (B) wins (round 363)
+[server] Reason: The winning team won by annihilating the enemy team's Archons.
+[server] -------------------- Match Finished --------------------
+[server:debug] match completed in 3.300 seconds
+[server:debug] Awaiting match
+[server:debug] Shutting down server
+Closed: /0:0:0:0:0:0:0:1:57972 for null
+
+BUILD SUCCESSFUL in 6s
+10 actionable tasks: 2 executed, 8 up-to-date
