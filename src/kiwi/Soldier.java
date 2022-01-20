@@ -41,8 +41,8 @@ public class Soldier extends Unit {
             throws GameActionException {
         double Q = 0;
 
-        int enemySoldiers = 0;
-        int friendlySoldiers = 0;
+        double enemySoldiers = 0;
+        double friendlySoldiers = 0;
         MapLocation nearbyFriendlyArchon = null;
         Team team = rc.getTeam();
 
@@ -62,10 +62,10 @@ public class Soldier extends Unit {
                         int hitsUntilDeath = (robot.health + 2) / 3;
                         // 1.0 casts to double
                         if (robot.team == rc.getTeam()) {
-                            friendlySoldiers++;
+                            friendlySoldiers += 1 / (levelDistance + 2);
                             // Q += 0.5 * hitsUntilDeath / levelDistance;
                         } else {
-                            enemySoldiers++;
+                            enemySoldiers += 1 / (levelDistance + 2);
                             // Q -= 0.5 * hitsUntilDeath / levelDistance;
                         }
                         break;
@@ -94,6 +94,8 @@ public class Soldier extends Unit {
 
             Q -= closestThreatenedArchonDistance;
         } else {
+            Q += friendlySoldiers - enemySoldiers;
+
             // Offensive.
             // Encourage exploration.
             // Fall away from nearby Archon, but only to an extent.
@@ -267,172 +269,21 @@ public class Soldier extends Unit {
         }
     }
 
-    public SoldierMode determineMode() throws GameActionException {
-        // Priority 1 - Defend.
-        MapLocation[] threatenedArchons = findThreatenedArchons();
-        if (threatenedArchons != null) {
-            for (MapLocation archon : threatenedArchons) {
-                if (rc.getLocation().distanceSquaredTo(archon) <= DRUSH_RSQR) {
-                    return SoldierMode.DEFENSIVE_RUSH;
-                }
-            }
-        }
-
-        // Priority 3 - Kill Archons.
-        if (archonIndex != -1) {
-            MapLocation archon = Comms.intToLocation(rc.readSharedArray(archonIndex));
-            if (rc.getLocation().distanceSquaredTo(archon) <= ARUSH_RSQR) {
-                return SoldierMode.ARCHON_RUSH;
-            }
-        }
-
-        // See if there's a good direction to go.
-        // Follow the direction of the health gradient.
-        double[] healthGradient = getHealthGradient();
-        // Translate the health gradient to a direction
-        // double thres = 1;
-        double attackThreshold = 0.5;
-        int[] direction = {
-                healthGradient[0] > -attackThreshold ? 1 : healthGradient[0] < attackThreshold ? -1 : 0,
-                healthGradient[1] > -attackThreshold ? 1 : healthGradient[1] < attackThreshold ? -1 : 0
-        };
-        moveInDirection(direction);
-
-        // If there's a nearby target, and we have enough ppl nearby, swarm it.
-        if (target == null) {
-            RobotInfo[] nearby = rc.senseNearbyRobots(-1);
-            int friendlySoldierCount = 0;
-            int enemySoldierCount = 0;
-            if (nearby != null) {
-                for (RobotInfo robot : nearby) {
-                    if (robot.type == RobotType.SOLDIER) {
-                        if (robot.team == rc.getTeam()) {
-                            friendlySoldierCount++;
-                        } else {
-                            enemySoldierCount++;
-                        }
-                    }
-                }
-                if (friendlySoldierCount > enemySoldierCount && enemySoldierCount > 0) {
-                    // MapLocation tgt = Comms.getTarget(rc, i);
-                    // if (tgt == null)
-                    // continue;
-                    // if (rc.getLocation().distanceSquaredTo(tgt) < 100) {
-                    // target = tgt;
-                    return SoldierMode.HUNTING;
-                    // }
-                }
-            }
-        }
-
-        // Priority 4 - Hunt enemies.
-        if (target != null) {
-            return SoldierMode.HUNTING;
-        }
-
-        return SoldierMode.EXPLORATORY;
-    }
-
-    public void moveTowardsClosest(MapLocation[] locations) throws GameActionException {
-        MapLocation closest = locations[0];
-        MapLocation location = rc.getLocation();
-        int closestDistance = Integer.MAX_VALUE;
-        // only find closest archon if there is more then one
-        if (locations.length > 1) {
-            for (MapLocation loc : locations) {
-                if (loc.distanceSquaredTo(rc.getLocation()) < closestDistance) {
-                    closestDistance = loc.distanceSquaredTo(location);
-                    closest = loc;
-                }
-            }
-        }
-        fuzzyMove(closest);
-    }
-
-    public boolean archonDied() throws GameActionException {
-        RobotInfo home;
-        if (rc.canSenseLocation(homeArchon)) {
-            home = rc.senseRobotAtLocation(homeArchon);
-            return (home == null || home.type != RobotType.ARCHON);
-        }
-        return false;
-    }
-
-    /**
-     * waitAtDist() stays near the home archon
-     **/
-    public void waitAtDist(MapLocation loc, int idealDistSquared, boolean shouldRepel) throws GameActionException {
-        // stays at around an ideal dist
-        MapLocation myLocation = rc.getLocation();
-        RobotInfo[] nearbyAllies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam());
-        int buffer = 4;
-        // rc.setIndicatorString("" +
-        // Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared));
-        if (Math.abs(myLocation.distanceSquaredTo(loc) - idealDistSquared) <= buffer) {
-            return; // you're already in range
-        }
-        int[] costs = new int[8];
-        for (int i = 0; i < 8; i++) {
-            MapLocation newLocation = myLocation.add(directions[i]);
-            int cost = 0;
-            if (!rc.onTheMap(newLocation)) {
-                cost = 999999;
-            } else {
-                cost = 10 * Math.abs(newLocation.distanceSquaredTo(loc) - idealDistSquared);
-                if (shouldRepel) { // don't go near fellow ally soldiers
-                    for (RobotInfo robot : nearbyAllies) {
-                        if (robot.type == rc.getType()) {
-                            cost -= newLocation.distanceSquaredTo(robot.location); // trying to maximize distance
-                        }
-                    }
-                }
-                // cost += rc.senseRubble(newLocation);
-            }
-
-            costs[i] = cost;
-
-        }
-        /*
-         * String s = " ";
-         * for (int i =0; i < 8; i++) s += directions[i] + ": " + costs[i] + " ";
-         * rc.setIndicatorString(s);
-         */
-        int cost = 99999;
-        Direction optimalDir = null;
-        for (int i = 0; i < directions.length; i++) {
-            Direction dir = directions[i];
-            if (rc.canMove(dir)) {
-                if (costs[i] < cost) {
-                    cost = costs[i];
-                    optimalDir = dir;
-                }
-            }
-        }
-        if (optimalDir != null) {
-            if (rc.canMove(optimalDir)) {
-                // rc.setIndicatorString("here2");
-                rc.move(optimalDir);
-            }
-        }
-
-    }
-
     public MapLocation[] findThreatenedArchons() throws GameActionException {
         MapLocation[] archons = new MapLocation[4];
-        int numThreatenedArchons = 0;
+        int n = 0;
         for (int i = 0; i < 4; i++) {
-            // rc.writeSharedArray(, value);
             int data = rc.readSharedArray(CHANNEL.FRIENDLY_ARCHON_STATUS.getValue() + i);
             // go through channels until you find an empty one to communicate with.
             MapLocation location = Comms.intToLocation(data);
             if (location != null) {
-                archons[numThreatenedArchons++] = location;
+                archons[n++] = location;
             }
         }
 
         // only return threatened archons.
-        MapLocation[] threatenedArchons = new MapLocation[numThreatenedArchons];
-        for (int i = 0; i < numThreatenedArchons; i++) {
+        MapLocation[] threatenedArchons = new MapLocation[n];
+        for (int i = 0; i < n; i++) {
             threatenedArchons[i] = archons[i];
         }
         return threatenedArchons;

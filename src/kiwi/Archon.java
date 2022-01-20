@@ -169,7 +169,13 @@ public class Archon extends Unit {
 
     public boolean underThreat() {
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        return (enemies.length >= 1);
+        int enemySoldierCount = 0;
+        for (RobotInfo enemy : enemies) {
+            if (enemy.type == RobotType.SOLDIER) {
+                enemySoldierCount++;
+            }
+        }
+        return enemySoldierCount >= 1;
     }
 
     /////////////////////////////////////////////////////////////////////
