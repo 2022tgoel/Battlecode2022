@@ -70,8 +70,7 @@ public class Miner extends Unit {
                             exploratoryGridSquare = -1;
                             exploratoryMapLocation = null;
                         } else {
-                            Direction d = rc.getLocation().directionTo(exploratoryMapLocation);
-                            moveInDirection(new int[] { d.dx, d.dy });
+                            moveToLocation(exploratoryMapLocation);
                         }
                         break;
                 }
@@ -86,7 +85,8 @@ public class Miner extends Unit {
         amountMined += mine();
         senseMiningArea();
         if (mode == MODE.MOVING_TO_EXPLORATION_ASSIGNMENT) {
-            rc.setIndicatorString("Moving to exploration assignment " + exploratoryGridSquare);
+            rc.setIndicatorString(
+                    "Moving to exploration assignment " + exploratoryGridSquare + " at " + exploratoryMapLocation);
         } else {
             rc.setIndicatorString("" + mode + " " + amountMined + " " + target);
         }
