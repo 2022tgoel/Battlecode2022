@@ -417,10 +417,12 @@ public class Soldier extends Unit {
         int weakestMinerHealth = 100000;
         int weakestSageHealth = 100000;
         int weakestTowerHealth = 100000;
+        int weakestBuilerHealth = 100000;
         RobotInfo weakestSoldier = null;
         RobotInfo weakestTower = null;
         RobotInfo weakestSage = null;
         RobotInfo weakestMiner = null;
+        RobotInfo weakestBuilder = null;
         RobotInfo archon = null;
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
@@ -447,6 +449,12 @@ public class Soldier extends Unit {
                     if (bot.health < weakestSageHealth) {
                         weakestSage = bot;
                         weakestSageHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.BUILDER) {
+                    if (bot.health < weakestBuilerHealth) {
+                        weakestBuilder = bot;
+                        weakestBuilerHealth = bot.health;
                     }
                 }
                 if (bot.type == RobotType.ARCHON) {
@@ -483,6 +491,14 @@ public class Soldier extends Unit {
                     rc.attack(weakestMiner.location);
                     target = weakestMiner.location;
                     broadcastTarget(weakestMiner.location);
+                    return true;
+                }
+            }
+            else if (weakestBuilder != null && attackMiners) {
+                if (rc.canAttack(weakestBuilder.location)) {
+                    rc.attack(weakestBuilder.location);
+                    target = weakestBuilder.location;
+                    broadcastTarget(weakestBuilder.location);
                     return true;
                 }
             }
