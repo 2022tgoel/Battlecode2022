@@ -38,3 +38,7 @@ battlecode-scaffold.iws
 
 # for user specific jdk paths
 gradle.properties
+
+# because test data changes every run
+test/data.txt
+test/maps.txt
