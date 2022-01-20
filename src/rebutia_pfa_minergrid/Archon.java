@@ -1,4 +1,4 @@
-package rebutia_pfa_builderfarming;
+package rebutia_pfa_minergrid;
 
 import battlecode.common.*;
 import java.util.*;
@@ -11,7 +11,7 @@ public class Archon extends Unit {
         SOLDIER_HUB,
         THREATENED,
         OTHER_THREATENED,
-        SEND_MARTYRS
+        ;
     }
 
     int round_num;
@@ -53,7 +53,6 @@ public class Archon extends Unit {
         radio.clearThreat();
         radio.clearMiningAreas();
         radio.clearTargetAreas();
-        radio.clearRanks();
 
         archonNumber = radio.getArchonNum();
         // System.out.println("Archon number: " + archonNumber + " Mode num: " +
@@ -93,25 +92,6 @@ public class Archon extends Unit {
                 if (round_num % num_archons_alive != archonNumber || round_num % 4 != 0)
                     break;
                 build(new int[] { 4, 1, 0 }); // defaultBuildOrder);
-                break;
-            case SEND_MARTYRS:
-                if (round_num % num_archons_alive != archonNumber)
-                    break;
-                if (rc.getTeamLeadAmount(rc.getTeam()) < 600)
-                    break;
-                radio.postRank(RANK.MARTYR);
-                int bestDirectionIdx = -1;
-                int bestDirectionRubble = 100000;
-                for (int i = 0; i < dirs.length; i++) {
-                    int rubbleHere = rc.senseRubble(rc.getLocation().add(dirs[i]));
-                    if (rubbleHere < bestDirectionRubble && rc.canBuildRobot(RobotType.BUILDER, dirs[i])) {
-                        bestDirectionRubble = rubbleHere;
-                        bestDirectionIdx = i;
-                    }
-                }
-                if (bestDirectionIdx != -1) {
-                    buildBuilder(dirs[bestDirectionIdx]);
-                }
                 break;
         }
         num_archons_alive = rc.getArchonCount();
@@ -161,27 +141,16 @@ public class Archon extends Unit {
     public MODE determineMode() throws GameActionException {
         int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
         int numMinersInitial = Math.max((sizeBracket * 3) / num_archons_init, 1);
-        if (underThreat()) {
+        if (underThreat())
             return MODE.THREATENED;
-        }
-
-        if (radio.totalUnderThreat() > 0) {
+        else if (radio.totalUnderThreat() > 0)
             return MODE.OTHER_THREATENED;
-        }
-
-        if (num_miners < numMinersInitial) {
+        else if (num_miners < numMinersInitial)
             return MODE.INITIAL;
-        }
-
-        if (radio.getMode() == archonNumber) {
+        else if (radio.getMode() == archonNumber)
             return MODE.SOLDIER_HUB;
-        }
-
-        if (this.built_units % 13 == 0) {
-            return MODE.SEND_MARTYRS;
-        }
-
-        return MODE.DEFAULT;
+        else
+            return MODE.DEFAULT;
     }
 
     public boolean underThreat() throws GameActionException {
@@ -198,6 +167,9 @@ public class Archon extends Unit {
         if (rc.canBuildRobot(RobotType.MINER, dir)) {
             rc.buildRobot(RobotType.MINER, dir);
             built_units++;
+            num_miners++;
+            int minersBuilt = rc.readSharedArray(CHANNEL.MINERS_BUILT.getValue());
+            rc.writeSharedArray(CHANNEL.MINERS_BUILT.getValue(), minersBuilt + 1);
             return true;
         }
         return false;
