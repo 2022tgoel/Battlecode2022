@@ -40,7 +40,6 @@ public class Soldier extends Unit {
 
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
-        rank = findRankSoldier();
         initialize();
         exploreLoc = getInitialExploratoryLocation();
     }
