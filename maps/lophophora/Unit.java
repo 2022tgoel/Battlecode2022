@@ -1,4 +1,4 @@
-package rebutia;
+package lophophora;
 
 import battlecode.common.*;
 import java.util.*;
@@ -10,7 +10,7 @@ public class Unit{
     RANK[] rank_map = initializeRankMap();
     final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
-    static final int minerToLeadRate = 250;
+    static final int minerToLeadRate = 100;
     int seed_increment = 4;
     MapLocation homeArchon;
     public MapLocation archon_target;
@@ -27,12 +27,15 @@ public class Unit{
         Direction.NORTHWEST,
     };
 
+    static Navigation mover;
+
     public Unit(RobotController robotController) throws GameActionException {
         rc = robotController;
         rng.setSeed((long) rc.getID() + seed_increment);
         homeArchon = findHomeArchon();
         initializeRankMap();
         mapArea = getMapArea();
+        mover = new Navigation(rc);
     }
 
     /**
@@ -133,7 +136,7 @@ public class Unit{
                 }
                 
             }
-            fuzzyMove(target);
+            moveToLocation(target);
             return true;
         }
         else {
@@ -198,28 +201,8 @@ public class Unit{
         }
         int value = (demand << 8) + (x_loc << 4) + y_loc; 
         rc.setIndicatorDot(new MapLocation(x_loc*4, y_loc*4), 255, 0, 0);
-        // System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 + " " + demand + " " + rc.getRoundNum());
+        System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 + " " + demand + " " + rc.getRoundNum());
         rc.writeSharedArray(CHANNEL.MINING1.getValue() +indToPut, value);
-    }
-
-    public MapLocation findNearestArchon() throws GameActionException {
-        int min_dist = Integer.MAX_VALUE;
-        MapLocation closest = null;
-        for (int i = 0; i < 4; i++) {
-            int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
-            if (data != 0) {
-                int w = data / 4096;
-                int x = (data - w * 4096) / 64;
-                int y = data % 64;
-                MapLocation loc = new MapLocation(x, y);
-                int dist = loc.distanceSquaredTo(rc.getLocation());
-                if (dist < min_dist) {
-                    min_dist = dist;
-                    closest = loc;
-                }
-            }
-        }
-        return closest;
     }
     /**
      * validCoords() check if the x and y are on the map
@@ -236,15 +219,26 @@ public class Unit{
      * @param loc is where to go
      **/
     public void moveToLocation(MapLocation loc) throws GameActionException{
-        fuzzyMove(loc); // best pathfinding strat 
+        Direction d= mover.getBestDir(loc);
+        System.out.println(d);
+        if (d!=null && rc.canMove(d)){
+            rc.move(d);
+        }
+       // fuzzyMove(loc); // best pathfinding strat 
     }
 
     public void moveInDirection(int[] toDest) throws GameActionException{
         MapLocation loc = rc.getLocation();
         MapLocation dest = new MapLocation(loc.x + toDest[0], loc.y + toDest[1]);
-        fuzzyMove(dest);
+        Direction d= mover.getBestDir(dest);
+        System.out.println(d);
+        if (d!=null && rc.canMove(d)){
+            rc.move(d);
+        }
+      //  fuzzyMove(dest);
         // rc.setIndicatorString("I JUST MOVED TO " + toDest[0] + " " + toDest[1]);
     }
+
     /**
      * fuzzyMove() is the method that moves to a location using a weight of how within the correct direction you are
      *             how much rubble is in a square (rather that just thresholding rubbles)
@@ -253,6 +247,7 @@ public class Unit{
      *            
      **/
     //keep updating this so that you can see stagnation
+    /*
     static int calls = 0; //# of fuzzy move calls
     static MapLocation last = null;
     static MapLocation cur =null;
@@ -345,7 +340,7 @@ public class Unit{
         }
         return optimalDir;
     }
-    
+    */
     public int cooldown(MapLocation loc) throws GameActionException{
         //returns cooldown of movement
         return (int) Math.floor((1+rc.senseRubble(loc)/10.0)*rc.getType().movementCooldown);
@@ -502,18 +497,6 @@ public class Unit{
             default:
                 break;
             
-        }
-    }
-
-    public void broadcastTarget(MapLocation enemy) throws GameActionException {
-        int data;
-        int loc = 64 * enemy.x + enemy.y;
-        for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
-            data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
-            if (data == 0) {
-                rc.writeSharedArray(CHANNEL.TARGET.getValue() + i, loc);
-                // System.out.println("I broadcasted an enemy at " + enemy.toString());
-            }
         }
     }
 }

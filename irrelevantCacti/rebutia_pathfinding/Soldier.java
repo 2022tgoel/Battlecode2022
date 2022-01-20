@@ -1,4 +1,4 @@
-package rebutia;
+package rebutia_pathfinding;
 
 import battlecode.common.*;
 
@@ -159,7 +159,7 @@ public class Soldier extends Unit {
                 int w = data / 4096;
                 int x = (data - w * 4096) / 64;
                 int y = data % 64;
-                // System.out.println("I received an enemy at " + x + " " + y + " on round " + round_num);
+                System.out.println("I received an enemy at " + x + " " + y + " on round " + round_num);
                 MapLocation potentialTarget = new MapLocation(x, y);
                 if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
                     closestDist = cur.distanceSquaredTo(potentialTarget);
@@ -233,11 +233,11 @@ public class Soldier extends Unit {
             return MODE.FLEE;
         }
         // Priority 3 - Kill Archons.
-        boolean archonDetected = detectArchon() || senseArchon();
+        /* boolean archonDetected = detectArchon() || senseArchon();
         if (archonDetected) {
             if (rc.getLocation().distanceSquaredTo(archon_target) <= ARUSH_RSQR)
                 return MODE.ARCHON_RUSH;
-        }
+        } */
         // Priority 4 - Hunt enemies.
         if (target != null) {
             return MODE.HUNTING;
@@ -457,6 +457,7 @@ public class Soldier extends Unit {
             else if (archon != null) {
                 if (rc.canAttack(archon.location)) {
                     rc.attack(archon.location);
+                    broadcastTarget(archon.location);
                     return true;
                 }
             }

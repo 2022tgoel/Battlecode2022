@@ -1,26 +1,41 @@
 import os
 import platform
+import random
 
+JDK_PATH = None # set to None if u don't care / old test.py was working
 
 def main():
     print("Starting Tests!")
-    playerA = "barbaryfig"
-    playerB = "kiwi"
-    playAllMaps(playerA, playerB)
 
-def playAllMaps(playerA: str, playerB: str):
-    listMaps()
-    maps = getMaps()
+    playerA = sys.argv[1].strip() if len(sys.argv) >= 3 else "rebutia_pathfinding_archon"
+    playerB = sys.argv[2].strip() if len(sys.argv) >= 3 else "rebutia"
+
+    init(playerA, playerB)
+
+    maps = sys.argv[3:] if len(sys.argv) >= 4 else None
+    if maps is None:
+        listMaps()
+        maps = getMaps()
+        # select fiftenn random maps
+        maps = random.sample(maps, 15)
+
+    play(playerA, playerB, maps)
+
+def init(playerA, playerB):
+    changeGame(playerA, playerB, 'other') # init gradle.properties before running any commands
+
+def play(playerA, playerB, maps):
     winsA = 0
     winsB = 0
     dataList = []
-    print(f"{playerA} wins: 0 | {playerB} wins: 0", end="\r")
+
     for map in maps:
+        print(f"{playerA} wins: {winsA} | {playerB} wins: {winsB} | running: {map}" + ' '*25, end="\r")
         updateA, updateB = runMatch(playerA, playerB, map)
         winsA += updateA
         winsB += updateB
         dataList.append((map, updateA, updateB))
-        print(f"{playerA} wins: {winsA} | {playerB} wins: {winsB}", end="\r")
+
     print(f"{playerA} wins: {winsA} | {playerB} wins: {winsB}", end="\n")
     printData(playerA, playerB, dataList)
 
@@ -41,7 +56,7 @@ def listMaps():
 
 def getMaps():
     maps = []
-    with open("test/maps.txt", "r") as f:
+    with open("./test/maps.txt", "r") as f:
         f_iter = iter(f)
         next(f_iter, None)
         next(f_iter, None)
@@ -61,7 +76,9 @@ def changeGame(player1: str, player2: str, map: str):
         f.write(f"maps={map}\n")
         f.write(f"source=src\n")
         f.write(f"profilerEnabled=false\n")
-        f.write(f"outputVerbose=false")
+        f.write(f"outputVerbose=false\n")
+        if JDK_PATH is not None:
+            f.write(f"org.gradle.java.home={JDK_PATH}")
 
 def executeGame():
     if (platform.system() == 'Windows'):

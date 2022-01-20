@@ -1,4 +1,4 @@
-package rebutia;
+package rebutia_gleb;
 
 import battlecode.common.*;
 
@@ -40,8 +40,9 @@ public class Soldier extends Unit {
     }
     @Override
     public void run() throws GameActionException {
+        super.run();
         round_num = rc.getRoundNum();
-        updateCount();
+        radio.updateCounter();
         attacked = attemptAttack(false);
         findTargets();
         mode = determineMode();
@@ -159,7 +160,7 @@ public class Soldier extends Unit {
                 int w = data / 4096;
                 int x = (data - w * 4096) / 64;
                 int y = data % 64;
-                // System.out.println("I received an enemy at " + x + " " + y + " on round " + round_num);
+                System.out.println("I received an enemy at " + x + " " + y + " on round " + round_num);
                 MapLocation potentialTarget = new MapLocation(x, y);
                 if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
                     closestDist = cur.distanceSquaredTo(potentialTarget);

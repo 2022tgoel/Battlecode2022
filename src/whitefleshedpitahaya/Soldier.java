@@ -1,4 +1,4 @@
-package rebutia;
+package whitefleshedpitahaya;
 
 import battlecode.common.*;
 
@@ -7,14 +7,12 @@ import java.util.*;
 public class Soldier extends Unit {
 
     enum MODE {
-        EXPLORATORY,
+        EXPLORATORY, //at the start of the game, before anyone has found anything
         HUNTING,
-        ARCHON_RUSH,
+        SEARCHING_ENEMIES, //when u have already found enemies
         FLEE,
-        LOW_HEALTH,
         DEFENSIVE_RUSH,
-        WAITING,
-        CONVOY
+        DYING
         ;
     }
 
@@ -22,62 +20,85 @@ public class Soldier extends Unit {
     int round_num = 0;
 
     RANK rank;
-    MODE mode = MODE.EXPLORATORY;
 
     MapLocation[] threatenedArchons;
-    MapLocation target;
 
-    int[] exploratoryDir = getExploratoryDir(5);
     private int[] fleeDirection = {Integer.MAX_VALUE, Integer.MAX_VALUE};
-    private int stopFleeingRound = 10000;
+    private int stopFleeingRound = -1;
     private int DRUSH_RSQR = 400;
     private int ARUSH_RSQR = 900;
+
+    MODE mode;
+
+    //for explore mode only
+    private MapLocation exploreLoc;
+    private int[] exploratoryDir;
+
+    //for attacking and searching enemies modes
+    private MapLocation target = null;
+    private int[] lastAttackDir = null;
 
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
         rank = findRankSoldier();
         initialize();
+        exploreLoc = getInitialExploratoryLocation();
     }
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
-        updateCount();
         attacked = attemptAttack(false);
         findTargets();
+        senseMiningArea();
+
         mode = determineMode();
+        visualize();
         switch (mode) {
             case EXPLORATORY:
-                moveInDirection(exploratoryDir);
-                break;
-            case ARCHON_RUSH:
-                approachArchon();
-                target = null;
+                if (adjacentToEdge()){
+                    exploratoryDir = flip(exploratoryDir);
+                    exploreLoc = scaleToEdge(exploratoryDir);
+                }
+                moveToLocation(exploreLoc);
                 break;
             case HUNTING:
                 huntTarget();
                 target = null;
                 break;
+            case SEARCHING_ENEMIES:
+                if (adjacentToEdge()) { //TODO: bots occasionally get stuck somehow
+                    lastAttackDir = flip(lastAttackDir);
+                }
+                moveInDirection(lastAttackDir);
+                break;
             case DEFENSIVE_RUSH:
                 defensiveMove();
+                break;
             case FLEE:
-                moveInDirection(fleeDirection);
+                fleeLowRubble(fleeDirection);
                 break;
             default:
                 break;
         }
+
         if (!attacked) attemptAttack(true);
-        if (adjacentToEdge()) {
-            exploratoryDir = getExploratoryDir(5);
-        }
-        senseMiningArea();
-        visualize();
     }
 
     public void visualize() throws GameActionException {
-        if (target != null) {
+        rc.setIndicatorString("MODE: " + mode.toString());
+        if (mode == MODE.EXPLORATORY){
+            rc.setIndicatorLine(rc.getLocation(), exploreLoc, 100, 100, 0);
+        }
+        else if (mode == MODE.HUNTING){
+            rc.setIndicatorLine(rc.getLocation(), target, 0, 100, 0);
+        }
+        else if (mode == MODE.SEARCHING_ENEMIES){
+            rc.setIndicatorString("MODE: " + mode.toString() + " DIR: " + lastAttackDir[0] + " " + lastAttackDir[1]);
+        }
+        else if (target != null) {
             if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: " + target.toString() + " MODE: " + mode.toString());
             else rc.setIndicatorString("TARGET: " + target.toString() + " MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
-            rc.setIndicatorLine(rc.getLocation(), target, 0, 100, 0);
+            rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 100);
         }
         else {
             if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: null MODE: " + mode.toString());
@@ -85,21 +106,74 @@ public class Soldier extends Unit {
         }
     }
 
+    public MODE determineMode() throws GameActionException {
+        
+        // Priority 1 - Defend.
+        threatenedArchons = findThreatenedArchons();
+        if (threatenedArchons != null) {
+            for (MapLocation archon: threatenedArchons) {
+                if (rc.getLocation().distanceSquaredTo(archon) <= DRUSH_RSQR) {
+                    return MODE.DEFENSIVE_RUSH;
+                }
+            }
+        }
+
+        // Priority 2 - Don't die.
+        int[] potFleeDir = fleeDirection();
+        boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
+        if (!validFlee && stopFleeingRound == round_num) {
+            exploreLoc = getInitialExploratoryLocation(); 
+            lastAttackDir = null;
+        }
+        if (validFlee || stopFleeingRound > round_num) {
+            if (validFlee) fleeDirection = potFleeDir;
+            // keep fleeing for two moves (2 rounds per move)
+            if (stopFleeingRound <= round_num) {
+                stopFleeingRound = round_num + 6;
+            }
+            return MODE.FLEE;
+        }
+        
+        // Priority 3 - Hunt enemies.
+        if (target != null) {
+            return MODE.HUNTING;
+        }
+        else if (lastAttackDir != null){
+            return MODE.SEARCHING_ENEMIES;
+        }
+        else return MODE.EXPLORATORY;
+    }
+
+    /**
+     * getInitialExploratoryLocation() gets the location when you extend the vector from your location 
+     * to the center to the edge
+     **/
+    public MapLocation getInitialExploratoryLocation(){
+        MapLocation my = rc.getLocation();
+        MapLocation center = new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2);
+        exploratoryDir = new int[]{center.x - my.x, center.y - my.y};
+        if (!my.equals(center)){
+            return scaleToEdge(exploratoryDir);
+        }
+        else {
+            System.out.println("YOU REACHED A CASE THAT SHOULD BE IMPLEMENTED");
+            return null; //TODO
+        }
+    }
+
     public int[] fleeDirection() throws GameActionException{
         MapLocation cur = rc.getLocation();
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1);
-        double cxsf = 0;
-        double cysf = 0;
         double cxse = 0;
         double cyse = 0;
         int numEnemies = 0;
-        int maxHealthEnemy = 0;
+        int numEnemyHits = 0;
+        int numFriendHits = (rc.getHealth() + 2) / 3;
         int numFriends = 0;
         for (RobotInfo bot: nearbyBots) {
             if (bot.team == rc.getTeam()) {
                 if (bot.type == RobotType.SOLDIER) {
-                    cxsf += bot.location.x;
-                    cysf += bot.location.y;
+                    numFriendHits += ((bot.health + 2) / 3);
                     numFriends++;
                 }
             }
@@ -107,29 +181,35 @@ public class Soldier extends Unit {
                 if (bot.type == RobotType.SOLDIER) {
                     cxse += bot.location.x;
                     cyse += bot.location.y;
-                    maxHealthEnemy = Math.max(maxHealthEnemy, bot.health);
+                    numEnemyHits += ((bot.health + 2) / 3);
                     numEnemies++;
                 }
         }
+        if (numEnemies == 0) return new int[]{Integer.MAX_VALUE, Integer.MAX_VALUE};
+
         if (numEnemies > 0) {
             cxse /= numEnemies;
             cyse /= numEnemies;
         }
-        if (numFriends > 0) {
-            cxsf /= numFriends;
-            cysf /= numFriends;
+
+        double unit_difference = (double) (numFriends + 1 - numEnemies);
+        double ratio;
+
+        if (((numFriends + 1) / numEnemies) > 1) {
+            ratio = ((numFriends + 1) / numEnemies);
         }
-        // for example, if soldier has 7,8, or 9 health this expression spits out 3, as the soldier can only survive 3 hits.
-        int soldierHitsLeft = (rc.getHealth() + 2) / 3;
-        int enemyHitsLeft = (maxHealthEnemy + 2) / 3;
-        boolean winsInteraction = false;
-        // soldier strikes second, so must have more hits remaining
-        if (attacked) winsInteraction = (soldierHitsLeft > enemyHitsLeft);
-        else winsInteraction = (soldierHitsLeft >= enemyHitsLeft);
-        // count yourself
-        if (numEnemies > (numFriends + 1) || (numEnemies == 1 && !winsInteraction)) {
-            double dx = -(cxse - cur.x);
-            double dy = -(cyse - cur.y);
+        else {
+            ratio = numEnemies / (numFriends + 1);
+        }
+
+        double a = 6 * ratio;
+        int unit_advantage = (int) (a * Math.pow(unit_difference,2) * Math.signum(unit_difference));
+
+        // System.out.println("Unit advantage: " + unit_advantage + " Ratio: " + ratio + " numFriendHits " + numFriendHits + " numEnemyHits " + numEnemyHits + "round_num " + round_num + " id " + rc.getID());
+
+        if (numFriendHits + unit_advantage < numEnemyHits) {
+            double dx = -(cxse - cur.x) * 3;
+            double dy = -(cyse - cur.y) * 3;
             // more attracted
             // dx = 0.7 * dx + 0.3 * (cxsf - cur.x);
             // dy = 0.7 * dx + 0.3 * (cysf - cur.y);
@@ -156,11 +236,10 @@ public class Soldier extends Unit {
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
             data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             if (data != 0) {
-                int w = data / 4096;
-                int x = (data - w * 4096) / 64;
-                int y = data % 64;
-                // System.out.println("I received an enemy at " + x + " " + y + " on round " + round_num);
-                MapLocation potentialTarget = new MapLocation(x, y);
+                int x = (data >> 4) & 15;
+                int y = data & 15;
+                // System.out.println("I received an enemy at " + x*4 + " " + y*4 + " on round " + round_num);
+                MapLocation potentialTarget = new MapLocation(x*4, y*4);
                 if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
                     closestDist = cur.distanceSquaredTo(potentialTarget);
                     closestTarget = potentialTarget;
@@ -172,9 +251,10 @@ public class Soldier extends Unit {
         if (closestTarget != null) {
             if (cur.distanceSquaredTo(closestTarget) <= mapArea / 16) {
                 target = closestTarget;
-                exploratoryDir = new int[]{closestTarget.x - cur.x, closestTarget.y - cur.y};
-                // wanders in direction of target
             }
+            lastAttackDir = new int[]{closestTarget.x - cur.x, closestTarget.y - cur.y};
+            lastAttackDir = scaleToSize(lastAttackDir);
+            // wanders in direction of target
         }
     }
 
@@ -197,53 +277,64 @@ public class Soldier extends Unit {
         }
         dx += (target.x - cur.x);
         dy += (target.y - cur.y);
+        // this is stupid. make it just go to the target
         dir[0] = (dir[0] + dx) / (num_soldiers + 1);
         dir[1] = (dir[1] + dy) / (num_soldiers + 1);
-        if (dir[0] != 0 || dir[1] != 0) exploratoryDir = dir;
+        if (dir[0] != 0 || dir[1] != 0) lastAttackDir = scaleToSize(dir);
         else  {
             dir = new int[]{dx, dy};
-            exploratoryDir = dir;
+            lastAttackDir = scaleToSize(dir);
         }
-        if (rc.getLocation().distanceSquaredTo(target) <= 9) return;
-        else moveInDirection(dir);
+        if (rc.getLocation().distanceSquaredTo(target) <= 9) {
+            // check for low rubble squares to move to
+            Direction lowRubble = findLowRubble();
+            if (lowRubble != null) rc.move(lowRubble);
+        }
+        else moveInDirection(lastAttackDir);
     }
 
-    public MODE determineMode() throws GameActionException {
-
-        // Priority 1 - Defend.
-        threatenedArchons = findThreatenedArchons();
-        if (threatenedArchons != null) {
-            for (MapLocation archon: threatenedArchons) {
-                if (rc.getLocation().distanceSquaredTo(archon) <= DRUSH_RSQR) {
-                    return MODE.DEFENSIVE_RUSH;
-                }
+    public Direction findLowRubble() throws GameActionException {
+        MapLocation cur = rc.getLocation();
+        int cur_rubble = 1 + rc.senseRubble(cur) / 10;
+        int rubble;
+        for (int i = 0; i < 8; i++) {
+            rubble = rc.senseRubble(cur.add(directions[i]));
+            if (rubble < cur_rubble && rc.canMove(directions[i])) {
+                return directions[i];
             }
         }
+        return null;
+    }
 
-        // Priority 2 - Don't die.
-        int[] potFleeDir = fleeDirection();
-        boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
-        if (!validFlee && stopFleeingRound == round_num) exploratoryDir = getExploratoryDir(5);
-        if (validFlee || stopFleeingRound <= round_num) {
-            if (validFlee) fleeDirection = potFleeDir;
-            // keep fleeing for two moves (2 rounds per move)
-            if (stopFleeingRound <= round_num) {
-                stopFleeingRound = round_num + 4;
+    public void fleeLowRubble(int[] dir) throws GameActionException {
+        MapLocation cur = rc.getLocation();
+        Direction d = cur.directionTo(new MapLocation(cur.x + dir[0], cur.y + dir[1]));
+        Direction[] sorted_dirs = {d, d.rotateLeft(), d.rotateRight(), d.rotateLeft().rotateLeft(), d.rotateRight().rotateRight(), d.opposite().rotateRight(), d.opposite().rotateLeft(), d.opposite()};
+        int a = 6;
+        int lowestCost = 100000;
+        Direction bestDir = null;
+        for (int i = 0; i < 8; i++) {
+            if (!rc.canMove(sorted_dirs[i])) continue;
+            MapLocation loc = cur.add(sorted_dirs[i]);
+
+            int cost = 0;
+            cost += (int) a * (1 + (rc.senseRubble(loc) / 10)) ;
+            // Preference tier for moving towards target
+            if (i >=1){
+                cost+=5;
             }
-            return MODE.FLEE;
+            if (i >= 3) {
+                cost += 30;
+            }
+            if (i >=5){
+                cost+=30;
+            }
+            if (cost < lowestCost) {
+                lowestCost = cost;
+                bestDir = sorted_dirs[i];
+            }
         }
-        // Priority 3 - Kill Archons.
-        boolean archonDetected = detectArchon() || senseArchon();
-        if (archonDetected) {
-            if (rc.getLocation().distanceSquaredTo(archon_target) <= ARUSH_RSQR)
-                return MODE.ARCHON_RUSH;
-        }
-        // Priority 4 - Hunt enemies.
-        if (target != null) {
-            return MODE.HUNTING;
-        }
-
-        return MODE.EXPLORATORY;
+        if (bestDir != null) rc.move(bestDir);
     }
 
     public void defensiveMove() throws GameActionException{
@@ -260,7 +351,7 @@ public class Soldier extends Unit {
         }
         // if you don't see the enemy, and you're not close to the archon, move towards it
         if (rc.getLocation().distanceSquaredTo(closest) > 36 || target == null) {
-            fuzzyMove(closest);
+            moveToLocation(closest);
         }
         else {
             huntTarget();
@@ -274,64 +365,6 @@ public class Soldier extends Unit {
             return (home == null || home.type != RobotType.ARCHON);
         }
         return false;
-    }
-    /**
-     * waitAtDist() stays near the home archon
-     **/
-    public void waitAtDist(MapLocation loc, int idealDistSquared, boolean shouldRepel) throws GameActionException{
-        //stays at around an ideal dist
-        MapLocation myLocation = rc.getLocation();
-        RobotInfo[] nearbyAllies = rc.senseNearbyRobots(rc.getType().visionRadiusSquared, rc.getTeam());
-        int buffer = 4;
-        // rc.setIndicatorString("" + Math.abs(myLocation.distanceSquaredTo(homeArchon)-idealDistSquared));
-        if (Math.abs(myLocation.distanceSquaredTo(loc)-idealDistSquared) <= buffer){
-            return; //you're already in range
-        }
-        int[] costs = new int[8];
-        for (int i = 0; i < 8; i++){
-            MapLocation newLocation = myLocation.add(directions[i]);
-            int cost = 0;
-            if (!rc.onTheMap(newLocation)) {
-                cost = 999999;
-            }
-            else {
-                cost = 10*Math.abs(newLocation.distanceSquaredTo(loc)-idealDistSquared);
-                if (shouldRepel){ //don't go near fellow ally soldiers
-                    for (RobotInfo robot : nearbyAllies) {
-                        if (robot.type == rc.getType()) {
-                            cost -= newLocation.distanceSquaredTo(robot.location); //trying to maximize distance
-                        }
-                    }
-                }
-                //cost += rc.senseRubble(newLocation);
-            }
-            
-            costs[i] = cost;
-
-        }
-        /*
-        String s = " ";
-        for (int i =0; i < 8; i++) s += directions[i] + ": " + costs[i] + " ";
-        rc.setIndicatorString(s);
-        */
-        int cost = 99999;
-        Direction optimalDir = null;
-        for (int i = 0; i < directions.length; i++) {
-            Direction dir = directions[i];
-            if (rc.canMove(dir)) {
-                if (costs[i] < cost) {
-                    cost = costs[i];
-                    optimalDir = dir;
-                }
-            }
-        }
-        if (optimalDir != null) {
-            if (rc.canMove(optimalDir)) {
-                // rc.setIndicatorString("here2");
-                rc.move(optimalDir);
-            }
-        }
-
     }
 
     public MapLocation[] findThreatenedArchons() throws GameActionException {
@@ -365,22 +398,6 @@ public class Soldier extends Unit {
         }
     }
 
-    public void moveToEnemySoldiers() throws GameActionException{
-        RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        int num_enemies = 0;
-        double cx = 0;
-        double cy = 0;
-        for (RobotInfo enemy : enemies) {
-            if (enemy.type == RobotType.SOLDIER || enemy.type == RobotType.SAGE) {
-                cx += (double) enemy.location.x;
-                cy += (double) enemy.location.y;
-                num_enemies += 1;
-            }
-        }
-        if (num_enemies ==0) fuzzyMove(homeArchon);
-        else fuzzyMove(new MapLocation((int) (cx / num_enemies), (int) (cy / num_enemies)));
-    }
-
     public boolean isLowHealth() throws GameActionException {
         if (rc.getHealth() < 20) {
             return true;
@@ -390,33 +407,15 @@ public class Soldier extends Unit {
         }
     }
 
-    public Direction usefulDir() throws GameActionException {
-        MapLocation cur = rc.getLocation();
-        Direction d = rc.getLocation().directionTo(homeArchon); // placeholder
-        MapLocation center = new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2);
-        if (center.x - cur.x > 0) {
-            if (center.y - cur.y > 0) {
-                d = Direction.NORTHEAST;
-            } else {
-                d = Direction.SOUTHEAST;
-            }
-        } else {
-            if (center.y - cur.y > 0) {
-                d = Direction.NORTHWEST;
-            } else {
-                d = Direction.SOUTHWEST;
-            }
-        }
-        // rc.setIndicatorString(d.dx + " " + d.dy);
-        Direction[] dirs = {d, d.rotateLeft(), d.rotateRight()};
-        return dirs[rng.nextInt(dirs.length)];
-    }
-
     public boolean attemptAttack(boolean attackMiners) throws GameActionException {
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
         int weakestSoldierHealth = 100000;
         int weakestMinerHealth = 100000;
+        int weakestSageHealth = 100000;
+        int weakestTowerHealth = 100000;
         RobotInfo weakestSoldier = null;
+        RobotInfo weakestTower = null;
+        RobotInfo weakestSage = null;
         RobotInfo weakestMiner = null;
         RobotInfo archon = null;
         // if there are any nearby enemy robots, attack the one with the least health
@@ -434,15 +433,44 @@ public class Soldier extends Unit {
                         weakestMinerHealth = bot.health;
                     }
                 }
+                if (bot.type == RobotType.WATCHTOWER) {
+                    if (bot.health < weakestTowerHealth) {
+                        weakestTower = bot;
+                        weakestTowerHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.SAGE) {
+                    if (bot.health < weakestSageHealth) {
+                        weakestSage = bot;
+                        weakestSageHealth = bot.health;
+                    }
+                }
                 if (bot.type == RobotType.ARCHON) {
                     archon = bot;
                 }
             }
-            if (weakestSoldier != null) {
+            // make more conditional, like damaging which one would give the biggest advantage
+            if (weakestSage != null) {
+                if (rc.canAttack(weakestSage.location)) {
+                    rc.attack(weakestSage.location);
+                    target = weakestSage.location;
+                    broadcastTarget(weakestSage.location);
+                    return true;
+                }
+            }
+            else if (weakestSoldier != null) {
                 if (rc.canAttack(weakestSoldier.location)) {
                     rc.attack(weakestSoldier.location);
                     target = weakestSoldier.location;
                     broadcastTarget(weakestSoldier.location);
+                    return true;
+                }
+            }
+            else if (weakestTower != null) {
+                if (rc.canAttack(weakestTower.location)) {
+                    rc.attack(weakestTower.location);
+                    target = weakestTower.location;
+                    broadcastTarget(weakestTower.location);
                     return true;
                 }
             }
@@ -457,6 +485,7 @@ public class Soldier extends Unit {
             else if (archon != null) {
                 if (rc.canAttack(archon.location)) {
                     rc.attack(archon.location);
+                    broadcastTarget(archon.location);
                     return true;
                 }
             }

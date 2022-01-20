@@ -1,4 +1,4 @@
-package rebutia;
+package rebutia_pathfinding_archon;
 
 import battlecode.common.*;
 import java.util.*;
@@ -27,12 +27,15 @@ public class Unit{
         Direction.NORTHWEST,
     };
 
+    static Navigation mover;
+
     public Unit(RobotController robotController) throws GameActionException {
         rc = robotController;
         rng.setSeed((long) rc.getID() + seed_increment);
         homeArchon = findHomeArchon();
         initializeRankMap();
         mapArea = getMapArea();
+        mover = new Navigation(rc);
     }
 
     /**
@@ -133,7 +136,7 @@ public class Unit{
                 }
                 
             }
-            fuzzyMove(target);
+            moveToLocation(target);
             return true;
         }
         else {
@@ -236,116 +239,63 @@ public class Unit{
      * @param loc is where to go
      **/
     public void moveToLocation(MapLocation loc) throws GameActionException{
-        fuzzyMove(loc); // best pathfinding strat 
+        Direction d= mover.getBestDir(loc);
+        // System.out.println(d);
+        if (d!=null && rc.canMove(d)){
+            rc.move(d);
+        }
+       // fuzzyMove(loc); // best pathfinding strat 
     }
 
     public void moveInDirection(int[] toDest) throws GameActionException{
         MapLocation loc = rc.getLocation();
         MapLocation dest = new MapLocation(loc.x + toDest[0], loc.y + toDest[1]);
-        fuzzyMove(dest);
+        Direction d= mover.getBestDir(dest);
+        // System.out.println(d);
+        if (d!=null && rc.canMove(d)){
+            rc.move(d);
+        }
+      //  fuzzyMove(dest);
         // rc.setIndicatorString("I JUST MOVED TO " + toDest[0] + " " + toDest[1]);
     }
-    /**
-     * fuzzyMove() is the method that moves to a location using a weight of how within the correct direction you are
-     *             how much rubble is in a square (rather that just thresholding rubbles)
-     *
-     * @param dest  location you wish to move to
-     *            
-     **/
-    //keep updating this so that you can see stagnation
-    static int calls = 0; //# of fuzzy move calls
-    static MapLocation last = null;
-    static MapLocation cur =null;
-    static boolean stagnatingMode = false;
-    public Direction fuzzyMove(MapLocation dest) throws GameActionException{
-        return fuzzyMove(dest, 0.1); //will not go to squares with more that 20 rubble
-    }
-    public Direction fuzzyMove(MapLocation dest, double rubbleWeight) throws GameActionException{
-        MapLocation myLocation = rc.getLocation();
-        if (myLocation.equals(dest)){
-            return null; //you're already there!
-        }
-        Direction toDest = myLocation.directionTo(dest);
-        if (myLocation.add(toDest).equals(dest)){
-            if (rc.canMove(toDest)){
-                rc.move(toDest);
-            }
-        }
-        else{
-            Direction optimalDir = getBestDirectionFuzzy(toDest, rubbleWeight);
-            if (optimalDir != null) {
-                if (rc.canMove(optimalDir)){ //if you can move in the optimalDir, then you can move toDest - toDest is into a wall
-                    rc.move(optimalDir);
-                    calls++; //only considered a call if you actually move
-                    if (calls % 8 == 0) { //just completed your 8th, 16th, etc, call
-                        last = cur;
-                        cur = myLocation;
-                    }
-                } 
-            }
-            return optimalDir;
-            // find location
 
+    public MapLocation scaleToEdge(int[] toDest){
+        MapLocation loc = rc.getLocation();
+        //scaling this directional vector so that it reaches the edge 
+        double scaleFactor = 1000;
+        if (toDest[0] > 0){
+            scaleFactor = Math.min(scaleFactor, ((double) (rc.getMapWidth() - 1 - loc.x))/((double) toDest[0]));
         }
-        return null;
-
+        else if (toDest[0] < 0){
+            scaleFactor = Math.min(scaleFactor, ((double) (loc.x))/((double) -1*toDest[0]));
+        }
+        if (toDest[1] > 0){
+            scaleFactor = Math.min(scaleFactor, ((double) (rc.getMapHeight() - 1 - loc.y))/((double) toDest[1]));
+        }
+        else if (toDest[1] < 0) {
+            scaleFactor = Math.min(scaleFactor, ((double) (loc.y))/((double) -1*toDest[1]));
+        }
+        assert(scaleFactor >=0);
+        int nx = loc.x + (int) (scaleFactor * (double) toDest[0]);
+        nx = Math.min(nx, rc.getMapWidth() - 1);
+        nx = Math.max(nx, 0);
+        int ny = loc.y + (int) (scaleFactor * (double) toDest[1]);
+        ny = Math.min(ny, rc.getMapHeight() - 1);
+        ny = Math.max(ny, 0);
+        return new MapLocation(nx, ny);
     }
 
-    public Direction getBestDirectionFuzzy(Direction toDest, double rubbleWeight) throws GameActionException{
-        MapLocation myLocation = rc.getLocation();
-        Direction[] dirs = {toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(),
-                toDest.rotateRight().rotateRight(), toDest.opposite().rotateLeft(), toDest.opposite().rotateRight(), toDest.opposite()};
-        int[] costs = new int[8];
-        if (calls % 8 == 0){
-            if (last!= null && (myLocation.distanceSquaredTo(last) <=4)) {
-                stagnatingMode = true;
-            }
-            else stagnatingMode = false;
-        }
-        for (int i = 0; i < dirs.length; i++) {
-            MapLocation newLocation = myLocation.add(dirs[i]);
-            // Movement invalid, set higher cost than starting value
-            if (!validCoords(newLocation.x, newLocation.y)) {
-                costs[i] = 999999;
-            }
-            else {
-                int cost = 0;
-                if (!stagnatingMode) cost +=(int) (rubbleWeight * Math.pow((double) rc.senseRubble(newLocation), 2.0));
-                // Preference tier for moving towards target
-                if (i >=1){
-                    cost+=5;
-                }
-                if (i >= 3) {
-                    cost += 30;
-                }
-                if (i >=5){
-                    cost+=30;
-                }
-                costs[i] = cost+ rng.nextInt(10); //some randomness
-            }
-            
-        }
-        
-        String s = "";
-        for (int i= 0; i < dirs.length;i++){
-            s+=dirs[i] + " " + String.valueOf(costs[i])+ " ";
-        }
-        s+=String.valueOf(rc.canMove(toDest));
-        rc.setIndicatorString(s);
-        int cost = 99999;
-        Direction optimalDir = null;
-        for (int i = 0; i < dirs.length; i++) {
-            Direction dir = dirs[i];
-            if (rc.canMove(dir)) {
-                if (costs[i] < cost) {
-                    cost = costs[i];
-                    optimalDir = dir;
-                }
-            }
-        }
-        return optimalDir;
+    public int[] scaleToSize(int[] toDest){
+        return scaleToSize(toDest, 12.0);
     }
-    
+
+    public int[] scaleToSize(int[] toDest, double desiredLength){
+        double len = Math.sqrt(Math.pow(toDest[0], 2)+ Math.pow(toDest[1], 2));
+        double scaleFactor = desiredLength / len;
+        int[] newDir = new int[]{(int)(toDest[0]*scaleFactor), (int)(toDest[1]*scaleFactor)};
+        return newDir;
+    }
+
     public int cooldown(MapLocation loc) throws GameActionException{
         //returns cooldown of movement
         return (int) Math.floor((1+rc.senseRubble(loc)/10.0)*rc.getType().movementCooldown);
@@ -425,11 +375,33 @@ public class Unit{
         return false;
     }
 
+    public int[] flip(int[] dir){//directional vector input
+        assert(dir.length == 2);
+        MapLocation loc = rc.getLocation();
+        int[] ret = new int[2];
+        ret[0] = dir[0];
+        ret[1] = dir[1];
+        if (loc.x < 5 && ret[0] <0){
+            ret[0] = -1*ret[0];
+        } 
+        if (loc.y < 5 && ret[1] <0){
+            ret[1] = -1*ret[1];
+        }
+        if (rc.getMapWidth()- loc.x < 5 && ret[0]>0){
+            ret[0] = -1*ret[0];
+        }
+        if (rc.getMapHeight() - loc.y < 5 && ret[1]>0){
+            ret[1] = -1*ret[1];
+        }
+        return ret;
+    }
+
+
     public MapLocation findHomeArchon() throws GameActionException {
         if (rc.getType() == RobotType.ARCHON) {
             return rc.getLocation();
         }
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam());
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(1, rc.getTeam());
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
             for (RobotInfo bot : nearbyBots) {
@@ -506,14 +478,24 @@ public class Unit{
     }
 
     public void broadcastTarget(MapLocation enemy) throws GameActionException {
-        int data;
-        int loc = 64 * enemy.x + enemy.y;
-        for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
-            data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
-            if (data == 0) {
-                rc.writeSharedArray(CHANNEL.TARGET.getValue() + i, loc);
-                // System.out.println("I broadcasted an enemy at " + enemy.toString());
+        int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
+        //fuzzy location
+        int x_loc= Math.min( (int)Math.round((double)enemy.x/4.0) , 15);
+        int y_loc= Math.min( (int)Math.round((double)enemy.y/4.0) , 15);
+        for (int i= 0; i < CHANNEL.NUM_TARGETS; i++){
+            int data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
+            int x = (data >> 4) & 15;
+            int y = data & 15;
+            if (x_loc == x && y_loc == y) {
+                return;
+            }
+            if (data == 0){
+                indToPut = i;
             }
         }
+        int value = (x_loc << 4) + y_loc; 
+        rc.setIndicatorDot(new MapLocation(x_loc*4, y_loc*4), 0, 100, 0);
+        rc.writeSharedArray(CHANNEL.TARGET.getValue() + indToPut, value);
+        // System.out.println("I broadcasted an enemy at " + enemy.toString());
     }
 }

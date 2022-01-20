@@ -1,4 +1,4 @@
-package rebutia;
+package rebutia_pathfinding;
 
 import battlecode.common.*;
 import java.util.*;
@@ -27,12 +27,15 @@ public class Unit{
         Direction.NORTHWEST,
     };
 
+    static Navigation mover;
+
     public Unit(RobotController robotController) throws GameActionException {
         rc = robotController;
         rng.setSeed((long) rc.getID() + seed_increment);
         homeArchon = findHomeArchon();
         initializeRankMap();
         mapArea = getMapArea();
+        mover = new Navigation(rc);
     }
 
     /**
@@ -198,7 +201,7 @@ public class Unit{
         }
         int value = (demand << 8) + (x_loc << 4) + y_loc; 
         rc.setIndicatorDot(new MapLocation(x_loc*4, y_loc*4), 255, 0, 0);
-        // System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 + " " + demand + " " + rc.getRoundNum());
+        System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 + " " + demand + " " + rc.getRoundNum());
         rc.writeSharedArray(CHANNEL.MINING1.getValue() +indToPut, value);
     }
 
@@ -236,13 +239,23 @@ public class Unit{
      * @param loc is where to go
      **/
     public void moveToLocation(MapLocation loc) throws GameActionException{
-        fuzzyMove(loc); // best pathfinding strat 
+        Direction d= mover.getBestDir(loc);
+        System.out.println(d);
+        if (d!=null && rc.canMove(d)){
+            rc.move(d);
+        }
+       // fuzzyMove(loc); // best pathfinding strat 
     }
 
     public void moveInDirection(int[] toDest) throws GameActionException{
         MapLocation loc = rc.getLocation();
         MapLocation dest = new MapLocation(loc.x + toDest[0], loc.y + toDest[1]);
-        fuzzyMove(dest);
+        Direction d= mover.getBestDir(dest);
+        System.out.println(d);
+        if (d!=null && rc.canMove(d)){
+            rc.move(d);
+        }
+      //  fuzzyMove(dest);
         // rc.setIndicatorString("I JUST MOVED TO " + toDest[0] + " " + toDest[1]);
     }
     /**
@@ -256,7 +269,6 @@ public class Unit{
     static int calls = 0; //# of fuzzy move calls
     static MapLocation last = null;
     static MapLocation cur =null;
-    static boolean stagnatingMode = false;
     public Direction fuzzyMove(MapLocation dest) throws GameActionException{
         return fuzzyMove(dest, 0.1); //will not go to squares with more that 20 rubble
     }
@@ -277,7 +289,7 @@ public class Unit{
                 if (rc.canMove(optimalDir)){ //if you can move in the optimalDir, then you can move toDest - toDest is into a wall
                     rc.move(optimalDir);
                     calls++; //only considered a call if you actually move
-                    if (calls % 8 == 0) { //just completed your 8th, 16th, etc, call
+                    if (((calls>>3)& 1) > 0) { //just completed your 8th, 16th, etc, call
                         last = cur;
                         cur = myLocation;
                     }
@@ -296,54 +308,89 @@ public class Unit{
         Direction[] dirs = {toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(),
                 toDest.rotateRight().rotateRight(), toDest.opposite().rotateLeft(), toDest.opposite().rotateRight(), toDest.opposite()};
         int[] costs = new int[8];
-        if (calls % 8 == 0){
-            if (last!= null && (myLocation.distanceSquaredTo(last) <=4)) {
-                stagnatingMode = true;
+       // if (false) {
+        if (last!= null && (((calls>>3)&1) > 0) && (myLocation.distanceSquaredTo(last) <=4)) { //just completed your 8th, 16th, etc, call last turn
+            //you're stagnating
+            for (int i = 0; i < dirs.length; i++) {
+                MapLocation newLocation = myLocation.add(dirs[i]);
+                // Movement invalid, set higher cost than starting value
+                if (!rc.onTheMap(newLocation)) {
+                    costs[i] = 999999;
+                }
+                else {
+                    int cost = 0;
+                    // Preference tier for moving towards target
+                    if (i >=1){
+                        cost+=5;
+                    }
+                    if (i >= 3) {
+                        cost += 30;
+                    }
+                    if (i >=5 ){
+                        cost+=30;
+                    }
+                    costs[i] = cost;
+                }
+                
+                
             }
-            else stagnatingMode = false;
+            int cost = 99999;
+            Direction optimalDir = null;
+            for (int i = 0; i < dirs.length; i++) {
+                Direction dir = dirs[i];
+                if (rc.canMove(dir)) {
+                    if (costs[i] < cost) {
+                        cost = costs[i];
+                        optimalDir = dir;
+                    }
+                }
+            }
+            return optimalDir;
         }
-        for (int i = 0; i < dirs.length; i++) {
-            MapLocation newLocation = myLocation.add(dirs[i]);
-            // Movement invalid, set higher cost than starting value
-            if (!validCoords(newLocation.x, newLocation.y)) {
-                costs[i] = 999999;
-            }
-            else {
-                int cost = 0;
-                if (!stagnatingMode) cost +=(int) (rubbleWeight * Math.pow((double) rc.senseRubble(newLocation), 2.0));
-                // Preference tier for moving towards target
-                if (i >=1){
-                    cost+=5;
+        else {
+            // Ignore repel factor in beginning and when close to target
+            for (int i = 0; i < dirs.length; i++) {
+                MapLocation newLocation = myLocation.add(dirs[i]);
+                // Movement invalid, set higher cost than starting value
+                if (!validCoords(newLocation.x, newLocation.y)) {
+                    costs[i] = 999999;
                 }
-                if (i >= 3) {
-                    cost += 30;
+                else {
+                    int cost = (int) (rubbleWeight * Math.pow((double) rc.senseRubble(newLocation), 2.0));
+                    // Preference tier for moving towards target
+                    if (i >=1){
+                        cost+=5;
+                    }
+                    if (i >= 3) {
+                        cost += 30;
+                    }
+                    if (i >=5){
+                        cost+=30;
+                    }
+                    costs[i] = cost+ rng.nextInt(10); //some randomness
                 }
-                if (i >=5){
-                    cost+=30;
-                }
-                costs[i] = cost+ rng.nextInt(10); //some randomness
+                
             }
             
-        }
-        
-        String s = "";
-        for (int i= 0; i < dirs.length;i++){
-            s+=dirs[i] + " " + String.valueOf(costs[i])+ " ";
-        }
-        s+=String.valueOf(rc.canMove(toDest));
-        rc.setIndicatorString(s);
-        int cost = 99999;
-        Direction optimalDir = null;
-        for (int i = 0; i < dirs.length; i++) {
-            Direction dir = dirs[i];
-            if (rc.canMove(dir)) {
-                if (costs[i] < cost) {
-                    cost = costs[i];
-                    optimalDir = dir;
+            String s = "";
+            for (int i= 0; i < dirs.length;i++){
+                s+=dirs[i] + " " + String.valueOf(costs[i])+ " ";
+            }
+            s+=String.valueOf(rc.canMove(toDest));
+            rc.setIndicatorString(s);
+            int cost = 99999;
+            Direction optimalDir = null;
+            for (int i = 0; i < dirs.length; i++) {
+                Direction dir = dirs[i];
+                if (rc.canMove(dir)) {
+                    if (costs[i] < cost) {
+                        cost = costs[i];
+                        optimalDir = dir;
+                    }
                 }
             }
+            return optimalDir;
         }
-        return optimalDir;
     }
     
     public int cooldown(MapLocation loc) throws GameActionException{
@@ -512,8 +559,138 @@ public class Unit{
             data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             if (data == 0) {
                 rc.writeSharedArray(CHANNEL.TARGET.getValue() + i, loc);
-                // System.out.println("I broadcasted an enemy at " + enemy.toString());
+                System.out.println("I broadcasted an enemy at " + enemy.toString());
             }
         }
     }
+    /*
+    public Direction getBestDirBFS(MapLocation target) throws GameActionException {
+        MapLocation cur = rc.getLocation();
+
+        int n = 5;
+        MapLocation[][] locs = new MapLocation[2*n + 1][2*n + 1];
+        double[][] vs = new double[2*n + 1][2*n + 1];
+        Direction[][] ds = new Direction[2*n + 1][2*n + 1];
+        int[][] rubble = new int[2*n + 1][2*n + 1];
+        int num_locs = 69;
+
+        // center initialized to zero
+        locs[n][n] = cur;
+        vs[n][n] = 0;
+
+        // make a spiral
+        Direction[] dirs = {Direction.NORTH, Direction.WEST, Direction.SOUTH, Direction.EAST};
+        int index = 0;
+        int counter = 0;
+        int threshold = 1;
+
+        MapLocation l_prev = locs[n][n];
+        Direction d;
+        int[] inc;
+        int x = n;
+        int y = n;
+
+        for (int i = 0; i < num_locs; i++) {
+            counter++;
+            if (counter >= threshold) {
+                index++;
+                counter = 0;
+                if (index % 2 == 0) {
+                    threshold++;
+                }
+            }
+            d = dirs[index % 4];
+            inc = getIncrementFromDir(d);
+            x += inc[0];
+            y += inc[1];
+            locs[x][y] = l_prev.add(d);
+            vs[x][y] = 1000000;
+        }
+
+
+
+        
+    }
+
+    public static int[][] sortedPos(int rsqr) {
+        int n = (int) Math.ceil(Math.sqrt(rsqr));
+        int[][] pos = new int[(2 * n + 1) * (2 * n + 1)][2];
+        double[] dist = new double[(2 * n + 1) * (2 * n + 1)];
+        double d = 0;
+        int counter = 0;
+        for (int i = 0; i < 2 * n + 1; i++) {
+            for (int j = 0; j < 2 * n + 1; j++) {
+                // if point in circle
+                d = Math.pow((n - i), 2) + Math.pow((n - j), 2);
+                if (d <= rsqr) {
+                    pos[counter][0] = i;
+                    pos[counter][1] = j;
+                    dist[counter] = (double) d;
+                    counter++;
+                }
+            }
+        }
+
+        // sort pos by distance
+        for (int i = 0; i < counter; i++) {
+            for (int j = i + 1; j < counter; j++) {
+                if (dist[i] > dist[j]) {
+                    double temp = dist[i];
+                    dist[i] = dist[j];
+                    dist[j] = temp;
+                    int[] temp2 = pos[i];
+                    pos[i] = pos[j];
+                    pos[j] = temp2;
+                }
+            }
+        }
+
+        int[][] pos_new = new int[counter - 1][2];
+
+        for (int i = 1; i < counter; i++) {
+            pos_new[i - 1][0] = pos[i][0];
+            pos_new[i - 1][1] = pos[i][1];
+        }
+
+        return pos_new;
+    }
+
+
+    public int[] getIncrementFromDir(Direction D) {
+        int[] inc = {0, 0};
+        switch (D) {
+            case NORTH:
+                inc[1] = 1;
+                break;
+            case NORTHEAST:
+                inc[0] = 1;
+                inc[1] = 1;
+                break;
+            case EAST:  
+                inc[0] = 1;
+                break;
+            case SOUTHEAST:
+                inc[0] = 1;
+                inc[1] = -1;
+                break;
+            case SOUTH:
+                inc[1] = -1;
+                break;
+            case SOUTHWEST:
+                inc[0] = -1;
+                inc[1] = -1;
+                break;
+            case WEST:
+                inc[0] = -1;
+                break;
+            case NORTHWEST:
+                inc[0] = -1;
+                inc[1] = 1;
+                break;
+            case CENTER:
+                break;
+        }
+        return inc;
+    }
+    */
 }

@@ -1,16 +1,16 @@
-package rebutia;
+package barbary_gleb;
 
 import battlecode.common.*;
-import java.util.*;
+
+import java.util.Random;
 // shared code across the units
 public class Unit{
-
+    Comms radio;
     RobotController rc;
     int archon_index = -1;
     RANK[] rank_map = initializeRankMap();
     final Random rng = new Random();
     static final int goldToLeadConversionRate = 200;
-    static final int minerToLeadRate = 250;
     int seed_increment = 4;
     MapLocation homeArchon;
     public MapLocation archon_target;
@@ -33,14 +33,16 @@ public class Unit{
         homeArchon = findHomeArchon();
         initializeRankMap();
         mapArea = getMapArea();
+        radio = new Comms(rc);
     }
 
     /**
      * run() is a placeholder implemented in the specific files
      **/
     public void run() throws GameActionException{
-        
+        radio.init();
     }
+
     //when you sense or detect, you get an archon_index
     /**
      * detectArchon() looks through the archon positions for a new one, then stores it in archon_index
@@ -142,15 +144,6 @@ public class Unit{
         }
     }
 
-    public int numFriendlyMiners(){
-        RobotInfo[] allies =  rc.senseNearbyRobots(-1, rc.getTeam());
-        int c = 0;
-        for (RobotInfo r : allies){
-            if (r.type == RobotType.MINER) c++;
-        }
-        return c;
-    }
-
 
     public boolean senseMiningArea() throws GameActionException {
         int value = 0;
@@ -168,58 +161,33 @@ public class Unit{
             cx+=margin*loc.x;
             cy+=margin*loc.y;
         }
-        if (value >=25){
+        if (value >=75){ 
             MapLocation dest = new MapLocation(cx/value, cy/value);
-            // demand disabled for now
-            int demand = value/minerToLeadRate - numFriendlyMiners();
-            if (demand > 0) {
-                broadcastMiningArea(dest, demand); 
-                return true;
-            }
+         //   System.out.println(dest);
+            broadcastMiningArea(dest);
+            return true;
         }
         return false;
     }
     
-    public void broadcastMiningArea(MapLocation loc, int demand) throws GameActionException{
+    public void broadcastMiningArea(MapLocation loc) throws GameActionException{
+        //check that the loc is not already broadcasted
         int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
-        //fuzzy location
-        int x_loc= Math.min( (int)Math.round((double)loc.x/4.0) , 15);
-        int y_loc= Math.min( (int)Math.round((double)loc.y/4.0) , 15);
         for (int i= 0; i < 5; i++){
             int data = rc.readSharedArray(CHANNEL.MINING1.getValue() + i);
-            int x = (data >> 4) & 15;
-            int y = data & 15;
-            if (x_loc == x && y_loc == y) {
+            int x = data / 64;
+            int y = data % 64;
+            if (loc.x == x && loc.y == y) {
                 return;
             }
             if (data == 0){
                 indToPut = i;
             }
         }
-        int value = (demand << 8) + (x_loc << 4) + y_loc; 
-        rc.setIndicatorDot(new MapLocation(x_loc*4, y_loc*4), 255, 0, 0);
-        // System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 + " " + demand + " " + rc.getRoundNum());
-        rc.writeSharedArray(CHANNEL.MINING1.getValue() +indToPut, value);
-    }
-
-    public MapLocation findNearestArchon() throws GameActionException {
-        int min_dist = Integer.MAX_VALUE;
-        MapLocation closest = null;
-        for (int i = 0; i < 4; i++) {
-            int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
-            if (data != 0) {
-                int w = data / 4096;
-                int x = (data - w * 4096) / 64;
-                int y = data % 64;
-                MapLocation loc = new MapLocation(x, y);
-                int dist = loc.distanceSquaredTo(rc.getLocation());
-                if (dist < min_dist) {
-                    min_dist = dist;
-                    closest = loc;
-                }
-            }
-        }
-        return closest;
+        MapLocation dest = new MapLocation(Math.min((int)Math.round((double)loc.x/7.0)*7, rc.getMapWidth()-1),
+                                          Math.min((int)Math.round((double)loc.y/7.0)*7, rc.getMapHeight()-1));//rounding each value to multiples of seven - it's a fuzzy location!
+        int loc_int = locationToInt(dest); 
+        rc.writeSharedArray(CHANNEL.MINING1.getValue() +indToPut, loc_int);
     }
     /**
      * validCoords() check if the x and y are on the map
@@ -256,7 +224,6 @@ public class Unit{
     static int calls = 0; //# of fuzzy move calls
     static MapLocation last = null;
     static MapLocation cur =null;
-    static boolean stagnatingMode = false;
     public Direction fuzzyMove(MapLocation dest) throws GameActionException{
         return fuzzyMove(dest, 0.1); //will not go to squares with more that 20 rubble
     }
@@ -277,7 +244,7 @@ public class Unit{
                 if (rc.canMove(optimalDir)){ //if you can move in the optimalDir, then you can move toDest - toDest is into a wall
                     rc.move(optimalDir);
                     calls++; //only considered a call if you actually move
-                    if (calls % 8 == 0) { //just completed your 8th, 16th, etc, call
+                    if (((calls>>3)& 1) > 0) { //just completed your 8th, 16th, etc, call
                         last = cur;
                         cur = myLocation;
                     }
@@ -296,54 +263,89 @@ public class Unit{
         Direction[] dirs = {toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(),
                 toDest.rotateRight().rotateRight(), toDest.opposite().rotateLeft(), toDest.opposite().rotateRight(), toDest.opposite()};
         int[] costs = new int[8];
-        if (calls % 8 == 0){
-            if (last!= null && (myLocation.distanceSquaredTo(last) <=4)) {
-                stagnatingMode = true;
+       // if (false) {
+        if (last!= null && (((calls>>3)&1) > 0) && (myLocation.distanceSquaredTo(last) <=4)) { //just completed your 8th, 16th, etc, call last turn
+            //you're stagnating
+            for (int i = 0; i < dirs.length; i++) {
+                MapLocation newLocation = myLocation.add(dirs[i]);
+                // Movement invalid, set higher cost than starting value
+                if (!rc.onTheMap(newLocation)) {
+                    costs[i] = 999999;
+                }
+                else {
+                    int cost = 0;
+                    // Preference tier for moving towards target
+                    if (i >=1){
+                        cost+=5;
+                    }
+                    if (i >= 3) {
+                        cost += 50;
+                    }
+                    if (i >=5 ){
+                        cost+=30;
+                    }
+                    costs[i] = cost;
+                }
+                
+                
             }
-            else stagnatingMode = false;
+            int cost = 99999;
+            Direction optimalDir = null;
+            for (int i = 0; i < dirs.length; i++) {
+                Direction dir = dirs[i];
+                if (rc.canMove(dir)) {
+                    if (costs[i] < cost) {
+                        cost = costs[i];
+                        optimalDir = dir;
+                    }
+                }
+            }
+            return optimalDir;
         }
-        for (int i = 0; i < dirs.length; i++) {
-            MapLocation newLocation = myLocation.add(dirs[i]);
-            // Movement invalid, set higher cost than starting value
-            if (!validCoords(newLocation.x, newLocation.y)) {
-                costs[i] = 999999;
-            }
-            else {
-                int cost = 0;
-                if (!stagnatingMode) cost +=(int) (rubbleWeight * Math.pow((double) rc.senseRubble(newLocation), 2.0));
-                // Preference tier for moving towards target
-                if (i >=1){
-                    cost+=5;
+        else {
+            // Ignore repel factor in beginning and when close to target
+            for (int i = 0; i < dirs.length; i++) {
+                MapLocation newLocation = myLocation.add(dirs[i]);
+                // Movement invalid, set higher cost than starting value
+                if (!validCoords(newLocation.x, newLocation.y)) {
+                    costs[i] = 999999;
                 }
-                if (i >= 3) {
-                    cost += 30;
+                else {
+                    int cost = (int) (rubbleWeight * Math.pow((double) rc.senseRubble(newLocation), 2.0));
+                    // Preference tier for moving towards target
+                    if (i >=1){
+                        cost+=5;
+                    }
+                    if (i >= 3) {
+                        cost += 30;
+                    }
+                    if (i >=5){
+                        cost+=30;
+                    }
+                    costs[i] = cost+ rng.nextInt(10); //some randomness
                 }
-                if (i >=5){
-                    cost+=30;
-                }
-                costs[i] = cost+ rng.nextInt(10); //some randomness
+                
             }
             
-        }
-        
-        String s = "";
-        for (int i= 0; i < dirs.length;i++){
-            s+=dirs[i] + " " + String.valueOf(costs[i])+ " ";
-        }
-        s+=String.valueOf(rc.canMove(toDest));
-        rc.setIndicatorString(s);
-        int cost = 99999;
-        Direction optimalDir = null;
-        for (int i = 0; i < dirs.length; i++) {
-            Direction dir = dirs[i];
-            if (rc.canMove(dir)) {
-                if (costs[i] < cost) {
-                    cost = costs[i];
-                    optimalDir = dir;
+            String s = "";
+            for (int i= 0; i < dirs.length;i++){
+                s+=String.valueOf(costs[i])+ " ";
+            }
+            s+=String.valueOf(rc.canMove(toDest));
+            rc.setIndicatorString(s);
+            int cost = 99999;
+            Direction optimalDir = null;
+            for (int i = 0; i < dirs.length; i++) {
+                Direction dir = dirs[i];
+                if (rc.canMove(dir)) {
+                    if (costs[i] < cost) {
+                        cost = costs[i];
+                        optimalDir = dir;
+                    }
                 }
             }
+            return optimalDir;
         }
-        return optimalDir;
     }
     
     public int cooldown(MapLocation loc) throws GameActionException{
@@ -484,36 +486,5 @@ public class Unit{
 
     public int getMapArea() {
         return rc.getMapHeight() * rc.getMapWidth();
-    }
-
-    // should add channels for each unit...
-    public void updateCount() throws GameActionException {
-        RobotType r = rc.getType();
-        switch (r) {
-            case MINER:
-                int num = rc.readSharedArray(CHANNEL.MINERS_ALIVE.getValue());
-                rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), num + 1);
-            case SOLDIER:
-                num = rc.readSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue());
-                rc.writeSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue(), num + 1);
-            case BUILDER:
-                num = rc.readSharedArray(CHANNEL.BUILDERS_ALIVE.getValue());
-                rc.writeSharedArray(CHANNEL.BUILDERS_ALIVE.getValue(), num + 1);
-            default:
-                break;
-            
-        }
-    }
-
-    public void broadcastTarget(MapLocation enemy) throws GameActionException {
-        int data;
-        int loc = 64 * enemy.x + enemy.y;
-        for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
-            data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
-            if (data == 0) {
-                rc.writeSharedArray(CHANNEL.TARGET.getValue() + i, loc);
-                // System.out.println("I broadcasted an enemy at " + enemy.toString());
-            }
-        }
     }
 }
