@@ -1,6 +1,7 @@
 import os
 import platform
 import random
+import sys
 
 JDK_PATH = None # set to None if u don't care / old test.py was working
 
