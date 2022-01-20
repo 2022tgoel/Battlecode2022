@@ -95,7 +95,6 @@ public class Archon extends Unit {
         }
         num_archons_alive = rc.getArchonCount();
         rc.setIndicatorString("mode: " + mode.toString() + " " + num_soldiers_hub);
-        System.out.println("numTowers: " + troopCounter[4]);
     }
 
     public boolean build(int[] build_order) throws GameActionException{
@@ -139,8 +138,8 @@ public class Archon extends Unit {
         if (underThreat()) return MODE.THREATENED;
         else if (radio.totalUnderThreat() > 0) return MODE.OTHER_THREATENED;
         else if (num_miners < numMinersInitial) return MODE.INITIAL; 
+        else if (radio.getMode() == archonNumber && troopCounter[4] > (CONSTANTS.SOLDIERS_TO_TOWERS * (double) troopCounter[2])) return MODE.SOLDIER_HUB;
         else if (troopCounter[2] < 4 && num_builders < 1) return MODE.MAKE_BUILDER;
-        else if (radio.getMode() == archonNumber && troopCounter[4] > 4 * troopCounter[2]) return MODE.SOLDIER_HUB;
         else return  MODE.DEFAULT;
     }
 
