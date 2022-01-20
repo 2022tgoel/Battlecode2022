@@ -75,7 +75,7 @@ public class Soldier extends Unit {
                 defensiveMove();
                 break;
             case FLEE:
-                moveInDirection(fleeDirection);
+                fleeLowRubble(fleeDirection);
                 break;
             default:
                 break;
@@ -304,6 +304,37 @@ public class Soldier extends Unit {
             }
         }
         return null;
+    }
+
+    public void fleeLowRubble(int[] dir) throws GameActionException {
+        MapLocation cur = rc.getLocation();
+        Direction d = cur.directionTo(new MapLocation(cur.x + dir[0], cur.y + dir[1]));
+        Direction[] sorted_dirs = {d, d.rotateLeft(), d.rotateRight(), d.rotateLeft().rotateLeft(), d.rotateRight().rotateRight(), d.opposite().rotateRight(), d.opposite().rotateLeft(), d.opposite()};
+        int a = 6;
+        int lowestCost = 100000;
+        Direction bestDir = null;
+        for (int i = 0; i < 8; i++) {
+            if (!rc.canMove(sorted_dirs[i])) continue;
+            MapLocation loc = cur.add(sorted_dirs[i]);
+
+            int cost = 0;
+            cost += (int) a * (1 + (rc.senseRubble(loc) / 10)) ;
+            // Preference tier for moving towards target
+            if (i >=1){
+                cost+=5;
+            }
+            if (i >= 3) {
+                cost += 30;
+            }
+            if (i >=5){
+                cost+=30;
+            }
+            if (cost < lowestCost) {
+                lowestCost = cost;
+                bestDir = sorted_dirs[i];
+            }
+        }
+        if (bestDir != null) rc.move(bestDir);
     }
 
     public void defensiveMove() throws GameActionException{
