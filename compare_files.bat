@@ -1,0 +1,1 @@
+git diff head:src/%2/%1.java src/%3/%1.java
