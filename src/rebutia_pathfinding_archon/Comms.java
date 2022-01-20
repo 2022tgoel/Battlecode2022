@@ -13,36 +13,6 @@ public class Comms {
         round_num = rc.getRoundNum();
     }
 
-    public int getMiners() throws GameActionException{
-        return rc.readSharedArray(CHANNEL.MINERS_ALIVE.getValue());
-    }
-
-    public void setMiners(int value) throws GameActionException{
-        rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), value);
-    }
-
-    public int getSoldiers() throws GameActionException{
-        return rc.readSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue());
-    }
-
-    public void setSoldiers(int value) throws GameActionException{
-        rc.writeSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue(), value);
-    }
-
-    public int getBuilders() throws GameActionException{
-        return rc.readSharedArray(CHANNEL.BUILDERS_ALIVE.getValue());
-    }
-
-    public void setBuilders(int value) throws GameActionException{
-        rc.writeSharedArray(CHANNEL.BUILDERS_ALIVE.getValue(), value);
-    }
-
-    public void clearCounts() throws GameActionException {
-        rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), 0);
-        rc.writeSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue(), 0);
-        rc.writeSharedArray(CHANNEL.BUILDERS_ALIVE.getValue(), 0);
-    }
-
     public void postBuild(BOT b) throws GameActionException {
         switch (b) {
             case MINER:

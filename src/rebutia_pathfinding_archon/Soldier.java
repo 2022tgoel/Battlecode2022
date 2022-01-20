@@ -47,7 +47,6 @@ public class Soldier extends Unit {
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
-        updateCount();
         attacked = attemptAttack(false);
         findTargets();
         senseMiningArea();
