@@ -136,7 +136,7 @@ public class Unit{
                 }
                 
             }
-            fuzzyMove(target);
+            moveToLocation(target);
             return true;
         }
         else {
@@ -258,141 +258,33 @@ public class Unit{
       //  fuzzyMove(dest);
         // rc.setIndicatorString("I JUST MOVED TO " + toDest[0] + " " + toDest[1]);
     }
-    /**
-     * fuzzyMove() is the method that moves to a location using a weight of how within the correct direction you are
-     *             how much rubble is in a square (rather that just thresholding rubbles)
-     *
-     * @param dest  location you wish to move to
-     *            
-     **/
-    //keep updating this so that you can see stagnation
-    static int calls = 0; //# of fuzzy move calls
-    static MapLocation last = null;
-    static MapLocation cur =null;
-    public Direction fuzzyMove(MapLocation dest) throws GameActionException{
-        return fuzzyMove(dest, 0.1); //will not go to squares with more that 20 rubble
-    }
-    public Direction fuzzyMove(MapLocation dest, double rubbleWeight) throws GameActionException{
-        MapLocation myLocation = rc.getLocation();
-        if (myLocation.equals(dest)){
-            return null; //you're already there!
-        }
-        Direction toDest = myLocation.directionTo(dest);
-        if (myLocation.add(toDest).equals(dest)){
-            if (rc.canMove(toDest)){
-                rc.move(toDest);
-            }
-        }
-        else{
-            Direction optimalDir = getBestDirectionFuzzy(toDest, rubbleWeight);
-            if (optimalDir != null) {
-                if (rc.canMove(optimalDir)){ //if you can move in the optimalDir, then you can move toDest - toDest is into a wall
-                    rc.move(optimalDir);
-                    calls++; //only considered a call if you actually move
-                    if (((calls>>3)& 1) > 0) { //just completed your 8th, 16th, etc, call
-                        last = cur;
-                        cur = myLocation;
-                    }
-                } 
-            }
-            return optimalDir;
-            // find location
 
+    public MapLocation scaleToEdge(int[] toDest){
+        MapLocation loc = rc.getLocation();
+        //scaling this directional vector so that it reaches the edge 
+        double scaleFactor = 1000;
+        if (toDest[0] > 0){
+            scaleFactor = Math.min(scaleFactor, ((double) (rc.getMapWidth() - 1 - loc.x))/((double) toDest[0]));
         }
-        return null;
-
+        else if (toDest[0] < 0){
+            scaleFactor = Math.min(scaleFactor, ((double) (loc.x))/((double) -1*toDest[0]));
+        }
+        if (toDest[1] > 0){
+            scaleFactor = Math.min(scaleFactor, ((double) (rc.getMapHeight() - 1 - loc.y))/((double) toDest[1]));
+        }
+        else if (toDest[1] < 0) {
+            scaleFactor = Math.min(scaleFactor, ((double) (loc.y))/((double) -1*toDest[1]));
+        }
+        assert(scaleFactor >=0);
+        int nx = loc.x + (int) (scaleFactor * (double) toDest[0]);
+        nx = Math.min(nx, rc.getMapWidth() - 1);
+        nx = Math.max(nx, 0);
+        int ny = loc.y + (int) (scaleFactor * (double) toDest[1]);
+        ny = Math.min(ny, rc.getMapHeight() - 1);
+        ny = Math.max(ny, 0);
+        return new MapLocation(nx, ny);
     }
 
-    public Direction getBestDirectionFuzzy(Direction toDest, double rubbleWeight) throws GameActionException{
-        MapLocation myLocation = rc.getLocation();
-        Direction[] dirs = {toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(),
-                toDest.rotateRight().rotateRight(), toDest.opposite().rotateLeft(), toDest.opposite().rotateRight(), toDest.opposite()};
-        int[] costs = new int[8];
-       // if (false) {
-        if (last!= null && (((calls>>3)&1) > 0) && (myLocation.distanceSquaredTo(last) <=4)) { //just completed your 8th, 16th, etc, call last turn
-            //you're stagnating
-            for (int i = 0; i < dirs.length; i++) {
-                MapLocation newLocation = myLocation.add(dirs[i]);
-                // Movement invalid, set higher cost than starting value
-                if (!rc.onTheMap(newLocation)) {
-                    costs[i] = 999999;
-                }
-                else {
-                    int cost = 0;
-                    // Preference tier for moving towards target
-                    if (i >=1){
-                        cost+=5;
-                    }
-                    if (i >= 3) {
-                        cost += 30;
-                    }
-                    if (i >=5 ){
-                        cost+=30;
-                    }
-                    costs[i] = cost;
-                }
-                
-                
-            }
-            int cost = 99999;
-            Direction optimalDir = null;
-            for (int i = 0; i < dirs.length; i++) {
-                Direction dir = dirs[i];
-                if (rc.canMove(dir)) {
-                    if (costs[i] < cost) {
-                        cost = costs[i];
-                        optimalDir = dir;
-                    }
-                }
-            }
-            return optimalDir;
-        }
-        else {
-            // Ignore repel factor in beginning and when close to target
-            for (int i = 0; i < dirs.length; i++) {
-                MapLocation newLocation = myLocation.add(dirs[i]);
-                // Movement invalid, set higher cost than starting value
-                if (!validCoords(newLocation.x, newLocation.y)) {
-                    costs[i] = 999999;
-                }
-                else {
-                    int cost = (int) (rubbleWeight * Math.pow((double) rc.senseRubble(newLocation), 2.0));
-                    // Preference tier for moving towards target
-                    if (i >=1){
-                        cost+=5;
-                    }
-                    if (i >= 3) {
-                        cost += 30;
-                    }
-                    if (i >=5){
-                        cost+=30;
-                    }
-                    costs[i] = cost+ rng.nextInt(10); //some randomness
-                }
-                
-            }
-            
-            String s = "";
-            for (int i= 0; i < dirs.length;i++){
-                s+=dirs[i] + " " + String.valueOf(costs[i])+ " ";
-            }
-            s+=String.valueOf(rc.canMove(toDest));
-            rc.setIndicatorString(s);
-            int cost = 99999;
-            Direction optimalDir = null;
-            for (int i = 0; i < dirs.length; i++) {
-                Direction dir = dirs[i];
-                if (rc.canMove(dir)) {
-                    if (costs[i] < cost) {
-                        cost = costs[i];
-                        optimalDir = dir;
-                    }
-                }
-            }
-            return optimalDir;
-        }
-    }
-    
     public int cooldown(MapLocation loc) throws GameActionException{
         //returns cooldown of movement
         return (int) Math.floor((1+rc.senseRubble(loc)/10.0)*rc.getType().movementCooldown);
@@ -472,11 +364,33 @@ public class Unit{
         return false;
     }
 
+    public int[] flip(int[] dir){//directional vector input
+        assert(dir.length == 2);
+        MapLocation loc = rc.getLocation();
+        int[] ret = new int[2];
+        ret[0] = dir[0];
+        ret[1] = dir[1];
+        if (loc.x < 5 && ret[0] <0){
+            ret[0] = -1*ret[0];
+        } 
+        if (loc.y < 5 && ret[1] <0){
+            ret[1] = -1*ret[1];
+        }
+        if (rc.getMapWidth()- loc.x < 5 && ret[0]>0){
+            ret[0] = -1*ret[0];
+        }
+        if (rc.getMapHeight() - loc.y < 5 && ret[1]>0){
+            ret[1] = -1*ret[1];
+        }
+        return ret;
+    }
+
+
     public MapLocation findHomeArchon() throws GameActionException {
         if (rc.getType() == RobotType.ARCHON) {
             return rc.getLocation();
         }
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam());
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(1, rc.getTeam());
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
             for (RobotInfo bot : nearbyBots) {
@@ -553,145 +467,24 @@ public class Unit{
     }
 
     public void broadcastTarget(MapLocation enemy) throws GameActionException {
-        int data;
-        int loc = 64 * enemy.x + enemy.y;
-        for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
-            data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
-            if (data == 0) {
-                rc.writeSharedArray(CHANNEL.TARGET.getValue() + i, loc);
-                System.out.println("I broadcasted an enemy at " + enemy.toString());
+        int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
+        //fuzzy location
+        int x_loc= Math.min( (int)Math.round((double)enemy.x/4.0) , 15);
+        int y_loc= Math.min( (int)Math.round((double)enemy.y/4.0) , 15);
+        for (int i= 0; i < CHANNEL.NUM_TARGETS; i++){
+            int data = rc.readSharedArray(CHANNEL.MINING1.getValue() + i);
+            int x = (data >> 4) & 15;
+            int y = data & 15;
+            if (x_loc == x && y_loc == y) {
                 return;
             }
-        }
-    }
-    /*
-    public Direction getBestDirBFS(MapLocation target) throws GameActionException {
-        MapLocation cur = rc.getLocation();
-
-        int n = 5;
-        MapLocation[][] locs = new MapLocation[2*n + 1][2*n + 1];
-        double[][] vs = new double[2*n + 1][2*n + 1];
-        Direction[][] ds = new Direction[2*n + 1][2*n + 1];
-        int[][] rubble = new int[2*n + 1][2*n + 1];
-        int num_locs = 69;
-
-        // center initialized to zero
-        locs[n][n] = cur;
-        vs[n][n] = 0;
-
-        // make a spiral
-        Direction[] dirs = {Direction.NORTH, Direction.WEST, Direction.SOUTH, Direction.EAST};
-        int index = 0;
-        int counter = 0;
-        int threshold = 1;
-
-        MapLocation l_prev = locs[n][n];
-        Direction d;
-        int[] inc;
-        int x = n;
-        int y = n;
-
-        for (int i = 0; i < num_locs; i++) {
-            counter++;
-            if (counter >= threshold) {
-                index++;
-                counter = 0;
-                if (index % 2 == 0) {
-                    threshold++;
-                }
-            }
-            d = dirs[index % 4];
-            inc = getIncrementFromDir(d);
-            x += inc[0];
-            y += inc[1];
-            locs[x][y] = l_prev.add(d);
-            vs[x][y] = 1000000;
-        }
-
-
-
-        
-    }
-
-    public static int[][] sortedPos(int rsqr) {
-        int n = (int) Math.ceil(Math.sqrt(rsqr));
-        int[][] pos = new int[(2 * n + 1) * (2 * n + 1)][2];
-        double[] dist = new double[(2 * n + 1) * (2 * n + 1)];
-        double d = 0;
-        int counter = 0;
-        for (int i = 0; i < 2 * n + 1; i++) {
-            for (int j = 0; j < 2 * n + 1; j++) {
-                // if point in circle
-                d = Math.pow((n - i), 2) + Math.pow((n - j), 2);
-                if (d <= rsqr) {
-                    pos[counter][0] = i;
-                    pos[counter][1] = j;
-                    dist[counter] = (double) d;
-                    counter++;
-                }
+            if (data == 0){
+                indToPut = i;
             }
         }
-
-        // sort pos by distance
-        for (int i = 0; i < counter; i++) {
-            for (int j = i + 1; j < counter; j++) {
-                if (dist[i] > dist[j]) {
-                    double temp = dist[i];
-                    dist[i] = dist[j];
-                    dist[j] = temp;
-                    int[] temp2 = pos[i];
-                    pos[i] = pos[j];
-                    pos[j] = temp2;
-                }
-            }
-        }
-
-        int[][] pos_new = new int[counter - 1][2];
-
-        for (int i = 1; i < counter; i++) {
-            pos_new[i - 1][0] = pos[i][0];
-            pos_new[i - 1][1] = pos[i][1];
-        }
-
-        return pos_new;
+        int value = (x_loc << 4) + y_loc; 
+        rc.setIndicatorDot(new MapLocation(x_loc*4, y_loc*4), 0, 100, 0);
+        rc.writeSharedArray(CHANNEL.TARGET.getValue() + indToPut, value);
+        System.out.println("I broadcasted an enemy at " + enemy.toString());
     }
-
-
-    public int[] getIncrementFromDir(Direction D) {
-        int[] inc = {0, 0};
-        switch (D) {
-            case NORTH:
-                inc[1] = 1;
-                break;
-            case NORTHEAST:
-                inc[0] = 1;
-                inc[1] = 1;
-                break;
-            case EAST:  
-                inc[0] = 1;
-                break;
-            case SOUTHEAST:
-                inc[0] = 1;
-                inc[1] = -1;
-                break;
-            case SOUTH:
-                inc[1] = -1;
-                break;
-            case SOUTHWEST:
-                inc[0] = -1;
-                inc[1] = -1;
-                break;
-            case WEST:
-                inc[0] = -1;
-                break;
-            case NORTHWEST:
-                inc[0] = -1;
-                inc[1] = 1;
-                break;
-            case CENTER:
-                break;
-        }
-        return inc;
-    }
-    */
 }

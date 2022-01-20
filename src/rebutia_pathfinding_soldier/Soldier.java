@@ -66,7 +66,7 @@ public class Soldier extends Unit {
                 target = null;
                 break;
             case SEARCHING_ENEMIES:
-                if (adjacentToEdge()){ //TODO: bots occasionally get stuck somehow
+                if (adjacentToEdge()) { //TODO: bots occasionally get stuck somehow
                     lastAttackDir = flip(lastAttackDir);
                 }
                 moveInDirection(lastAttackDir);
@@ -87,7 +87,7 @@ public class Soldier extends Unit {
     public void visualize() throws GameActionException {
         rc.setIndicatorString("MODE: " + mode.toString());
         if (mode == MODE.EXPLORATORY){
-            rc.setIndicatorLine(rc.getLocation(), exploreLoc, 0, 100, 0);
+            rc.setIndicatorLine(rc.getLocation(), exploreLoc, 100, 100, 0);
         }
         else if (mode == MODE.HUNTING){
             rc.setIndicatorLine(rc.getLocation(), target, 0, 100, 0);
@@ -98,7 +98,7 @@ public class Soldier extends Unit {
         else if (target != null) {
             if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: " + target.toString() + " MODE: " + mode.toString());
             else rc.setIndicatorString("TARGET: " + target.toString() + " MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
-            rc.setIndicatorLine(rc.getLocation(), target, 0, 100, 0);
+            rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 100);
         }
         else {
             if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: null MODE: " + mode.toString());
@@ -247,9 +247,9 @@ public class Soldier extends Unit {
         if (closestTarget != null) {
             if (cur.distanceSquaredTo(closestTarget) <= mapArea / 16) {
                 target = closestTarget;
-                lastAttackDir = new int[]{closestTarget.x - cur.x, closestTarget.y - cur.y};
-                // wanders in direction of target
             }
+            lastAttackDir = new int[]{closestTarget.x - cur.x, closestTarget.y - cur.y};
+            // wanders in direction of target
         }
     }
 

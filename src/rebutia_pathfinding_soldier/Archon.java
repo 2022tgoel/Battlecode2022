@@ -57,8 +57,6 @@ public class Archon extends Unit {
             radio.clearCounts();
         }
 
-        attemptHeal();
-
         MODE mode = determineMode();
         switch (mode) {
             case THREATENED:
@@ -102,6 +100,7 @@ public class Archon extends Unit {
                 build(defaultBuildOrder);
                 break;
         }
+        // attemptHeal();
         rc.setIndicatorString("mode: " + mode.toString() + " " +radio.totalUnderThreat());
     }
 

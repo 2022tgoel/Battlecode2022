@@ -28,7 +28,6 @@ public class Miner extends Unit {
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
-        updateCount();
         int amountMined = mine();
         mode = getMode(amountMined);
         switch (rank) {
@@ -39,7 +38,7 @@ public class Miner extends Unit {
                         break;
                     case MINE_DISCOVERED:
                         rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 255);
-                        fuzzyMove(target);
+                        moveToLocation(target);
                         break;
                     case FLEEING:
                         moveInDirection(fleeDirection);

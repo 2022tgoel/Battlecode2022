@@ -146,7 +146,7 @@ public class Builder extends Unit {
             }
         }
         if (target != null) {
-            fuzzyMove(target);
+            moveToLocation(target);
             rc.setIndicatorString("target: " + target.x + " " + target.y);
         }
         else moveInDirection(exploratoryDir);
