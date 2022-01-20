@@ -9,6 +9,7 @@ public class Archon extends Unit {
         INITIAL,
         DEFAULT,
         SOLDIER_HUB,
+        MAKE_BUILDER,
         THREATENED,
         OTHER_THREATENED,
         ;
@@ -74,6 +75,11 @@ public class Archon extends Unit {
                 if (round_num % num_archons_alive != archonNumber) break;
                 build(chooseInitialBuildOrder());
                 break;
+            case MAKE_BUILDER:
+                if (num_builders < 1) {
+                    build(new int[]{0,0,1});
+                }
+                break;
             case SOLDIER_HUB:
                 boolean soldier_built = build(new int[]{0, 1, 0});
                 if (soldier_built) num_soldiers_hub++;
@@ -134,6 +140,7 @@ public class Archon extends Unit {
         if (underThreat()) return MODE.THREATENED;
         else if (radio.totalUnderThreat() > 0) return MODE.OTHER_THREATENED;
         else if (num_miners < numMinersInitial) return MODE.INITIAL; 
+        else if (true) return MODE.MAKE_BUILDER;
         else if (radio.getMode() == archonNumber) return MODE.SOLDIER_HUB;
         else return  MODE.DEFAULT;
     }

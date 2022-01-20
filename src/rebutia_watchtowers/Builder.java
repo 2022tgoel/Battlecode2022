@@ -6,7 +6,8 @@ import java.util.*;
 public class Builder extends Unit {
     public enum MODE {
         HEALING,
-        BUILDING
+        BUILDING,
+        REPAIRING
     }
 
     int travel_counter = 0;
@@ -15,8 +16,11 @@ public class Builder extends Unit {
     Direction[] dirs;
     RANK rank;
     MODE mode;
+
     private int num_watchtowers = 0;
     private int num_labs = 0;
+    MapLocation target = null;
+
     private int built_units = 0;
     private int[] build_order;
     public Builder(RobotController rc) throws GameActionException {
@@ -41,20 +45,39 @@ public class Builder extends Unit {
                     case BUILDING:
                         build(build_order);
                         break;
+                    case REPAIRING:
+                        if (rc.canRepair(target)) rc.repair(target);
+                        else moveToLocation(target);
+                        target = null;
+                        break;
                 }
                 break;
             default:
                 break;
-
         }
+        // rc.setIndicatorString("RANK: " + rank.toString());
     }
 
     private int[] getBuildOrder() {
-        return new int[]{1, 0}; // laboratories, watchtowers
+        return new int[]{0, 1}; // laboratories, watchtowers
     }
 
-    public MODE getMode() {
-        return MODE.HEALING;
+    public MODE getMode() throws GameActionException{
+        if (findUnrepaired()) {
+            return MODE.REPAIRING;
+        }
+        return MODE.BUILDING;
+    }
+
+    public boolean findUnrepaired() throws GameActionException {
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam());
+        for (RobotInfo bot : nearbyBots) {
+            if (bot.type == RobotType.WATCHTOWER && bot.mode == RobotMode.PROTOTYPE) {
+                target = bot.location;
+                return true;
+            }
+        }
+        return false;
     }
 
     public int distToWall(Direction d) {
@@ -102,8 +125,8 @@ public class Builder extends Unit {
     }
 
     public void buildWatchtower(Direction dir) throws GameActionException{ 
-        if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
-            rc.buildRobot(RobotType.SOLDIER, dir);
+        if (rc.canBuildRobot(RobotType.WATCHTOWER, dir)) {
+            rc.buildRobot(RobotType.WATCHTOWER, dir);
             built_units++;
             num_watchtowers++;
         }

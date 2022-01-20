@@ -294,15 +294,18 @@ public class Soldier extends Unit {
 
     public Direction findLowRubble() throws GameActionException {
         MapLocation cur = rc.getLocation();
-        int cur_rubble = 1 + rc.senseRubble(cur) / 10;
+        int lowest_rubble = 1 + rc.senseRubble(cur) / 10;
         int rubble;
+        Direction bestDir = null;
         for (int i = 0; i < 8; i++) {
-            rubble = rc.senseRubble(cur.add(directions[i]));
-            if (rubble < cur_rubble && rc.canMove(directions[i])) {
-                return directions[i];
+            if (!rc.canMove(directions[i])) continue;
+            rubble = 1 + rc.senseRubble(cur.add(directions[i])) / 10;
+            if (rubble < lowest_rubble && rc.canMove(directions[i])) {
+                lowest_rubble = rubble;
+                bestDir = directions[i];
             }
         }
-        return null;
+        return bestDir;
     }
 
     public void fleeLowRubble(int[] dir) throws GameActionException {
