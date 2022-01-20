@@ -253,6 +253,7 @@ public class Soldier extends Unit {
                 target = closestTarget;
             }
             lastAttackDir = new int[]{closestTarget.x - cur.x, closestTarget.y - cur.y};
+            lastAttackDir = scaleToSize(lastAttackDir);
             // wanders in direction of target
         }
     }
@@ -279,13 +280,13 @@ public class Soldier extends Unit {
         // this is stupid. make it just go to the target
         dir[0] = (dir[0] + dx) / (num_soldiers + 1);
         dir[1] = (dir[1] + dy) / (num_soldiers + 1);
-        if (dir[0] != 0 || dir[1] != 0) lastAttackDir = dir;
+        if (dir[0] != 0 || dir[1] != 0) lastAttackDir = scaleToSize(dir);
         else  {
             dir = new int[]{dx, dy};
-            lastAttackDir = dir;
+            lastAttackDir = scaleToSize(dir);
         }
         if (rc.getLocation().distanceSquaredTo(target) <= 9) return;
-        else moveInDirection(dir);
+        else moveInDirection(lastAttackDir);
     }
 
     public void defensiveMove() throws GameActionException{
