@@ -5,12 +5,72 @@ import battlecode.common.*;
 public class Comms {
     RobotController rc;
     private int round_num;
+    boolean wasFirstConnection;
     public Comms(RobotController robotController) throws GameActionException{
         rc = robotController;
+    }
+    public boolean init() throws GameActionException {
+        wasFirstConnection = false;
+        // TODO: distribute init comms clearing?
+        if(rc.readSharedArray(CHANNEL.ROUND_NUM.getValue()) != rc.getRoundNum()){
+            rc.writeSharedArray(CHANNEL.ROUND_NUM.getValue(), rc.getRoundNum());
+
+            // clear robot counter update channels
+            for(BiCHANNEL bich : BiCHANNEL.values()){
+                CHANNEL ch = getCounterChannel(bich, false);
+                if(ch != null) rc.writeSharedArray(ch.getValue(), 0);
+            }
+
+            wasFirstConnection = true;
+        }
+        return wasFirstConnection;
     }
 
     public void update() {
         round_num = rc.getRoundNum();
+    }
+    public void updateCounter() throws GameActionException {
+        updateCounter(rc.getType());
+    }
+
+    public void updateCounter(RobotType rt) throws GameActionException {
+        updateCounter(getRobotCounterBiChannel(rt));
+    }
+
+    public void updateCounter(BiCHANNEL bich) throws GameActionException {
+        CHANNEL channel = getCounterChannel(bich, false);
+        int num = wasFirstConnection ? 0 : rc.readSharedArray(channel.getValue());
+        rc.writeSharedArray(channel.getValue(), num+1);
+    }
+
+    public int readCounter(RobotType rt) throws GameActionException {
+        return readCounter(getRobotCounterBiChannel(rt));
+    }
+
+    public int readCounter(BiCHANNEL bich) throws GameActionException {
+        CHANNEL channel = getCounterChannel(bich, true);
+        return rc.readSharedArray(channel.getValue());
+    }
+
+    public BiCHANNEL getRobotCounterBiChannel(RobotType rt){
+        switch(rt){
+            case MINER:
+                return BiCHANNEL.MINERS_ALIVE;
+            case SOLDIER:
+                return BiCHANNEL.SOLDIERS_ALIVE;
+            case BUILDER:
+                return BiCHANNEL.BUILDERS_ALIVE;
+            case WATCHTOWER:
+                return BiCHANNEL.TOWERS_ALIVE;
+            default:
+                return null;
+        }
+    }
+
+    public CHANNEL getCounterChannel(BiCHANNEL bich, boolean isReadMode){
+        boolean mod = rc.getRoundNum() % 2 == 0;
+        if(isReadMode) mod = !mod;
+        return mod ? bich.ch1 : bich.ch2;
     }
 
     public void postBuild(BOT b) throws GameActionException {

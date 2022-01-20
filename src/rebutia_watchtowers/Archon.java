@@ -34,7 +34,7 @@ public class Archon extends Unit {
     int[] defaultBuildOrder;
     int threatChannel = -1;
 
-    Comms radio;
+    private int[] troopCounter = {0, 0, 0, 0}; // miner, soldier, builder, sage
 
 	public Archon(RobotController rc) throws GameActionException {
         super(rc);
@@ -43,7 +43,6 @@ public class Archon extends Unit {
         num_archons_init = num_archons_alive;
         dirs = sortedDirections();
         defaultBuildOrder = chooseBuildOrder();
-        radio = new Comms(rc);
         archonNumber = radio.getArchonNum();
     }
 
@@ -56,6 +55,7 @@ public class Archon extends Unit {
         radio.clearTargetAreas();
 
         archonNumber = radio.getArchonNum();
+        troopCounter = new int[]{radio.readCounter(RobotType.MINER), radio.readCounter(RobotType.SOLDIER), radio.readCounter(RobotType.BUILDER), 0};
         // System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
         MODE mode = determineMode();
         switch (mode) {
@@ -158,8 +158,10 @@ public class Archon extends Unit {
     public boolean buildMiner(Direction dir) throws GameActionException{
         if (rc.canBuildRobot(RobotType.MINER, dir)) {
             rc.buildRobot(RobotType.MINER, dir);
+            radio.updateCounter(RobotType.MINER);
             built_units++;
             num_miners++;
+            troopCounter[0]++;
             return true;
         }
         return false;
@@ -168,8 +170,10 @@ public class Archon extends Unit {
     public boolean buildSoldier(Direction dir) throws GameActionException{ 
         if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
             rc.buildRobot(RobotType.SOLDIER, dir);
+            radio.updateCounter(RobotType.SOLDIER);
             built_units++;
             num_soldiers++;
+            troopCounter[1]++;
             return true;
         }
         return false;
@@ -179,8 +183,10 @@ public class Archon extends Unit {
         rc.setIndicatorString("here " + rc.canBuildRobot(RobotType.BUILDER, dir));
         if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
             rc.buildRobot(RobotType.BUILDER, dir);
+            radio.updateCounter(RobotType.BUILDER);
             built_units++;
             num_builders++;
+            troopCounter[2]++;
             return true;
         }
         return false;

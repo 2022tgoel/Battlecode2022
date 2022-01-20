@@ -36,7 +36,9 @@ public class Watchtower extends Unit {
     }
 
     public void run() throws GameActionException {
-    	round_num = rc.getRoundNum();
+    	super.run();
+        round_num = rc.getRoundNum();
+        radio.updateCounter();
         attacked = attemptAttack(false);
         senseMiningArea();
 
