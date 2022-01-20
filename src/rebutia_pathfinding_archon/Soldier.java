@@ -208,8 +208,8 @@ public class Soldier extends Unit {
         // System.out.println("Unit advantage: " + unit_advantage + " Ratio: " + ratio + " numFriendHits " + numFriendHits + " numEnemyHits " + numEnemyHits + "round_num " + round_num + " id " + rc.getID());
 
         if (numFriendHits + unit_advantage < numEnemyHits) {
-            double dx = -(cxse - cur.x);
-            double dy = -(cyse - cur.y);
+            double dx = -(cxse - cur.x) * 3;
+            double dy = -(cyse - cur.y) * 3;
             // more attracted
             // dx = 0.7 * dx + 0.3 * (cxsf - cur.x);
             // dy = 0.7 * dx + 0.3 * (cysf - cur.y);
@@ -276,6 +276,7 @@ public class Soldier extends Unit {
         }
         dx += (target.x - cur.x);
         dy += (target.y - cur.y);
+        // this is stupid. make it just go to the target
         dir[0] = (dir[0] + dx) / (num_soldiers + 1);
         dir[1] = (dir[1] + dy) / (num_soldiers + 1);
         if (dir[0] != 0 || dir[1] != 0) lastAttackDir = dir;
@@ -361,7 +362,11 @@ public class Soldier extends Unit {
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
         int weakestSoldierHealth = 100000;
         int weakestMinerHealth = 100000;
+        int weakestSageHealth = 100000;
+        int weakestTowerHealth = 100000;
         RobotInfo weakestSoldier = null;
+        RobotInfo weakestTower = null;
+        RobotInfo weakestSage = null;
         RobotInfo weakestMiner = null;
         RobotInfo archon = null;
         // if there are any nearby enemy robots, attack the one with the least health
@@ -379,15 +384,44 @@ public class Soldier extends Unit {
                         weakestMinerHealth = bot.health;
                     }
                 }
+                if (bot.type == RobotType.WATCHTOWER) {
+                    if (bot.health < weakestTowerHealth) {
+                        weakestTower = bot;
+                        weakestTowerHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.SAGE) {
+                    if (bot.health < weakestSageHealth) {
+                        weakestSage = bot;
+                        weakestSageHealth = bot.health;
+                    }
+                }
                 if (bot.type == RobotType.ARCHON) {
                     archon = bot;
                 }
             }
-            if (weakestSoldier != null) {
+            // make more conditional, like damaging which one would give the biggest advantage
+            if (weakestSage != null) {
+                if (rc.canAttack(weakestSage.location)) {
+                    rc.attack(weakestSage.location);
+                    target = weakestSage.location;
+                    broadcastTarget(weakestSage.location);
+                    return true;
+                }
+            }
+            else if (weakestSoldier != null) {
                 if (rc.canAttack(weakestSoldier.location)) {
                     rc.attack(weakestSoldier.location);
                     target = weakestSoldier.location;
                     broadcastTarget(weakestSoldier.location);
+                    return true;
+                }
+            }
+            else if (weakestTower != null) {
+                if (rc.canAttack(weakestTower.location)) {
+                    rc.attack(weakestTower.location);
+                    target = weakestTower.location;
+                    broadcastTarget(weakestTower.location);
                     return true;
                 }
             }
