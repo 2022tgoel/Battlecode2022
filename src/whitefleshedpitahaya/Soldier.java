@@ -55,14 +55,14 @@ public class Soldier extends Unit {
         visualize();
         switch (mode) {
             case EXPLORATORY:
-                if (soldierAheadOfMe()) {
+                if (soldierBehindMe()) {
                     if (adjacentToEdge()){
                         exploratoryDir = flip(exploratoryDir);
                         exploreLoc = scaleToEdge(exploratoryDir);
                     }
                     moveToLocation(exploreLoc);
-                    break;
                 }
+                break;
             case HUNTING:
                 huntTarget();
                 target = null;
@@ -163,18 +163,18 @@ public class Soldier extends Unit {
         }
     }
 
-    public boolean isAhead(MapLocation loc){
+    public boolean isBehind(MapLocation loc){
         MapLocation my = rc.getLocation();
         int[] v = new int[]{loc.x - my.x, loc.y - my.y};
         int dotProduct = v[0]*exploratoryDir[0] + v[1]*exploratoryDir[1];
-        return (dotProduct > 0); 
+        return (dotProduct < 0); 
     }
 
-    public boolean soldierAheadOfMe(){
+    public boolean soldierBehindMe(){
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(15, rc.getTeam());
         for (RobotInfo r : nearbyBots){
             if (r.type == RobotType.SOLDIER){
-                if (isAhead(r.location)) return true;
+                if (isBehind(r.location)) return true;
             }
         }
         return false;

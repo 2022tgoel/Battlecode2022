@@ -4,7 +4,7 @@ import battlecode.common.*;
 import java.util.*;
 // shared code across the units
 public class Unit{
-
+    Comms radio;
     RobotController rc;
     int archon_index = -1;
     RANK[] rank_map = initializeRankMap();
@@ -35,6 +35,7 @@ public class Unit{
         homeArchon = findHomeArchon();
         initializeRankMap();
         mapArea = getMapArea();
+        radio = new Comms(rc);
         mover = new Navigation(rc);
     }
 
@@ -42,7 +43,7 @@ public class Unit{
      * run() is a placeholder implemented in the specific files
      **/
     public void run() throws GameActionException{
-        
+        radio.init();
     }
     //when you sense or detect, you get an archon_index
     /**

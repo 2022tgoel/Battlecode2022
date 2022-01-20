@@ -10,7 +10,8 @@ public class Watchtower extends Unit {
         ATTACKING,
         SEARCHING_ENEMIES, //when u have already found enemies
         FLEE,
-        DEFENSIVE_RUSH
+        DEFENSIVE_RUSH,
+        NONE
         ;
     }
 
@@ -35,7 +36,9 @@ public class Watchtower extends Unit {
     }
 
     public void run() throws GameActionException {
-    	round_num = rc.getRoundNum();
+    	super.run();
+        round_num = rc.getRoundNum();
+        radio.updateCounter();
         attacked = attemptAttack(false);
         senseMiningArea();
 
@@ -43,7 +46,11 @@ public class Watchtower extends Unit {
         visualize();
         switch (mode) {
             case SEEKING:
-                huntTarget();
+                if (rc.getMode() == RobotMode.TURRET && rc.canTransform()) rc.transform();
+                if (rc.getMode() == RobotMode.PORTABLE) {
+                    if (target != null) huntTarget();
+                    else moveInDirection(lastAttackDir);
+                }
                 target = null;
                 break;
             case ATTACKING:
@@ -61,15 +68,20 @@ public class Watchtower extends Unit {
             case FLEE:
                 moveInDirection(fleeDirection);
                 break;
+            case NONE:
+                break;
             default:
                 break;
         }
+        System.out.println("Watchtower mode: " + rc.getMode().toString());
     }
 
     public void visualize() throws GameActionException {
         rc.setIndicatorString("MODE: " + mode.toString());
         if (mode == MODE.SEEKING){
-            rc.setIndicatorLine(rc.getLocation(), target, 0, 100, 0);
+            if (target != null) {
+                rc.setIndicatorLine(rc.getLocation(), target, 255, 0, 0);
+            }
         }
         if (mode == MODE.ATTACKING){
             rc.setIndicatorLine(rc.getLocation(), target, 100, 0, 0);
@@ -113,9 +125,9 @@ public class Watchtower extends Unit {
         }
 
         // Priority 3 - Hunt enemies.
+        findTargets();
         if (target != null) {
             if (rc.getLocation().distanceSquaredTo(target) > 60) {
-                if (rc.getMode() == RobotMode.TURRET && rc.canTransform()) rc.transform();
                 return MODE.SEEKING;
             }
             else {
@@ -124,9 +136,9 @@ public class Watchtower extends Unit {
             }
         }
         else if (lastAttackDir != null){
-            return MODE.SEARCHING_ENEMIES;
+            return MODE.SEEKING;
         }
-        else return null;
+        else return MODE.NONE;
     }
 
     public int[] fleeDirection() throws GameActionException{
@@ -207,9 +219,7 @@ public class Watchtower extends Unit {
 
         // finds closest target, and advances towards it.
         if (closestTarget != null) {
-            if (cur.distanceSquaredTo(closestTarget) <= mapArea / 16) {
-                target = closestTarget;
-            }
+            target = closestTarget;
             lastAttackDir = new int[]{closestTarget.x - cur.x, closestTarget.y - cur.y};
             lastAttackDir = scaleToSize(lastAttackDir);
             // wanders in direction of target
@@ -306,7 +316,7 @@ public class Watchtower extends Unit {
 
 
     public boolean attemptAttack(boolean attackMiners) throws GameActionException {
-        if (rc.getMode() == RobotMode.TURRET) return false;
+        if (rc.getMode() == RobotMode.PORTABLE) return false;
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
         int weakestSoldierHealth = 100000;
         int weakestMinerHealth = 100000;
