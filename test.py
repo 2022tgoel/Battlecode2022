@@ -1,60 +1,63 @@
 import os
 import platform
 import random
+import re
 import sys
+
+import pandas as pd
 
 JDK_PATH = None # set to None if u don't care / old test.py was working
 
 def main():
     print("Starting Tests!")
 
-    _, playerA, playerB = sys.argv
+    _, a, b = sys.argv
 
-    init(playerA, playerB)
+    init(a, b)
 
     maps = sys.argv[3:] if len(sys.argv) >= 4 else None
     if maps is None:
-        listMaps()
-        maps = getMaps()
-        # select fiftenn random maps
-        maps = random.sample(maps, 15)
+        store_maps()
+        maps = random.sample(read_maps(), 15)
 
-    play(playerA, playerB, maps)
+    play(a, b, maps)
 
-def init(playerA, playerB):
-    changeGame(playerA, playerB, 'other') # init gradle.properties before running any commands
+def init(a, b):
+    initialize_gradle_properties(a, b, 'other') # init gradle.properties before running any commands
 
-def play(playerA, playerB, maps):
-    winsA = 0
-    winsB = 0
-    dataList = []
+def play(a, b, maps):
+    a_wins = 0
+    b_wins = 0
+    history = []
 
     for map in maps:
-        print(f"{playerA} wins: {winsA} | {playerB} wins: {winsB} | running: {map}" + ' '*25, end="\r", flush=True)
-        updateA, updateB = runMatch(playerA, playerB, map)
-        winsA += updateA
-        winsB += updateB
-        dataList.append((map, updateA, updateB))
+        print(f"{a} wins: {a_wins} | {b} wins: {b_wins} | running: {map}" + ' '*25, end="\r", flush=True)
+        a_won, b_won = run_set(a, b, map)
+        a_wins += a_won
+        b_wins += b_won
+        history.append((map, a_won, b_won))
 
-    print(f"{playerA} wins: {winsA} | {playerB} wins: {winsB}", end="\n")
-    printData(playerA, playerB, dataList)
+    print(f"{a} wins: {a_wins} | {b} wins: {b_wins}")
+    print_history(a, b, history)
 
-def runMatch(playerA: str, playerB: str, map: str):
-    changeGame(playerA, playerB, map)
-    executeGame()
-    updateA1, updateB1 = parseGameResult()
-    changeGame(playerB, playerA, map)
-    executeGame()
-    updateB2, updateA2 = parseGameResult()
-    return (updateA1 + updateA2, updateB1 + updateB2)
+def run_set(a: str, b: str, map: str):
+    initialize_gradle_properties(a, b, map)
+    run_game()
+    a_won, b_won, a_df, b_df = parse_results()
+    print(a_df, b_df)
+    exit()
+    initialize_gradle_properties(b, a, map)
+    run_game()
+    b_won2, a_won2, a_df2, b_df2 = parse_results()
+    return (a_won + a_won2, b_won + b_won2)
 
-def listMaps():
-    if (platform.system() == 'Windows'):
+def store_maps():
+    if platform.system() == 'Windows':
         os.system("gradlew listMaps > test/maps.txt")
     else:
         os.system("./gradlew listMaps > test/maps.txt")
 
-def getMaps():
+def read_maps():
     maps = []
     with open("./test/maps.txt", "r") as f:
         f_iter = iter(f)
@@ -62,60 +65,72 @@ def getMaps():
         next(f_iter, None)
         for line in f_iter:
             data = line.rstrip().split()
-            if (data != []):
-                if (data[0] == "MAP:"):
+            if data:
+                if data[0] == "MAP:":
                     maps.append(data[1])
     return maps
 
-def changeGame(player1: str, player2: str, map: str):
+def initialize_gradle_properties(a: str, b: str, map: str):
     with open("gradle.properties", "w") as f:
-        f.write(f"teamA={player1}\n")
-        f.write(f"teamB={player2}\n")
-        f.write(f"packageNameA={player1}\n")
-        f.write(f"packageNameB={player2}\n")
+        f.write(f"teamA={a}\n")
+        f.write(f"teamB={b}\n")
+        f.write(f"packageNameA={a}\n")
+        f.write(f"packageNameB={b}\n")
         f.write(f"maps={map}\n")
         f.write(f"source=src\n")
         f.write(f"profilerEnabled=false\n")
-        f.write(f"outputVerbose=false\n")
+        f.write(f"outputVerbose=true\n")
         if JDK_PATH is not None:
             f.write(f"org.gradle.java.home={JDK_PATH}")
 
-def executeGame():
-    if (platform.system() == 'Windows'):
+def run_game():
+    if platform.system() == 'Windows':
         os.system("gradlew run > test/data.txt")
     else:
         os.system("./gradlew run > test/data.txt")
 
-def parseGameResult():
-    if (platform.system() == 'Windows'):
-        with open("test/data.txt", "r") as f:
-            f_iter = iter(f)
-            for line in f_iter:
-                if ('(A)' in line):
-                    return (1, 0)
-                elif ('(B)' in line):
-                    return (0, 1)
-    else:
-        with open("test/data.txt", "r") as f:
-            f_iter = iter(f)
-            for line in f_iter:
-                if (line.rstrip() == "[server] -------------------- Match Starting --------------------"):
-                    next(f_iter, None)
-                    test_line = next(f_iter, "")
-                    data = test_line.split()
-                    if (data[3] == "wins"):
-                        if (data[2] == "(A)"):
-                            return (1, 0)
-                        elif (data[2] == "(B)"):
-                            return (0, 1)
-                    elif (data[3] == "loses"):
-                        if (data[2] == "(A)"):
-                            return (0, 1)
-                        elif (data[2] == "(B)"):
-                            return (1, 0)
+def parse_results():
+    dfs = {
+        team: pd.DataFrame(columns=['round_number']) for team in 'AB'
+    }
 
-def printData(playerA, playerB, data):
-    for datum in data:
-        print(f"{datum[0]} -> {playerA}: {datum[1]} | {playerB}: {datum[2]}")
+    for v in dfs.values():
+        v.set_index('round_number', inplace=True)
+        
+    match_started = False
+    a_won = 0
+    b_won = 0
+
+    with open("test/data.txt", "r") as f:
+        i = iter(f)
+        for line in i:
+            if line.startswith('[server]'):
+                if 'match starting' in line.lower():
+                    match_started = True
+            
+                if match_started:
+                    if 'wins' in line.lower():
+                        a_won = int('(A)' in line)
+                        b_won = int('(B)' in line)
+                        break
+                    elif 'loses' in line.lower():
+                        a_won = 1 - int('(A)' in line)
+                        b_won = 1 - int('(B)' in line)
+                        break
+            elif line.startswith('[A:') or line.startswith('[B:'):
+                team, troop_type, troop_id, round_number = re.split(r'[:#@]', line[1:line.index(']')])
+                df = dfs[team]
+                troop_id = int(troop_id)
+                round_number = int(round_number)
+                message = line[line.index(']') + 2:]
+                if message[:1] == '$' and ':' in message:
+                    stat_name, stat_value = re.split(r':', message[1:])
+                    df.loc[round_number, stat_name] = stat_value
+
+    return (a_won, b_won, dfs['A'], dfs['B'])
+
+def print_history(a, b, history):
+    for name, a_won, b_won in history:
+        print(f"{name} -> {a}: {a_won} | {b}: {b_won}")
 
 main()

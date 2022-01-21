@@ -121,11 +121,6 @@ public class Miner extends Unit {
             return MODE.FLEEING;
         }
 
-        // Try moving to exploration assignment first thing
-        if (this.exploratoryGridSquare != -1) {
-            return MODE.MOVING_TO_EXPLORATION_ASSIGNMENT;
-        }
-
         // check that you should still pursue
         if (target != null) {
             boolean targetInRange = (!isBroadcast && rc.canSenseLocation(target));
@@ -138,6 +133,7 @@ public class Miner extends Unit {
                 }
             }
         }
+
         // choose location to pursue
         if (target != null) {
             return MODE.MOVING_TO_TARGET;
@@ -155,6 +151,10 @@ public class Miner extends Unit {
                 return MODE.MOVING_TO_TARGET;
             }
         }
+
+        // if (this.exploratoryGridSquare != -1) {
+        // return MODE.MOVING_TO_EXPLORATION_ASSIGNMENT;
+        // }
 
         return MODE.EXPLORING;
     }
@@ -201,13 +201,11 @@ public class Miner extends Unit {
     }
 
     public boolean occupiedWithMinerAlly(MapLocation loc) throws GameActionException {
-        if (rc.getLocation().equals(loc))
+        if (rc.getLocation().equals(loc)) {
             return false;
+        }
         RobotInfo r = rc.senseRobotAtLocation(loc);
-        if (r != null && r.team == rc.getTeam() && r.type == RobotType.MINER) {
-            return true;
-        } else
-            return false;
+        return (r != null && r.team == rc.getTeam() && r.type == RobotType.MINER);
     }
 
     public boolean isMiningArea(MapLocation loc) throws GameActionException {

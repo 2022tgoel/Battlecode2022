@@ -33,6 +33,8 @@ public class Archon extends Unit {
     int[] defaultBuildOrder;
     int threatChannel = -1;
 
+    Team team;
+
     Comms radio;
 
     public Archon(RobotController rc) throws GameActionException {
@@ -44,6 +46,7 @@ public class Archon extends Unit {
         defaultBuildOrder = chooseBuildOrder();
         radio = new Comms(rc);
         archonNumber = radio.getArchonNum();
+        team = rc.getTeam();
     }
 
     @Override
@@ -57,6 +60,11 @@ public class Archon extends Unit {
         archonNumber = radio.getArchonNum();
         // System.out.println("Archon number: " + archonNumber + " Mode num: " +
         // radio.getMode() + " " + " round: " + round_num);
+
+        if (archonNumber == 0) {
+            Analytics.log("lead", rc.getTeamLeadAmount(team) + "");
+        }
+
         MODE mode = determineMode();
         switch (mode) {
             case THREATENED:
