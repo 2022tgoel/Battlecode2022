@@ -1,5 +1,8 @@
 package rebutia_watchtowers;
 
+import java.util.Comparator;
+import java.util.PriorityQueue;
+
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
 import battlecode.common.MapLocation;
@@ -13,10 +16,8 @@ public class Watchtower extends Unit {
     enum MODE {
         BRANCH_OUT,
         SEEKING,
-        ATTACKING,
-        SEARCHING_ENEMIES, // when u have already found enemies
-        FLEE,
-        DEFENSIVE_RUSH,
+        RETURNING,
+        DEFENDING,
         NONE;
     }
 
@@ -28,10 +29,13 @@ public class Watchtower extends Unit {
     MapLocation[] threatenedArchons;
     MapLocation baseArchonLocation;
     MapLocation anchorLocation;
+    PriorityQueue<RobotInfo> enemyQueue = new PriorityQueue<RobotInfo>(10, new Comparator<RobotInfo>() {
+        public int compare(RobotInfo r1, RobotInfo r2) {
+            return r1.health - r2.health;
+        }
+    });
 
-    private int[] fleeDirection = { Integer.MAX_VALUE, Integer.MAX_VALUE };
     private int stopFleeingRound = -1;
-    private int DRUSH_RSQR = 400;
 
     // up to 10 manhattan distance yk
     public static final int ANCHOR_DISTANCE = 5;
@@ -55,7 +59,7 @@ public class Watchtower extends Unit {
         senseMiningArea();
 
         mode = determineMode();
-        visualize();
+        // moved visualize() to bottom
         switch (mode) {
             case SEEKING:
                 if (rc.getMode() == RobotMode.TURRET && rc.canTransform())
@@ -68,21 +72,6 @@ public class Watchtower extends Unit {
                 }
                 target = null;
                 break;
-            case ATTACKING:
-                attemptAttack(true);
-                break;
-            case SEARCHING_ENEMIES:
-                if (adjacentToEdge()) { // TODO: bots occasionally get stuck somehow
-                    lastAttackDir = flip(lastAttackDir);
-                }
-                moveInDirection(lastAttackDir);
-                break;
-            case DEFENSIVE_RUSH:
-                defensiveMove();
-                break;
-            case FLEE:
-                moveInDirection(fleeDirection);
-                break;
             case BRANCH_OUT:
                 // Choose an anchor location
                 if (anchorLocation == null) {
@@ -93,7 +82,6 @@ public class Watchtower extends Unit {
                     // it's okay to anchor if the space is occupied and we're within two squares of
                     // it
                     if (rc.getLocation().isWithinDistanceSquared(anchorLocation, 2)) {
-                        anchorLocation = null;
                         anchored = true;
                         break;
                     }
@@ -102,10 +90,23 @@ public class Watchtower extends Unit {
                     moveToLocation(anchorLocation);
                 }
                 break;
+            case DEFENDING:
+                // Use a priority queue for enemies
+                // This queue is based on the health of the enemy
+                while (!this.enemyQueue.isEmpty()) {
+                    RobotInfo enemy = this.enemyQueue.poll();
+                    while (rc.canAttack(enemy.location)) {
+                        rc.attack(enemy.location);
+                    }
+                }
+                break;
+            case RETURNING:
+                moveToLocation(anchorLocation);
+                break;
             case NONE:
                 break;
         }
-        // System.out.println("Watchtower mode: " + rc.getMode().toString());
+        visualize();
     }
 
     public boolean isMapLocationValid(MapLocation loc) {
@@ -132,89 +133,79 @@ public class Watchtower extends Unit {
 
     public void visualize() throws GameActionException {
         rc.setIndicatorString("MODE: " + mode.toString());
+        if (mode == MODE.BRANCH_OUT) {
+            rc.setIndicatorString("MODE: BRANCH_OUT to " + anchorLocation.toString());
+            return;
+        }
         if (mode == MODE.SEEKING) {
             if (target != null) {
                 rc.setIndicatorLine(rc.getLocation(), target, 255, 0, 0);
             }
         }
-        if (mode == MODE.ATTACKING) {
-            rc.setIndicatorLine(rc.getLocation(), target, 100, 0, 0);
-        } else if (mode == MODE.SEARCHING_ENEMIES) {
-            rc.setIndicatorString("MODE: " + mode.toString() + " DIR: " + lastAttackDir[0] + " " + lastAttackDir[1]);
-        } else if (target != null) {
-            if (mode != MODE.FLEE)
-                rc.setIndicatorString("TARGET: " + target.toString() + " MODE: " + mode.toString());
-            else
-                rc.setIndicatorString(
-                        "TARGET: " + target.toString() + " MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
+        if (target != null) {
+            rc.setIndicatorString(
+                    "TARGET: " + target.toString() + " MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
             rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 100);
         } else {
-            if (mode != MODE.FLEE)
-                rc.setIndicatorString("TARGET: null MODE: " + mode.toString());
-            else
-                rc.setIndicatorString("TARGET: null MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
+            rc.setIndicatorString("TARGET: null MODE: " + mode.toString());
         }
     }
 
     public MODE determineMode() throws GameActionException {
-        // Before doing anything, branch out from the Archon
+        this.enemyQueue.clear();
+
+        // If there are nearby enemies, attack them
+        for (RobotInfo ri : rc.senseNearbyRobots(-1, rc.getTeam().opponent())) {
+            if (!rc.isActionReady())
+                break;
+
+            if (ri.type == RobotType.SOLDIER) {
+                this.enemyQueue.add(ri);
+            }
+        }
+
+        if (!this.enemyQueue.isEmpty()) {
+            return MODE.DEFENDING;
+        }
+
+        // At the start of the game, branch out from the Archon
         // Make sure always 10 units^2 away from the Archon
         // Branch out
-        if (baseArchonLocation == null) {
-            RobotInfo[] nearby = rc.senseNearbyRobots(10, rc.getTeam());
-            for (RobotInfo ri : nearby) {
-                if (ri.type == RobotType.ARCHON) {
-                    baseArchonLocation = ri.location;
-                    return MODE.BRANCH_OUT;
+        if (!anchored) {
+            if (baseArchonLocation == null) {
+                RobotInfo[] nearby = rc.senseNearbyRobots(10, rc.getTeam());
+                for (RobotInfo ri : nearby) {
+                    if (ri.type == RobotType.ARCHON) {
+                        baseArchonLocation = ri.location;
+                        return MODE.BRANCH_OUT;
+                    }
                 }
-            }
-        } else if (baseArchonLocation.isWithinDistanceSquared(rc.getLocation(), 10)) {
-            return MODE.BRANCH_OUT;
-        }
-
-        // Priority 1 - Defend.
-        threatenedArchons = findThreatenedArchons();
-        if (threatenedArchons != null) {
-            for (MapLocation archon : threatenedArchons) {
-                if (rc.getLocation().distanceSquaredTo(archon) <= DRUSH_RSQR) {
-                    return MODE.DEFENSIVE_RUSH;
-                }
+            } else if (baseArchonLocation.isWithinDistanceSquared(rc.getLocation(), 10)) {
+                return MODE.BRANCH_OUT;
             }
         }
 
-        /*
-         * // Priority 2 - Don't die.
-         * int[] potFleeDir = fleeDirection();
-         * boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] !=
-         * Integer.MAX_VALUE);
-         * if (!validFlee && stopFleeingRound == round_num) lastAttackDir = null;
-         * if (validFlee || stopFleeingRound > round_num) {
-         * if (validFlee) fleeDirection = potFleeDir;
-         * // keep fleeing for two moves (2 rounds per move)
-         * if (stopFleeingRound <= round_num) {
-         * stopFleeingRound = round_num + 6;
-         * }
-         * return MODE.FLEE;
-         * }
-         */
+        // // Priority 3 - Hunt enemies.
+        // findTargets();
+        // if (target != null) {
+        // if (rc.getLocation().distanceSquaredTo(target) > 40) {
+        // return MODE.SEEKING;
+        // } else {
+        // Direction lowRubble = findLowRubble();
+        // if (lowRubble != null)
+        // rc.move(lowRubble);
+        // if (rc.getMode() == RobotMode.PORTABLE && rc.canTransform())
+        // rc.transform();
+        // return MODE.DEFENDING;
+        // }
+        // } else if (lastAttackDir != null) {
+        // return MODE.SEEKING;
+        // }
 
-        // Priority 3 - Hunt enemies.
-        findTargets();
-        if (target != null) {
-            if (rc.getLocation().distanceSquaredTo(target) > 40) {
-                return MODE.SEEKING;
-            } else {
-                Direction lowRubble = findLowRubble();
-                if (lowRubble != null)
-                    rc.move(lowRubble);
-                if (rc.getMode() == RobotMode.PORTABLE && rc.canTransform())
-                    rc.transform();
-                return MODE.ATTACKING;
-            }
-        } else if (lastAttackDir != null) {
-            return MODE.SEEKING;
-        } else
-            return MODE.NONE;
+        if (rc.getLocation().distanceSquaredTo(anchorLocation) > 2) {
+            return MODE.RETURNING;
+        }
+        return MODE.NONE;
     }
 
     public int[] fleeDirection() throws GameActionException {
@@ -496,6 +487,5 @@ public class Watchtower extends Unit {
     }
 
     public void initialize() {
-        DRUSH_RSQR = (int) ((double) mapArea / 9.0);
     }
 }
