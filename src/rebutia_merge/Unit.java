@@ -303,8 +303,8 @@ public class Unit {
         MapLocation dest = new MapLocation(loc.x + toDest[0], loc.y + toDest[1]);
         Direction d = mover.getBestDir(dest);
         // System.out.println(d);
-        if (d != null && rc.canMove(d)) {
-            rc.move(d);
+        if (d != null) {
+            if (rc.canMove(d)) rc.move(d);
         }
         // fuzzyMove(dest);
         // rc.setIndicatorString("I JUST MOVED TO " + toDest[0] + " " + toDest[1]);

@@ -225,7 +225,7 @@ public class Soldier extends Unit {
         double a = 6 * ratio;
         int unit_advantage = (int) (a * Math.pow(unit_difference,2) * Math.signum(unit_difference));
 
-        // System.out.println("Unit advantage: " + unit_advantage + " Ratio: " + ratio + " numFriendHits " + numFriendHits + " numEnemyHits " + numEnemyHits + "round_num " + round_num + " id " + rc.getID());
+        // System.out.println("Unit advantage: " + unit_advantage + " Ratio: " + ratio + " numFriendHits " + numFriendHits + " numEnemyHits " + numEnemyHits + "round_num " + round_num);
 
         if (numFriendHits + unit_advantage < numEnemyHits) {
             double dx = -(cxse - cur.x) * 3;
@@ -269,7 +269,7 @@ public class Soldier extends Unit {
 
         // finds closest target, and advances towards it.
         if (closestTarget != null) {
-            if (cur.distanceSquaredTo(closestTarget) <= mapArea / 16) {
+            if (cur.distanceSquaredTo(closestTarget) <= mapArea / 8) {
                 target = closestTarget;
             }
             lastAttackDir = new int[]{closestTarget.x - cur.x, closestTarget.y - cur.y};
@@ -334,7 +334,7 @@ public class Soldier extends Unit {
         Direction d = cur.directionTo(new MapLocation(cur.x + dir[0], cur.y + dir[1]));
         Direction[] sorted_dirs = {d, d.rotateLeft(), d.rotateRight(), d.rotateLeft().rotateLeft(), d.rotateRight().rotateRight(), d.opposite().rotateRight(), d.opposite().rotateLeft(), d.opposite()};
         int a = 6;
-        int lowestCost = a * (1 + (rc.senseRubble(rc.getLocation()) / 10)) + 60;
+        int lowestCost = a * (1 + (rc.senseRubble(rc.getLocation()) / 10)) + 50;
         Direction bestDir = null;
         for (int i = 0; i < 8; i++) {
             if (!rc.canMove(sorted_dirs[i])) continue;
@@ -347,7 +347,7 @@ public class Soldier extends Unit {
                 cost+=5;
             }
             if (i >= 3) {
-                cost += 30;
+                cost += 15;
             }
             if (i >=5){
                 cost+=30;

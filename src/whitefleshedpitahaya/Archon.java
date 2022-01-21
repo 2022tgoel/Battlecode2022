@@ -57,7 +57,7 @@ public class Archon extends Unit {
         archonNumber = radio.getArchonNum();
         updateAmountMined();
 
-     //   System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
+        //System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
         MODE mode = determineMode();
         
         switch (mode) {

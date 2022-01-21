@@ -73,8 +73,7 @@ public class Archon extends Unit {
             desiredNumMiners = determineMinerNum(leadEstimate);
         }
 
-        System.out.println(
-                "Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
+        //System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
         MODE mode = determineMode();
 
         switch (mode) {
@@ -119,11 +118,8 @@ public class Archon extends Unit {
                 }
             case DEFAULT:
                 attemptHeal();
-                if (round_num % num_archons_alive != archonNumber || round_num % 4 != 0)
-                    break;
-                // if (b){
-                build(new int[] { 4, 1, 0 }); // defaultBuildOrder);
-                // }
+                if (round_num % num_archons_alive != archonNumber || round_num % 5 != 0) break;
+                build(new int[] {1, 0, 0}); // defaultBuildOrder);
                 break;
         }
         num_archons_alive = rc.getArchonCount();
