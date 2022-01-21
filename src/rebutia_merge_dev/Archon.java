@@ -108,6 +108,11 @@ public class Archon extends Unit {
                 "Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
         MODE mode = determineMode();
 
+        int expectedMinerCount = EXPLORATORY_MINER_COUNT
+                + (int) (MINERS_PER_DEPOSIT * activeMiningAreaGridSquaresCount);
+
+        boolean shouldBuildMiners = (troopCounter[0] < expectedMinerCount);
+
         switch (mode) {
             case THREATENED:
                 threatChannel = radio.sendThreatAlert();
@@ -124,8 +129,9 @@ public class Archon extends Unit {
             case SOLDIER_HUB:
                 if (b) {
                     boolean soldier_built = build(new int[] { 0, 1, 0 });
-                    if (soldier_built)
+                    if (soldier_built) {
                         num_soldiers_hub++;
+                    }
                 } else {
                     attemptHeal();
                 }
@@ -142,13 +148,7 @@ public class Archon extends Unit {
                 if (round_num % num_archons_alive != archonNumber || round_num % 4 != 0)
                     break;
 
-                // This is a lot of miners!
-                int expectedMinerCount = EXPLORATORY_MINER_COUNT
-                        + (int) (MINERS_PER_DEPOSIT * activeMiningAreaGridSquaresCount);
-
-                boolean shouldBuildMiners = (troopCounter[0] < expectedMinerCount);
-
-                build(new int[] { shouldBuildMiners ? 4 : 1, 1, 0 });
+                build(new int[] { 4, shouldBuildMiners ? 0 : 1, 0 });
 
                 break;
         }
