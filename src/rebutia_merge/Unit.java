@@ -104,10 +104,6 @@ public class Unit {
         return found;
     }
 
-    public double cooldownMultiplier(MapLocation loc) throws GameActionException {
-        return (1.0 + (double) rc.senseRubble(loc) / 10.0);
-    }
-
     public int broadcastArchon(MapLocation loc) throws GameActionException {
         // check that the loc is not already broadcasted
         int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
