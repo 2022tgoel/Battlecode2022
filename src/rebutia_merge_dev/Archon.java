@@ -34,7 +34,6 @@ public class Archon extends Unit {
 
     int num_soldiers_hub = 0;
 
-    int[] defaultBuildOrder;
     int threatChannel = -1;
 
     private int[] troopCounter = { 0, 0, 0, 0, 0 }; // miner, soldier, builder, sage, watchtower
@@ -42,6 +41,7 @@ public class Archon extends Unit {
     private boolean initial = true;
 
     static final double MINERS_PER_DEPOSIT = 2;
+    static final int EXPLORATORY_MINER_COUNT = 5;
     static final int DEPOSIT_SIZE = 6;
 
     public Archon(RobotController rc) throws GameActionException {
@@ -50,7 +50,6 @@ public class Archon extends Unit {
         num_archons_alive = rc.getArchonCount();
         num_archons_init = num_archons_alive;
         dirs = sortedDirections();
-        defaultBuildOrder = chooseBuildOrder();
         archonNumber = radio.getArchonNum();
         radio.initalizeArchonLoc(archonNumber, rc.getLocation());
         addLeadEstimate();
@@ -58,8 +57,8 @@ public class Archon extends Unit {
         // designate MINERS_PER_DEPOSIT miners per plentiful grid square, and then add
         // some for exploration
         // deposit size that can be handled by a miner: 6x6
-        int depositsX = (int) Math.ceil(rc.getMapWidth() / DEPOSIT_SIZE);
-        int depositsY = (int) Math.ceil(rc.getMapHeight() / DEPOSIT_SIZE);
+        int depositsX = (int) Math.ceil((double) rc.getMapWidth() / DEPOSIT_SIZE);
+        int depositsY = (int) Math.ceil((double) rc.getMapHeight() / DEPOSIT_SIZE);
 
         miningAreaGridSquares = new boolean[depositsX][depositsY];
     }
@@ -149,7 +148,12 @@ public class Archon extends Unit {
                     break;
 
                 // This is a lot of miners!
-                build(new int[] { 4, 1, 0 });
+                int expectedMinerCount = EXPLORATORY_MINER_COUNT
+                        + (int) (MINERS_PER_DEPOSIT * activeMiningAreaGridSquaresCount);
+
+                boolean shouldBuildMiners = (troopCounter[0] < expectedMinerCount);
+
+                build(new int[] { shouldBuildMiners ? 4 : 1, 1, 0 });
 
                 break;
         }
@@ -351,16 +355,6 @@ public class Archon extends Unit {
                 Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST };
         Arrays.sort(dirs, (a, b) -> distToWall(b) - distToWall(a));
         return dirs;
-    }
-
-    public int[] chooseBuildOrder() {
-        if (mapArea < 1400) {
-            return new int[] { 1, 6, 0 }; // miners, soldiers, builders
-        } else if (mapArea < 2200) {
-            return new int[] { 1, 6, 0 }; // miners, soldiers, builders
-        } else {
-            return new int[] { 1, 6, 0 }; // miners, soldiers, builders
-        }
     }
 
     public int[] chooseInitialBuildOrder() throws GameActionException {
