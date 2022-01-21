@@ -334,7 +334,7 @@ public class Soldier extends Unit {
         Direction d = cur.directionTo(new MapLocation(cur.x + dir[0], cur.y + dir[1]));
         Direction[] sorted_dirs = {d, d.rotateLeft(), d.rotateRight(), d.rotateLeft().rotateLeft(), d.rotateRight().rotateRight(), d.opposite().rotateRight(), d.opposite().rotateLeft(), d.opposite()};
         int a = 6;
-        int lowestCost = 100000;
+        int lowestCost = a * (1 + (rc.senseRubble(rc.getLocation()) / 10)) + 60;
         Direction bestDir = null;
         for (int i = 0; i < 8; i++) {
             if (!rc.canMove(sorted_dirs[i])) continue;
