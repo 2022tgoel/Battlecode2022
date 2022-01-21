@@ -55,9 +55,9 @@ public class Archon extends Unit {
         radio.clearTargetAreas();
 
         archonNumber = radio.getArchonNum();
-        boolean b = checkForResources();
+        updateAmountMined();
 
-        System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
+     //   System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
         MODE mode = determineMode();
         
         switch (mode) {
@@ -78,7 +78,7 @@ public class Archon extends Unit {
                 build(chooseInitialBuildOrder());
                 break;
             case SOLDIER_HUB:
-                if (b) {
+                if (checkForResources(RobotType.SOLDIER.buildCostLead)) {
                     boolean soldier_built = build(new int[]{0, 1, 0});
                     if (soldier_built) num_soldiers_hub++;
                 }
@@ -102,7 +102,7 @@ public class Archon extends Unit {
                 break;
         }
         num_archons_alive = rc.getArchonCount();
-        rc.setIndicatorString("mode: " + mode.toString() + " " + leadLastCall + " ");
+        rc.setIndicatorString("mode: " + mode.toString() + " " + leadLastCall + " " + getAvgMined());
     }
 
     public boolean build(int[] build_order) throws GameActionException{
@@ -203,30 +203,36 @@ public class Archon extends Unit {
         return false;
     }
     //////////////////////////////////////////////////////////////////////
+    static int curLead = 200;
     static int leadLastCall = 200;
     static int[] amountMined = new int[10]; //10 turn avg
-    public boolean checkForResources() throws GameActionException { //CHANGE TO INCORPORATE GOLD ONCE WE USE SAGES
-        //calculated if you'll have enough resources to build something anytime soon 
-        int curLead = rc.getTeamLeadAmount(rc.getTeam());
+    public void updateAmountMined(){
+        curLead = rc.getTeamLeadAmount(rc.getTeam());
         int minedLastCall = curLead - leadLastCall;
-        amountMined[round_num % 10] = minedLastCall;
+        amountMined[round_num % amountMined.length] = minedLastCall;
         leadLastCall = curLead;
-        if (curLead >= 50 || round_num < 10){
+    }
+
+    public int getAvgMined(){
+        int avg = 0;
+        for (int i = 0; i < amountMined.length; i++) avg += amountMined[i];
+        avg = avg / amountMined.length;
+        return avg;
+        
+    }
+
+    public boolean checkForResources(int buildCost) throws GameActionException { //CHANGE TO INCORPORATE GOLD ONCE WE USE SAGES
+        if (curLead >= buildCost || round_num < 10){
             return true;
         }
         else {
-            int avg = 0;
-            for (int i = 0; i < 10; i++) avg += amountMined[i];
-            avg = avg / 10;
-            int numTurnsToResources = (50 - curLead)/avg;
+            int numTurnsToResources = (buildCost - curLead)/getAvgMined();
             int numTurnsToAct = rc.getActionCooldownTurns() + (int) ((cooldownMultiplier(rc.getLocation()) * rc.getType().actionCooldown)/10);
             if (numTurnsToResources > numTurnsToAct) {
                 return false;
             }
             else return true;
         }
-
-       
     }
 
     public MapLocation getAvgEnemyLocation() throws GameActionException {
