@@ -5,8 +5,8 @@ import java.util.*;
 
 public class Archon extends Unit {
 
-    enum MODE {
-        INITIAL,
+    private enum MODE {
+        // INITIAL,
         DEFAULT,
         SOLDIER_HUB,
         MAKE_BUILDER,
@@ -37,11 +37,9 @@ public class Archon extends Unit {
     int threatChannel = -1;
 
     private int[] troopCounter = { 0, 0, 0, 0, 0 }; // miner, soldier, builder, sage, watchtower
-    private int desiredNumMiners = 1000;
-    private boolean initial = true;
 
     static final double MINERS_PER_DEPOSIT = 2;
-    static final int EXPLORATORY_MINER_COUNT = 5;
+    static final int EXPLORATORY_MINER_COUNT = 3;
     static final int DEPOSIT_SIZE = 6;
 
     public Archon(RobotController rc) throws GameActionException {
@@ -57,10 +55,12 @@ public class Archon extends Unit {
         // designate MINERS_PER_DEPOSIT miners per plentiful grid square, and then add
         // some for exploration
         // deposit size that can be handled by a miner: 6x6
-        int depositsX = (int) Math.ceil((double) rc.getMapWidth() / DEPOSIT_SIZE);
-        int depositsY = (int) Math.ceil((double) rc.getMapHeight() / DEPOSIT_SIZE);
+        // int depositsX = (int) Math.ceil((double) rc.getMapWidth() / DEPOSIT_SIZE) +
+        // 5;
+        // int depositsY = (int) Math.ceil((double) rc.getMapHeight() / DEPOSIT_SIZE) +
+        // 5;
 
-        miningAreaGridSquares = new boolean[depositsX][depositsY];
+        miningAreaGridSquares = new boolean[12][12];
     }
 
     private void recordNewMiningDeposits() throws GameActionException {
@@ -99,10 +99,10 @@ public class Archon extends Unit {
                 radio.readCounter(RobotType.WATCHTOWER)
         };
 
-        if (round_num == 2) {
-            int leadEstimate = radio.getLeadEstimate();
-            desiredNumMiners = determineMinerNum(leadEstimate);
-        }
+        // if (round_num == 2) {
+        // int leadEstimate = radio.getLeadEstimate();
+        // desiredNumMiners = determineMinerNum(leadEstimate);
+        // }
 
         System.out.println(
                 "Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
@@ -120,11 +120,6 @@ public class Archon extends Unit {
                 for (Direction dir : enemyDirs) {
                     buildSoldier(dir);
                 }
-                break;
-            case INITIAL:
-                if (round_num % num_archons_alive != archonNumber)
-                    break;
-                build(chooseInitialBuildOrder());
                 break;
             case SOLDIER_HUB:
                 if (b) {
@@ -162,6 +157,7 @@ public class Archon extends Unit {
     }
 
     public boolean build(int[] build_order) throws GameActionException {
+        System.out.println("building at rate " + build_order[0] + ", " + build_order[1] + ", " + build_order[2]);
         boolean unit_built = false;
         for (Direction dir : dirs) {
             switch (counter % 3) {
@@ -192,20 +188,20 @@ public class Archon extends Unit {
     }
 
     public MODE determineMode() throws GameActionException {
-        if (underThreat())
+        if (underThreat()) {
             return MODE.THREATENED;
-        else if (radio.totalUnderThreat() > 0)
+        } else if (radio.totalUnderThreat() > 0) {
             return MODE.OTHER_THREATENED;
-        else if (troopCounter[0] < desiredNumMiners && initial == true)
-            return MODE.INITIAL;
-        else {
-            initial = false;
+        }
+        // else {
+        // // initial = false;
+        // }
+
+        if (radio.getMode() == archonNumber && round_num > 25) {
+            return MODE.SOLDIER_HUB;
         }
 
-        if (radio.getMode() == archonNumber)
-            return MODE.SOLDIER_HUB;
-        else
-            return MODE.DEFAULT;
+        return MODE.DEFAULT;
     }
 
     public int determineMinerNum(int leadEstimate) throws GameActionException {
@@ -300,10 +296,10 @@ public class Archon extends Unit {
             for (int i = 0; i < 10; i++)
                 avg += amountMined[i];
             avg = avg / 10;
-            int numTurnsToResources = (50 - curLead) / avg;
             if (avg == 0) {
                 return false;
             }
+            int numTurnsToResources = (50 - curLead) / avg;
             int numTurnsToAct = rc.getActionCooldownTurns()
                     + (int) ((cooldownMultiplier(rc.getLocation()) * rc.getType().actionCooldown) / 10);
             if (numTurnsToResources > numTurnsToAct) {
@@ -358,7 +354,7 @@ public class Archon extends Unit {
     }
 
     public int[] chooseInitialBuildOrder() throws GameActionException {
-        return new int[] { 1, 0, 0 };
+        return new int[] { 2, 1, 0 };
     }
 
     public void attemptHeal() throws GameActionException {
