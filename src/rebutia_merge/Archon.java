@@ -188,18 +188,22 @@ public class Archon extends Unit {
     }
 
     public int determineMinerNum(int leadEstimate) throws GameActionException {
-        int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
+        int sizeBracket = (int) Math.ceil((double) mapArea / 1000.0);
         int numMinersMap = sizeBracket * 2;
         if (leadEstimate > 2000) {
             return 12 + numMinersMap;
-        } else if (leadEstimate > 1000) {
-            return 10 + numMinersMap;
-        } else if (leadEstimate > 500) {
+        }
+        else if (leadEstimate > 1000) {
             return 8 + numMinersMap;
-        } else if (leadEstimate > 100) {
-            return 7 + numMinersMap;
-        } else {
-            return 6 + numMinersMap;
+        }
+        else if (leadEstimate > 500) {
+            return 4 + numMinersMap;
+        }
+        else if (leadEstimate > 100) {
+            return 2 + numMinersMap;
+        }
+        else {
+            return 2 + numMinersMap;
         }
     }
 
