@@ -230,7 +230,7 @@ public class Archon extends Unit {
             return true;
         }
         else {
-            int numTurnsToResources = (int)((double)(buildCost - curLead)/ (getAvgMined()+0.001));
+            int numTurnsToResources = (buildCost - curLead)/ (getAvgMined());
             int numTurnsToAct = rc.getActionCooldownTurns() + (int) ((cooldownMultiplier(rc.getLocation()) * rc.getType().actionCooldown)/10);
             if (numTurnsToResources > numTurnsToAct) {
                 return false;
