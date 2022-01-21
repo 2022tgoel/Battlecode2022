@@ -210,7 +210,6 @@ public class Archon extends Unit {
             radio.updateCounter(RobotType.MINER);
             built_units++;
             num_miners++;
-            leadLastCall -= RobotType.MINER.buildCostLead;
             troopCounter[0]++;
             return true;
         }
@@ -223,7 +222,6 @@ public class Archon extends Unit {
             radio.updateCounter(RobotType.SOLDIER);
             built_units++;
             num_soldiers++;
-            leadLastCall -= RobotType.SOLDIER.buildCostLead;
             troopCounter[1]++;
             return true;
         }
@@ -236,7 +234,6 @@ public class Archon extends Unit {
             radio.updateCounter(RobotType.BUILDER);
             built_units++;
             num_builders++;
-            leadLastCall -= RobotType.BUILDER.buildCostLead;
             troopCounter[2]++;
             return true;
         }
@@ -258,7 +255,7 @@ public class Archon extends Unit {
     static int[] amountMined = new int[10]; //10 turn avg
     public void updateAmountMined(){
         curLead = rc.getTeamLeadAmount(rc.getTeam());
-        if (curLead > leadLastCall){ //otherwise, something was spent
+        if (curLead >= leadLastCall){ //otherwise, something was spent
             int minedLastCall = curLead - leadLastCall;
             amountMined[round_num % amountMined.length] = minedLastCall;
         }
@@ -267,8 +264,8 @@ public class Archon extends Unit {
 
     public double getAvgMined(){
         double avg = 0;
-        for (int i = 0; i < amountMined.length; i++) avg += amountMined[i];
-        avg = avg / amountMined.length;
+        for (int i = 0; i < amountMined.length; i++) avg += (double)amountMined[i];
+        avg = avg / (double) amountMined.length;
         return avg;
         
     }
@@ -278,7 +275,7 @@ public class Archon extends Unit {
             return true;
         }
         else {
-            int numTurnsToResources = (int) (((double) buildCost - (double) curLead)/ (getAvgMined()));
+            int numTurnsToResources = (int)(((double)buildCost - (double)curLead)/ Math.max(getAvgMined(), 2.0));
             int numTurnsToAct = rc.getActionCooldownTurns() + (int) ((cooldownMultiplier(rc.getLocation()) * rc.getType().actionCooldown)/10);
             if (numTurnsToResources > numTurnsToAct) {
                 return false;
