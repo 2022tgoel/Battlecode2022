@@ -44,8 +44,6 @@ def run_set(a: str, b: str, map: str):
     initialize_gradle_properties(a, b, map)
     run_game()
     a_won, b_won, a_df, b_df = parse_results()
-    print(a_df, b_df)
-    exit()
     initialize_gradle_properties(b, a, map)
     run_game()
     b_won2, a_won2, a_df2, b_df2 = parse_results()
