@@ -157,30 +157,34 @@ public class Archon extends Unit {
     }
 
     public MODE determineMode() throws GameActionException {
-        int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
-        int numMinersInitial = Math.max((sizeBracket*3)/num_archons_init, 1);
         if (underThreat()) return MODE.THREATENED;
         else if (radio.totalUnderThreat() > 0) return MODE.OTHER_THREATENED;
-        else if (num_miners < numMinersInitial) return MODE.INITIAL; 
-        else if (radio.getMode() == archonNumber) return MODE.SOLDIER_HUB;
+        else if (troopCounter[0] < desiredNumMiners && initial == true) return MODE.INITIAL; 
+        else {
+            initial = false;
+        }
+
+        if (radio.getMode() == archonNumber) return MODE.SOLDIER_HUB;
         else return  MODE.DEFAULT;
     }
 
     public int determineMinerNum(int leadEstimate) throws GameActionException {
+        int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
+        int numMinersMap = sizeBracket * 2;
         if (leadEstimate > 2000) {
-            return 12;
+            return 12 + numMinersMap;
         }
         else if (leadEstimate > 1000) {
-            return 10;
+            return 10 + numMinersMap;
         }
         else if (leadEstimate > 500) {
-            return 8;
+            return 8 + numMinersMap;
         }
         else if (leadEstimate > 100) {
-            return 6;
+            return 7 + numMinersMap;
         }
         else {
-            return 4;
+            return 6 + numMinersMap;
         }
     }
 
@@ -358,7 +362,7 @@ public class Archon extends Unit {
             }
         }
     }
-    
+
     public void addLeadEstimate() throws GameActionException {
         MapLocation[] leadLocs = rc.senseNearbyLocationsWithLead();
         MapLocation[] friendlyArchonLocs = radio.getFriendlyArchons(num_archons_alive);
