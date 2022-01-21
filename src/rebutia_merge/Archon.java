@@ -73,99 +73,113 @@ public class Archon extends Unit {
             desiredNumMiners = determineMinerNum(leadEstimate);
         }
 
-        System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
+        System.out.println(
+                "Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
         MODE mode = determineMode();
 
         switch (mode) {
             case THREATENED:
                 threatChannel = radio.sendThreatAlert();
                 int tot = radio.totalUnderThreat();
-                
-                if (round_num % tot !=threatChannel){ //alternate between those under threat
+
+                if (tot != 0 && round_num % tot != threatChannel) { // alternate between those under threat
                     break;
                 }
                 Direction[] enemyDirs = getEnemyDirs();
-                for (Direction dir: enemyDirs) {
+                for (Direction dir : enemyDirs) {
                     buildSoldier(dir);
                 }
                 break;
             case INITIAL:
-                if (round_num % num_archons_alive != archonNumber) break;
+                if (round_num % num_archons_alive != archonNumber)
+                    break;
                 build(chooseInitialBuildOrder());
                 break;
             case SOLDIER_HUB:
                 if (b) {
-                    boolean soldier_built = build(new int[]{0, 1, 0});
-                    if (soldier_built) num_soldiers_hub++;
-                }
-                else {
+                    boolean soldier_built = build(new int[] { 0, 1, 0 });
+                    if (soldier_built)
+                        num_soldiers_hub++;
+                } else {
                     attemptHeal();
-                 //   rc.setIndicatorString("ATTEMPTING HEALING");
+                    // rc.setIndicatorString("ATTEMPTING HEALING");
                 }
                 if (num_soldiers_hub > 20) {
                     radio.broadcastMode((archonNumber + 1) % num_archons_alive);
                     num_soldiers_hub = 0;
                 }
                 break;
-            case OTHER_THREATENED: 
-                if (rc.getTeamLeadAmount(rc.getTeam()) < 600) break; //save for attacked archons
+            case OTHER_THREATENED:
+                if (rc.getTeamLeadAmount(rc.getTeam()) < 600)
+                    break; // save for attacked archons
             case DEFAULT:
                 attemptHeal();
-                if (round_num % num_archons_alive != archonNumber || round_num % 4 != 0) break;
-                //if (b){
-                build(new int[]{4, 1, 0}); //defaultBuildOrder);
-                //}
+                if (round_num % num_archons_alive != archonNumber || round_num % 4 != 0)
+                    break;
+                // if (b){
+                build(new int[] { 4, 1, 0 }); // defaultBuildOrder);
+                // }
                 break;
         }
         num_archons_alive = rc.getArchonCount();
         rc.setIndicatorString("mode: " + mode.toString() + " " + leadLastCall + " ");
     }
 
-    public boolean build(int[] build_order) throws GameActionException{
+    public boolean build(int[] build_order) throws GameActionException {
         boolean unit_built = false;
-        for (Direction dir: dirs) {
+        for (Direction dir : dirs) {
             switch (counter % 3) {
                 case 0:
                     if (built_units < build_order[counter % 3]) {
-                       // rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + build_order[counter % 3]);
+                        // rc.setIndicatorString("Trying to build a miner" + " built_units: " +
+                        // built_units + " " + build_order[counter % 3]);
                         unit_built = buildMiner(dir);
-                        // System.out.println("MINER BUILT: " + unit_built + " Roundnum: " + rc.getRoundNum());
+                        // System.out.println("MINER BUILT: " + unit_built + " Roundnum: " +
+                        // rc.getRoundNum());
                     }
                     break;
                 case 1:
                     if (built_units < build_order[counter % 3]) {
-                   // rc.setIndicatorString("Trying to build a soldier" + " built_units: " + built_units + " " + build_order[counter % 3]);
-                    unit_built = buildSoldier(dir);
-                    // System.out.println("SOLDIER BUILT: " + unit_built);
+                        // rc.setIndicatorString("Trying to build a soldier" + " built_units: " +
+                        // built_units + " " + build_order[counter % 3]);
+                        unit_built = buildSoldier(dir);
+                        // System.out.println("SOLDIER BUILT: " + unit_built);
                     }
                     break;
                 case 2:
                     if (built_units < build_order[counter % 3]) {
-                      //  rc.setIndicatorString("Trying to build a builder" + " built_units: " + built_units + " " + build_order[counter % 3]);
+                        // rc.setIndicatorString("Trying to build a builder" + " built_units: " +
+                        // built_units + " " + build_order[counter % 3]);
                         unit_built = buildBuilder(dir);
                         // System.out.println("BUILDER BUILT: " + unit_built);
                     }
                     break;
             }
-            if (built_units >= build_order[counter % 3]){
+            if (built_units >= build_order[counter % 3]) {
                 counter++;
                 built_units = 0;
             }
-            if (unit_built) return true;
+            if (unit_built)
+                return true;
         }
         return false;
     }
 
     public MODE determineMode() throws GameActionException {
-        if (underThreat()) return MODE.THREATENED;
-        else if (radio.totalUnderThreat() > 0) return MODE.OTHER_THREATENED;
-        else if (troopCounter[0] < desiredNumMiners && initial == true) return MODE.INITIAL; 
+        if (underThreat())
+            return MODE.THREATENED;
+        else if (radio.totalUnderThreat() > 0)
+            return MODE.OTHER_THREATENED;
+        else if (troopCounter[0] < desiredNumMiners && initial == true)
+            return MODE.INITIAL;
         else {
             initial = false;
         }
 
-        if (radio.getMode() == archonNumber) return MODE.SOLDIER_HUB;
-        else return  MODE.DEFAULT;
+        if (radio.getMode() == archonNumber)
+            return MODE.SOLDIER_HUB;
+        else
+            return MODE.DEFAULT;
     }
 
     public int determineMinerNum(int leadEstimate) throws GameActionException {
@@ -173,22 +187,18 @@ public class Archon extends Unit {
         int numMinersMap = sizeBracket * 2;
         if (leadEstimate > 2000) {
             return 12 + numMinersMap;
-        }
-        else if (leadEstimate > 1000) {
+        } else if (leadEstimate > 1000) {
             return 10 + numMinersMap;
-        }
-        else if (leadEstimate > 500) {
+        } else if (leadEstimate > 500) {
             return 8 + numMinersMap;
-        }
-        else if (leadEstimate > 100) {
+        } else if (leadEstimate > 100) {
             return 7 + numMinersMap;
-        }
-        else {
+        } else {
             return 6 + numMinersMap;
         }
     }
 
-    public boolean underThreat() throws GameActionException{
+    public boolean underThreat() throws GameActionException {
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         if (enemies.length > 0) {
             broadcastTarget(enemies[0].location);
@@ -196,9 +206,9 @@ public class Archon extends Unit {
         }
         return false;
     }
-    
+
     /////////////////////////////////////////////////////////////////////
-    public boolean buildMiner(Direction dir) throws GameActionException{
+    public boolean buildMiner(Direction dir) throws GameActionException {
         if (rc.canBuildRobot(RobotType.MINER, dir)) {
             rc.buildRobot(RobotType.MINER, dir);
             radio.updateCounter(RobotType.MINER);
@@ -211,7 +221,7 @@ public class Archon extends Unit {
         return false;
     }
 
-    public boolean buildSoldier(Direction dir) throws GameActionException{ 
+    public boolean buildSoldier(Direction dir) throws GameActionException {
         if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
             rc.buildRobot(RobotType.SOLDIER, dir);
             radio.updateCounter(RobotType.SOLDIER);
@@ -237,40 +247,42 @@ public class Archon extends Unit {
         return false;
     }
 
-    public boolean builderInRange() throws GameActionException{
+    public boolean builderInRange() throws GameActionException {
         RobotInfo[] allies = rc.senseNearbyRobots(RobotType.BUILDER.actionRadiusSquared, rc.getTeam());
         for (RobotInfo r : allies) {
-            if (r.type == RobotType.BUILDER){
+            if (r.type == RobotType.BUILDER) {
                 return true;
             }
         }
         return false;
     }
+
     //////////////////////////////////////////////////////////////////////
     static int leadLastCall = 200;
-    static int[] amountMined = new int[10]; //10 turn avg
-    public boolean checkForResources() throws GameActionException { //CHANGE TO INCORPORATE GOLD ONCE WE USE SAGES
-        //calculated if you'll have enough resources to build something anytime soon 
+    static int[] amountMined = new int[10]; // 10 turn avg
+
+    public boolean checkForResources() throws GameActionException { // CHANGE TO INCORPORATE GOLD ONCE WE USE SAGES
+        // calculated if you'll have enough resources to build something anytime soon
         int curLead = rc.getTeamLeadAmount(rc.getTeam());
         int minedLastCall = curLead - leadLastCall;
         amountMined[round_num % 10] = minedLastCall;
         leadLastCall = curLead;
-        if (curLead >= 50 || round_num < 10){
+        if (curLead >= 50 || round_num < 10) {
             return true;
-        }
-        else {
+        } else {
             int avg = 0;
-            for (int i = 0; i < 10; i++) avg += amountMined[i];
+            for (int i = 0; i < 10; i++)
+                avg += amountMined[i];
             avg = avg / 10;
-            int numTurnsToResources = (50 - curLead)/avg;
-            int numTurnsToAct = rc.getActionCooldownTurns() + (int) ((cooldownMultiplier(rc.getLocation()) * rc.getType().actionCooldown)/10);
+            int numTurnsToResources = (50 - curLead) / avg;
+            int numTurnsToAct = rc.getActionCooldownTurns()
+                    + (int) ((cooldownMultiplier(rc.getLocation()) * rc.getType().actionCooldown) / 10);
             if (numTurnsToResources > numTurnsToAct) {
                 return false;
-            }
-            else return true;
+            } else
+                return true;
         }
 
-       
     }
 
     public MapLocation getAvgEnemyLocation() throws GameActionException {
@@ -285,16 +297,19 @@ public class Archon extends Unit {
                 num_enemies += 1;
             }
         }
-        if (num_enemies > 0) return new MapLocation((int) (cx / num_enemies), (int) (cy / num_enemies));
-        else return rc.getLocation().add(dirs[0]);
+        if (num_enemies > 0)
+            return new MapLocation((int) (cx / num_enemies), (int) (cy / num_enemies));
+        else
+            return rc.getLocation().add(dirs[0]);
     }
 
-    public Direction[] getEnemyDirs() throws GameActionException{
+    public Direction[] getEnemyDirs() throws GameActionException {
         MapLocation loc = getAvgEnemyLocation();
         Direction toDest = rc.getLocation().directionTo(loc);
-        Direction[] d_arr = {toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(),
-                toDest.rotateRight().rotateRight(), toDest.opposite().rotateLeft(), toDest.opposite().rotateRight(), toDest.opposite()};
-        
+        Direction[] d_arr = { toDest, toDest.rotateLeft(), toDest.rotateRight(), toDest.rotateLeft().rotateLeft(),
+                toDest.rotateRight().rotateRight(), toDest.opposite().rotateLeft(), toDest.opposite().rotateRight(),
+                toDest.opposite() };
+
         return d_arr;
     }
 
@@ -302,30 +317,29 @@ public class Archon extends Unit {
         MapLocation my = rc.getLocation();
         MapLocation n = my.add(d);
         int min = Math.min(rc.getMapWidth() - 1 - n.x, n.x) + Math.min(n.y, rc.getMapHeight() - 1 - n.y);
-        assert(min<=60);
+        assert (min <= 60);
         return min;
     }
 
     public Direction[] sortedDirections() {
-        Direction[] dirs = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
-        Arrays.sort(dirs, (a,b) -> distToWall(b) - distToWall(a));
+        Direction[] dirs = { Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH,
+                Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST };
+        Arrays.sort(dirs, (a, b) -> distToWall(b) - distToWall(a));
         return dirs;
     }
 
     public int[] chooseBuildOrder() {
         if (mapArea < 1400) {
-            return new int[]{1, 6, 0}; // miners, soldiers, builders
-        }
-        else if (mapArea < 2200) {
-            return new int[]{1, 6, 0}; // miners, soldiers, builders
-        }
-        else {
-            return new int[]{1, 6, 0}; // miners, soldiers, builders
+            return new int[] { 1, 6, 0 }; // miners, soldiers, builders
+        } else if (mapArea < 2200) {
+            return new int[] { 1, 6, 0 }; // miners, soldiers, builders
+        } else {
+            return new int[] { 1, 6, 0 }; // miners, soldiers, builders
         }
     }
 
-    public int[] chooseInitialBuildOrder() throws GameActionException{
-        return new int[]{1, 0, 0};
+    public int[] chooseInitialBuildOrder() throws GameActionException {
+        return new int[] { 1, 0, 0 };
     }
 
     public void attemptHeal() throws GameActionException {
@@ -335,24 +349,23 @@ public class Archon extends Unit {
             RobotInfo weakestBot = null;
             for (RobotInfo bot : nearbyBots) {
                 if (bot.type == RobotType.SOLDIER)
-                    if ((weakestBot == null && bot.health < RobotType.SOLDIER.health) || 
-                        (weakestBot != null && bot.health < weakestBot.health)) {
-                        weakestBot = bot;
-                    }
-            }
-            if (weakestBot!=null) {
-                if (rc.canRepair(weakestBot.location)) {
-                  //  rc.setIndicatorString("Succesful Heal!");
-                    rc.repair(weakestBot.location);
-                }
-            }
-            else {
-                for (RobotInfo bot : nearbyBots) {
-                    if (bot.type == RobotType.MINER)
-                        if ((weakestBot == null && bot.health < RobotType.MINER.health) || 
+                    if ((weakestBot == null && bot.health < RobotType.SOLDIER.health) ||
                             (weakestBot != null && bot.health < weakestBot.health)) {
                         weakestBot = bot;
                     }
+            }
+            if (weakestBot != null) {
+                if (rc.canRepair(weakestBot.location)) {
+                    // rc.setIndicatorString("Succesful Heal!");
+                    rc.repair(weakestBot.location);
+                }
+            } else {
+                for (RobotInfo bot : nearbyBots) {
+                    if (bot.type == RobotType.MINER)
+                        if ((weakestBot == null && bot.health < RobotType.MINER.health) ||
+                                (weakestBot != null && bot.health < weakestBot.health)) {
+                            weakestBot = bot;
+                        }
                 }
                 if (weakestBot != null) {
                     if (rc.canRepair(weakestBot.location)) {
@@ -373,8 +386,7 @@ public class Archon extends Unit {
             for (MapLocation loc : leadLocsUncounted) {
                 total_value += rc.senseLead(loc);
             }
-        }
-        else {
+        } else {
             for (MapLocation loc : leadLocs) {
                 total_value += rc.senseLead(loc);
             }
@@ -408,7 +420,7 @@ public class Archon extends Unit {
         return leadLocsUncounted;
     }
 
-    public MapLocation[] firstN(MapLocation[] locs, int n) throws GameActionException{
+    public MapLocation[] firstN(MapLocation[] locs, int n) throws GameActionException {
         MapLocation[] newLocs = new MapLocation[n];
         for (int i = 0; i < n; i++) {
             newLocs[i] = locs[i];
