@@ -35,10 +35,8 @@ public class Watchtower extends Unit {
         }
     });
 
-    private int stopFleeingRound = -1;
-
     // up to 10 manhattan distance yk
-    public static final int ANCHOR_DISTANCE = 5;
+    public static final int ANCHOR_DISTANCE = 3;
 
     MODE mode;
 
@@ -62,13 +60,12 @@ public class Watchtower extends Unit {
         // moved visualize() to bottom
         switch (mode) {
             case SEEKING:
-                if (rc.getMode() == RobotMode.TURRET && rc.canTransform())
-                    rc.transform();
-                if (rc.getMode() == RobotMode.PORTABLE) {
-                    if (target != null)
+                if (this.transformInto(RobotMode.TURRET)) {
+                    if (target != null) {
                         huntTarget();
-                    else
+                    } else {
                         moveInDirection(lastAttackDir);
+                    }
                 }
                 target = null;
                 break;
@@ -78,19 +75,25 @@ public class Watchtower extends Unit {
                     // this may return null
                     anchorLocation = chooseAnchorLocation();
                 }
-                if (!rc.canMove(rc.getLocation().directionTo(anchorLocation))) {
-                    // it's okay to anchor if the space is occupied and we're within two squares of
-                    // it
-                    if (rc.getLocation().isWithinDistanceSquared(anchorLocation, 2)) {
-                        anchored = true;
-                        break;
-                    }
-                }
                 if (anchorLocation != null) {
-                    moveToLocation(anchorLocation);
+                    if (this.transformInto(RobotMode.PORTABLE)) {
+                        Direction dir = rc.getLocation().directionTo(anchorLocation);
+                        if (!rc.canMove(dir)) {
+                            // it's okay to anchor if the space is occupied and we're within two squares of
+                            // it
+                            if (rc.getLocation().isWithinDistanceSquared(anchorLocation, 2)) {
+                                anchored = true;
+                                break;
+                            }
+                        } else {
+                            moveToLocation(anchorLocation);
+                        }
+                    }
                 }
                 break;
             case DEFENDING:
+                this.transformInto(RobotMode.TURRET);
+
                 // Use a priority queue for enemies
                 // This queue is based on the health of the enemy
                 while (!this.enemyQueue.isEmpty()) {
@@ -106,7 +109,9 @@ public class Watchtower extends Unit {
             case NONE:
                 break;
         }
+
         visualize();
+
     }
 
     public boolean isMapLocationValid(MapLocation loc) {
@@ -122,7 +127,7 @@ public class Watchtower extends Unit {
         int minDistanceSquared = ANCHOR_DISTANCE * ANCHOR_DISTANCE;
         for (Direction d : Direction.values()) {
             // branch out in all 8 directions, look for the best place to anchor
-            anchorLocation = new MapLocation(me.x + d.dx * 10, me.y + d.dy * 10);
+            anchorLocation = new MapLocation(me.x + d.dx * ANCHOR_DISTANCE, me.y + d.dy * ANCHOR_DISTANCE);
             if (isMapLocationValid(anchorLocation)
                     && anchorLocation.distanceSquaredTo(baseArchonLocation) >= minDistanceSquared) {
                 return anchorLocation;
@@ -132,23 +137,29 @@ public class Watchtower extends Unit {
     }
 
     public void visualize() throws GameActionException {
-        rc.setIndicatorString("MODE: " + mode.toString());
-        if (mode == MODE.BRANCH_OUT) {
-            rc.setIndicatorString("MODE: BRANCH_OUT to " + anchorLocation.toString());
-            return;
+        String indicator = "";
+        if (rc.getMode() == RobotMode.TURRET) {
+            indicator += "T.";
+        } else {
+            indicator += "P.";
         }
-        if (mode == MODE.SEEKING) {
+
+        indicator += " " + mode.toString();
+
+        if (mode == MODE.BRANCH_OUT) {
+            indicator += " to " + anchorLocation.toString();
+        } else if (mode == MODE.SEEKING) {
             if (target != null) {
                 rc.setIndicatorLine(rc.getLocation(), target, 255, 0, 0);
             }
         }
+
         if (target != null) {
-            rc.setIndicatorString(
-                    "TARGET: " + target.toString() + " MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
+            indicator += " target " + target.toString();
             rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 100);
-        } else {
-            rc.setIndicatorString("TARGET: null MODE: " + mode.toString());
         }
+
+        rc.setIndicatorString(indicator);
     }
 
     public MODE determineMode() throws GameActionException {
@@ -156,9 +167,6 @@ public class Watchtower extends Unit {
 
         // If there are nearby enemies, attack them
         for (RobotInfo ri : rc.senseNearbyRobots(-1, rc.getTeam().opponent())) {
-            if (!rc.isActionReady())
-                break;
-
             if (ri.type == RobotType.SOLDIER) {
                 this.enemyQueue.add(ri);
             }
