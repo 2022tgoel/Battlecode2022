@@ -125,6 +125,7 @@ def parse_results():
                 message = line[line.index(']') + 2:]
                 if message[:1] == '$' and ':' in message:
                     stat_name, stat_value = re.split(r':', message[1:])
+                    stat_value = stat_value.strip()
                     df.loc[round_number, stat_name] = stat_value
 
     return (a_won, b_won, dfs['A'], dfs['B'])

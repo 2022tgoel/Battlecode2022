@@ -52,7 +52,7 @@ public class Archon extends Unit {
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
-        radio.update();
+        radio.setRoundNumber();
         radio.clearThreat();
         radio.clearMiningAreas();
         radio.clearTargetAreas();
@@ -63,6 +63,8 @@ public class Archon extends Unit {
 
         if (archonNumber == 0) {
             Analytics.log("lead", rc.getTeamLeadAmount(team) + "");
+            Analytics.log("miners_alive", rc.readSharedArray(CHANNEL.MINERS_ALIVE.getValue()) + "");
+            Analytics.log("soldiers_alive", rc.readSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue()) + "");
         }
 
         MODE mode = determineMode();
