@@ -265,8 +265,8 @@ public class Archon extends Unit {
         leadLastCall = curLead;
     }
 
-    public int getAvgMined(){
-        int avg = 0;
+    public double getAvgMined(){
+        double avg = 0;
         for (int i = 0; i < amountMined.length; i++) avg += amountMined[i];
         avg = avg / amountMined.length;
         return avg;
@@ -278,7 +278,7 @@ public class Archon extends Unit {
             return true;
         }
         else {
-            int numTurnsToResources = (buildCost - curLead)/ (getAvgMined());
+            int numTurnsToResources = (int) (((double) buildCost - (double) curLead)/ (getAvgMined()));
             int numTurnsToAct = rc.getActionCooldownTurns() + (int) ((cooldownMultiplier(rc.getLocation()) * rc.getType().actionCooldown)/10);
             if (numTurnsToResources > numTurnsToAct) {
                 return false;
