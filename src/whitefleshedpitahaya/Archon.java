@@ -55,8 +55,11 @@ public class Archon extends Unit {
         radio.clearTargetAreas();
 
         archonNumber = radio.getArchonNum();
-        // System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
+        boolean b = checkForResources();
+
+        System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
         MODE mode = determineMode();
+        
         switch (mode) {
             case THREATENED:
                 threatChannel = radio.sendThreatAlert();
@@ -75,8 +78,14 @@ public class Archon extends Unit {
                 build(chooseInitialBuildOrder());
                 break;
             case SOLDIER_HUB:
-                boolean soldier_built = build(new int[]{0, 1, 0});
-                if (soldier_built) num_soldiers_hub++;
+                if (b) {
+                    boolean soldier_built = build(new int[]{0, 1, 0});
+                    if (soldier_built) num_soldiers_hub++;
+                }
+                else {
+                    attemptHeal();
+                 //   rc.setIndicatorString("ATTEMPTING HEALING");
+                }
                 if (num_soldiers_hub > 20) {
                     radio.broadcastMode((archonNumber + 1) % num_archons_alive);
                     num_soldiers_hub = 0;
@@ -85,12 +94,15 @@ public class Archon extends Unit {
             case OTHER_THREATENED: 
                 if (rc.getTeamLeadAmount(rc.getTeam()) < 600) break; //save for attacked archons
             case DEFAULT:
+                attemptHeal();
                 if (round_num % num_archons_alive != archonNumber || round_num % 4 != 0) break;
+                //if (b){
                 build(new int[]{4, 1, 0}); //defaultBuildOrder);
+                //}
                 break;
         }
         num_archons_alive = rc.getArchonCount();
-        rc.setIndicatorString("mode: " + mode.toString() + " " + num_soldiers_hub);
+        rc.setIndicatorString("mode: " + mode.toString() + " " + leadLastCall + " ");
     }
 
     public boolean build(int[] build_order) throws GameActionException{
@@ -99,21 +111,21 @@ public class Archon extends Unit {
             switch (counter % 3) {
                 case 0:
                     if (built_units < build_order[counter % 3]) {
-                        rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + build_order[counter % 3]);
+                       // rc.setIndicatorString("Trying to build a miner" + " built_units: " + built_units + " " + build_order[counter % 3]);
                         unit_built = buildMiner(dir);
                         // System.out.println("MINER BUILT: " + unit_built + " Roundnum: " + rc.getRoundNum());
                     }
                     break;
                 case 1:
                     if (built_units < build_order[counter % 3]) {
-                    rc.setIndicatorString("Trying to build a soldier" + " built_units: " + built_units + " " + build_order[counter % 3]);
+                   // rc.setIndicatorString("Trying to build a soldier" + " built_units: " + built_units + " " + build_order[counter % 3]);
                     unit_built = buildSoldier(dir);
                     // System.out.println("SOLDIER BUILT: " + unit_built);
                     }
                     break;
                 case 2:
                     if (built_units < build_order[counter % 3]) {
-                        rc.setIndicatorString("Trying to build a builder" + " built_units: " + built_units + " " + build_order[counter % 3]);
+                      //  rc.setIndicatorString("Trying to build a builder" + " built_units: " + built_units + " " + build_order[counter % 3]);
                         unit_built = buildBuilder(dir);
                         // System.out.println("BUILDER BUILT: " + unit_built);
                     }
@@ -153,6 +165,7 @@ public class Archon extends Unit {
             rc.buildRobot(RobotType.MINER, dir);
             built_units++;
             num_miners++;
+            leadLastCall -= RobotType.MINER.buildCostLead;
             return true;
         }
         return false;
@@ -163,17 +176,18 @@ public class Archon extends Unit {
             rc.buildRobot(RobotType.SOLDIER, dir);
             built_units++;
             num_soldiers++;
+            leadLastCall -= RobotType.SOLDIER.buildCostLead;
             return true;
         }
         return false;
     }
 
     public boolean buildBuilder(Direction dir) throws GameActionException {
-        rc.setIndicatorString("here " + rc.canBuildRobot(RobotType.BUILDER, dir));
         if (rc.canBuildRobot(RobotType.BUILDER, dir)) {
             rc.buildRobot(RobotType.BUILDER, dir);
             built_units++;
             num_builders++;
+            leadLastCall -= RobotType.BUILDER.buildCostLead;
             return true;
         }
         return false;
@@ -189,6 +203,32 @@ public class Archon extends Unit {
         return false;
     }
     //////////////////////////////////////////////////////////////////////
+    static int leadLastCall = 200;
+    static int[] amountMined = new int[10]; //10 turn avg
+    public boolean checkForResources() throws GameActionException { //CHANGE TO INCORPORATE GOLD ONCE WE USE SAGES
+        //calculated if you'll have enough resources to build something anytime soon 
+        int curLead = rc.getTeamLeadAmount(rc.getTeam());
+        int minedLastCall = curLead - leadLastCall;
+        amountMined[round_num % 10] = minedLastCall;
+        leadLastCall = curLead;
+        if (curLead >= 50 || round_num < 10){
+            return true;
+        }
+        else {
+            int avg = 0;
+            for (int i = 0; i < 10; i++) avg += amountMined[i];
+            avg = avg / 10;
+            int numTurnsToResources = (50 - curLead)/avg;
+            int numTurnsToAct = rc.getActionCooldownTurns() + (int) ((cooldownMultiplier(rc.getLocation()) * rc.getType().actionCooldown)/10);
+            if (numTurnsToResources > numTurnsToAct) {
+                return false;
+            }
+            else return true;
+        }
+
+       
+    }
+
     public MapLocation getAvgEnemyLocation() throws GameActionException {
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         int num_enemies = 0;
@@ -245,19 +285,18 @@ public class Archon extends Unit {
     }
 
     public void attemptHeal() throws GameActionException {
-        boolean soldiers_home = false;
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(rc.getType().actionRadiusSquared, rc.getTeam());
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
-            RobotInfo weakestBot = nearbyBots[0];
+            RobotInfo weakestBot = null;
             for (RobotInfo bot : nearbyBots) {
                 if (bot.type == RobotType.SOLDIER)
-                    if (bot.health < weakestBot.health) {
+                    if ((weakestBot == null && bot.health < RobotType.SOLDIER.health) || 
+                        (weakestBot != null && bot.health < weakestBot.health)) {
                         weakestBot = bot;
                     }
-                    soldiers_home = true;
             }
-            if (soldiers_home) {
+            if (weakestBot!=null) {
                 if (rc.canRepair(weakestBot.location)) {
                   //  rc.setIndicatorString("Succesful Heal!");
                     rc.repair(weakestBot.location);
@@ -266,12 +305,15 @@ public class Archon extends Unit {
             else {
                 for (RobotInfo bot : nearbyBots) {
                     if (bot.type == RobotType.MINER)
-                        if (bot.health < weakestBot.health) {
-                            weakestBot = bot;
-                        }
+                        if ((weakestBot == null && bot.health < RobotType.MINER.health) || 
+                            (weakestBot != null && bot.health < weakestBot.health)) {
+                        weakestBot = bot;
+                    }
                 }
-                if (rc.canRepair(weakestBot.location)) {
-                    rc.repair(weakestBot.location);
+                if (weakestBot != null) {
+                    if (rc.canRepair(weakestBot.location)) {
+                        rc.repair(weakestBot.location);
+                    }
                 }
             }
         }
