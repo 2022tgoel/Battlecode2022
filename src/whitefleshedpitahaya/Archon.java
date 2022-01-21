@@ -210,17 +210,17 @@ public class Archon extends Unit {
     static int[] amountMined = new int[10]; //10 turn avg
     public void updateAmountMined(){
         curLead = rc.getTeamLeadAmount(rc.getTeam());
-        if (curLead > leadLastCall){ //otherwise, something was spent
+        if (curLead >= leadLastCall){ //otherwise, something was spent
             int minedLastCall = curLead - leadLastCall;
             amountMined[round_num % amountMined.length] = minedLastCall;
         }
         leadLastCall = curLead;
     }
 
-    public int getAvgMined(){
-        int avg = 0;
-        for (int i = 0; i < amountMined.length; i++) avg += amountMined[i];
-        avg = avg / amountMined.length;
+    public double getAvgMined(){
+        double avg = 0;
+        for (int i = 0; i < amountMined.length; i++) avg += (double)amountMined[i];
+        avg = avg / (double) amountMined.length;
         return avg;
         
     }
@@ -230,7 +230,7 @@ public class Archon extends Unit {
             return true;
         }
         else {
-            int numTurnsToResources = (buildCost - curLead)/ (getAvgMined());
+            int numTurnsToResources = (int)(((double)buildCost - (double)curLead)/ Math.max(getAvgMined(), 2.0));
             int numTurnsToAct = rc.getActionCooldownTurns() + (int) ((cooldownMultiplier(rc.getLocation()) * rc.getType().actionCooldown)/10);
             if (numTurnsToResources > numTurnsToAct) {
                 return false;
@@ -293,42 +293,7 @@ public class Archon extends Unit {
     public int[] chooseInitialBuildOrder() throws GameActionException{
         return new int[]{1, 0, 0};
     }
-
-    public void attemptHeal() throws GameActionException {
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(rc.getType().actionRadiusSquared, rc.getTeam());
-        // if there are any nearby enemy robots, attack the one with the least health
-        if (nearbyBots.length > 0) {
-            RobotInfo weakestBot = null;
-            for (RobotInfo bot : nearbyBots) {
-                if (bot.type == RobotType.SOLDIER)
-                    if ((weakestBot == null && bot.health < RobotType.SOLDIER.health) || 
-                        (weakestBot != null && bot.health < weakestBot.health)) {
-                        weakestBot = bot;
-                    }
-            }
-            if (weakestBot!=null) {
-                if (rc.canRepair(weakestBot.location)) {
-                  //  rc.setIndicatorString("Succesful Heal!");
-                    rc.repair(weakestBot.location);
-                }
-            }
-            else {
-                for (RobotInfo bot : nearbyBots) {
-                    if (bot.type == RobotType.MINER)
-                        if ((weakestBot == null && bot.health < RobotType.MINER.health) || 
-                            (weakestBot != null && bot.health < weakestBot.health)) {
-                        weakestBot = bot;
-                    }
-                }
-                if (weakestBot != null) {
-                    if (rc.canRepair(weakestBot.location)) {
-                        rc.repair(weakestBot.location);
-                    }
-                }
-            }
-        }
-    }
-    /*
+    
     final static RobotType[] healingOrder = new RobotType[]{RobotType.SOLDIER, RobotType.MINER, RobotType.SAGE, RobotType.WATCHTOWER};
     public void attemptHeal() throws GameActionException {
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(rc.getType().actionRadiusSquared, rc.getTeam());
@@ -351,6 +316,6 @@ public class Archon extends Unit {
             }
         }
     }
-    */
+    
     
 }
