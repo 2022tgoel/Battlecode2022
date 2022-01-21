@@ -1,42 +1,54 @@
 package rebutia_watchtowers;
 
-import battlecode.common.*;
-import java.util.*;
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotMode;
+import battlecode.common.RobotType;
 
 public class Watchtower extends Unit {
 
     enum MODE {
+        BRANCH_OUT,
         SEEKING,
         ATTACKING,
-        SEARCHING_ENEMIES, //when u have already found enemies
+        SEARCHING_ENEMIES, // when u have already found enemies
         FLEE,
         DEFENSIVE_RUSH,
-        NONE
-        ;
+        NONE;
     }
 
     boolean attacked = false;
+    boolean anchored = false;
+
     int round_num = 0;
 
     MapLocation[] threatenedArchons;
+    MapLocation baseArchonLocation;
+    MapLocation anchorLocation;
 
-    private int[] fleeDirection = {Integer.MAX_VALUE, Integer.MAX_VALUE};
+    private int[] fleeDirection = { Integer.MAX_VALUE, Integer.MAX_VALUE };
     private int stopFleeingRound = -1;
     private int DRUSH_RSQR = 400;
 
+    // up to 10 manhattan distance yk
+    public static final int ANCHOR_DISTANCE = 5;
+
     MODE mode;
 
-    //for attacking and searching enemies modes
+    // for attacking and searching enemies modes
     private MapLocation target = null;
     private int[] lastAttackDir = null;
 
-	public Watchtower(RobotController rc) throws GameActionException {
+    public Watchtower(RobotController rc) throws GameActionException {
         super(rc);
         initialize();
     }
 
     public void run() throws GameActionException {
-    	super.run();
+        super.run();
         round_num = rc.getRoundNum();
         radio.updateCounter();
         attacked = attemptAttack(false);
@@ -46,10 +58,13 @@ public class Watchtower extends Unit {
         visualize();
         switch (mode) {
             case SEEKING:
-                if (rc.getMode() == RobotMode.TURRET && rc.canTransform()) rc.transform();
+                if (rc.getMode() == RobotMode.TURRET && rc.canTransform())
+                    rc.transform();
                 if (rc.getMode() == RobotMode.PORTABLE) {
-                    if (target != null) huntTarget();
-                    else moveInDirection(lastAttackDir);
+                    if (target != null)
+                        huntTarget();
+                    else
+                        moveInDirection(lastAttackDir);
                 }
                 target = null;
                 break;
@@ -57,7 +72,7 @@ public class Watchtower extends Unit {
                 attemptAttack(true);
                 break;
             case SEARCHING_ENEMIES:
-                if (adjacentToEdge()) { //TODO: bots occasionally get stuck somehow
+                if (adjacentToEdge()) { // TODO: bots occasionally get stuck somehow
                     lastAttackDir = flip(lastAttackDir);
                 }
                 moveInDirection(lastAttackDir);
@@ -68,82 +83,141 @@ public class Watchtower extends Unit {
             case FLEE:
                 moveInDirection(fleeDirection);
                 break;
-            case NONE:
+            case BRANCH_OUT:
+                // Choose an anchor location
+                if (anchorLocation == null) {
+                    // this may return null
+                    anchorLocation = chooseAnchorLocation();
+                }
+                if (!rc.canMove(rc.getLocation().directionTo(anchorLocation))) {
+                    // it's okay to anchor if the space is occupied and we're within two squares of
+                    // it
+                    if (rc.getLocation().isWithinDistanceSquared(anchorLocation, 2)) {
+                        anchorLocation = null;
+                        anchored = true;
+                        break;
+                    }
+                }
+                if (anchorLocation != null) {
+                    moveToLocation(anchorLocation);
+                }
                 break;
-            default:
+            case NONE:
                 break;
         }
         // System.out.println("Watchtower mode: " + rc.getMode().toString());
     }
 
+    public boolean isMapLocationValid(MapLocation loc) {
+        return loc.x >= 0 && loc.x < rc.getMapWidth() && loc.y >= 0 && loc.y < rc.getMapHeight();
+    }
+
+    public MapLocation chooseAnchorLocation() {
+        if (baseArchonLocation == null) {
+            return null;
+        }
+        MapLocation me = rc.getLocation();
+        MapLocation anchorLocation;
+        int minDistanceSquared = ANCHOR_DISTANCE * ANCHOR_DISTANCE;
+        for (Direction d : Direction.values()) {
+            // branch out in all 8 directions, look for the best place to anchor
+            anchorLocation = new MapLocation(me.x + d.dx * 10, me.y + d.dy * 10);
+            if (isMapLocationValid(anchorLocation)
+                    && anchorLocation.distanceSquaredTo(baseArchonLocation) >= minDistanceSquared) {
+                return anchorLocation;
+            }
+        }
+        return null;
+    }
+
     public void visualize() throws GameActionException {
         rc.setIndicatorString("MODE: " + mode.toString());
-        if (mode == MODE.SEEKING){
+        if (mode == MODE.SEEKING) {
             if (target != null) {
                 rc.setIndicatorLine(rc.getLocation(), target, 255, 0, 0);
             }
         }
-        if (mode == MODE.ATTACKING){
+        if (mode == MODE.ATTACKING) {
             rc.setIndicatorLine(rc.getLocation(), target, 100, 0, 0);
-        }
-        else if (mode == MODE.SEARCHING_ENEMIES){
+        } else if (mode == MODE.SEARCHING_ENEMIES) {
             rc.setIndicatorString("MODE: " + mode.toString() + " DIR: " + lastAttackDir[0] + " " + lastAttackDir[1]);
-        }
-        else if (target != null) {
-            if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: " + target.toString() + " MODE: " + mode.toString());
-            else rc.setIndicatorString("TARGET: " + target.toString() + " MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
+        } else if (target != null) {
+            if (mode != MODE.FLEE)
+                rc.setIndicatorString("TARGET: " + target.toString() + " MODE: " + mode.toString());
+            else
+                rc.setIndicatorString(
+                        "TARGET: " + target.toString() + " MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
             rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 100);
-        }
-        else {
-            if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: null MODE: " + mode.toString());
-            else rc.setIndicatorString("TARGET: null MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
+        } else {
+            if (mode != MODE.FLEE)
+                rc.setIndicatorString("TARGET: null MODE: " + mode.toString());
+            else
+                rc.setIndicatorString("TARGET: null MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
         }
     }
 
     public MODE determineMode() throws GameActionException {
+        // Before doing anything, branch out from the Archon
+        // Make sure always 10 units^2 away from the Archon
+        // Branch out
+        if (baseArchonLocation == null) {
+            RobotInfo[] nearby = rc.senseNearbyRobots(10, rc.getTeam());
+            for (RobotInfo ri : nearby) {
+                if (ri.type == RobotType.ARCHON) {
+                    baseArchonLocation = ri.location;
+                    return MODE.BRANCH_OUT;
+                }
+            }
+        } else if (baseArchonLocation.isWithinDistanceSquared(rc.getLocation(), 10)) {
+            return MODE.BRANCH_OUT;
+        }
+
         // Priority 1 - Defend.
         threatenedArchons = findThreatenedArchons();
         if (threatenedArchons != null) {
-            for (MapLocation archon: threatenedArchons) {
+            for (MapLocation archon : threatenedArchons) {
                 if (rc.getLocation().distanceSquaredTo(archon) <= DRUSH_RSQR) {
                     return MODE.DEFENSIVE_RUSH;
                 }
             }
         }
 
-        /* // Priority 2 - Don't die.
-        int[] potFleeDir = fleeDirection();
-        boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
-        if (!validFlee && stopFleeingRound == round_num) lastAttackDir = null;
-        if (validFlee || stopFleeingRound > round_num) {
-            if (validFlee) fleeDirection = potFleeDir;
-            // keep fleeing for two moves (2 rounds per move)
-            if (stopFleeingRound <= round_num) {
-                stopFleeingRound = round_num + 6;
-            }
-            return MODE.FLEE;
-        } */
+        /*
+         * // Priority 2 - Don't die.
+         * int[] potFleeDir = fleeDirection();
+         * boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] !=
+         * Integer.MAX_VALUE);
+         * if (!validFlee && stopFleeingRound == round_num) lastAttackDir = null;
+         * if (validFlee || stopFleeingRound > round_num) {
+         * if (validFlee) fleeDirection = potFleeDir;
+         * // keep fleeing for two moves (2 rounds per move)
+         * if (stopFleeingRound <= round_num) {
+         * stopFleeingRound = round_num + 6;
+         * }
+         * return MODE.FLEE;
+         * }
+         */
 
         // Priority 3 - Hunt enemies.
         findTargets();
         if (target != null) {
             if (rc.getLocation().distanceSquaredTo(target) > 40) {
                 return MODE.SEEKING;
-            }
-            else {
+            } else {
                 Direction lowRubble = findLowRubble();
-                if (lowRubble != null) rc.move(lowRubble);
-                if (rc.getMode() == RobotMode.PORTABLE && rc.canTransform()) rc.transform();
+                if (lowRubble != null)
+                    rc.move(lowRubble);
+                if (rc.getMode() == RobotMode.PORTABLE && rc.canTransform())
+                    rc.transform();
                 return MODE.ATTACKING;
             }
-        }
-        else if (lastAttackDir != null){
+        } else if (lastAttackDir != null) {
             return MODE.SEEKING;
-        }
-        else return MODE.NONE;
+        } else
+            return MODE.NONE;
     }
 
-    public int[] fleeDirection() throws GameActionException{
+    public int[] fleeDirection() throws GameActionException {
         MapLocation cur = rc.getLocation();
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1);
         double cxse = 0;
@@ -152,14 +226,13 @@ public class Watchtower extends Unit {
         int numEnemyHits = 0;
         int numFriendHits = (rc.getHealth() + 2) / 3;
         int numFriends = 0;
-        for (RobotInfo bot: nearbyBots) {
+        for (RobotInfo bot : nearbyBots) {
             if (bot.team == rc.getTeam()) {
                 if (bot.type == RobotType.SOLDIER) {
                     numFriendHits += ((bot.health + 2) / 3);
                     numFriends++;
                 }
-            }
-            else if (bot.team == rc.getTeam().opponent())
+            } else if (bot.team == rc.getTeam().opponent())
                 if (bot.type == RobotType.SOLDIER) {
                     cxse += bot.location.x;
                     cyse += bot.location.y;
@@ -167,7 +240,8 @@ public class Watchtower extends Unit {
                     numEnemies++;
                 }
         }
-        if (numEnemies == 0) return new int[]{Integer.MAX_VALUE, Integer.MAX_VALUE};
+        if (numEnemies == 0)
+            return new int[] { Integer.MAX_VALUE, Integer.MAX_VALUE };
 
         if (numEnemies > 0) {
             cxse /= numEnemies;
@@ -179,15 +253,16 @@ public class Watchtower extends Unit {
 
         if (((numFriends + 1) / numEnemies) > 1) {
             ratio = ((numFriends + 1) / numEnemies);
-        }
-        else {
+        } else {
             ratio = numEnemies / (numFriends + 1);
         }
 
         double a = 6 * ratio;
-        int unit_advantage = (int) (a * Math.pow(unit_difference,2) * Math.signum(unit_difference));
+        int unit_advantage = (int) (a * Math.pow(unit_difference, 2) * Math.signum(unit_difference));
 
-        // System.out.println("Unit advantage: " + unit_advantage + " Ratio: " + ratio + " numFriendHits " + numFriendHits + " numEnemyHits " + numEnemyHits + "round_num " + round_num + " id " + rc.getID());
+        // System.out.println("Unit advantage: " + unit_advantage + " Ratio: " + ratio +
+        // " numFriendHits " + numFriendHits + " numEnemyHits " + numEnemyHits +
+        // "round_num " + round_num + " id " + rc.getID());
 
         if (numFriendHits + unit_advantage < numEnemyHits) {
             double dx = -(cxse - cur.x) * 3;
@@ -195,9 +270,9 @@ public class Watchtower extends Unit {
             // more attracted
             // dx = 0.7 * dx + 0.3 * (cxsf - cur.x);
             // dy = 0.7 * dx + 0.3 * (cysf - cur.y);
-            return new int[]{(int) dx, (int) dy};
+            return new int[] { (int) dx, (int) dy };
         }
-        return new int[]{Integer.MAX_VALUE, Integer.MAX_VALUE}; 
+        return new int[] { Integer.MAX_VALUE, Integer.MAX_VALUE };
     }
 
     public void findTargets() throws GameActionException {
@@ -210,8 +285,9 @@ public class Watchtower extends Unit {
             if (data != 0) {
                 int x = (data >> 4) & 15;
                 int y = data & 15;
-                // System.out.println("I received an enemy at " + x*4 + " " + y*4 + " on round " + round_num);
-                MapLocation potentialTarget = new MapLocation(x*4, y*4);
+                // System.out.println("I received an enemy at " + x*4 + " " + y*4 + " on round "
+                // + round_num);
+                MapLocation potentialTarget = new MapLocation(x * 4, y * 4);
                 if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
                     closestDist = cur.distanceSquaredTo(potentialTarget);
                     closestTarget = potentialTarget;
@@ -222,7 +298,7 @@ public class Watchtower extends Unit {
         // finds closest target, and advances towards it.
         if (closestTarget != null) {
             target = closestTarget;
-            lastAttackDir = new int[]{closestTarget.x - cur.x, closestTarget.y - cur.y};
+            lastAttackDir = new int[] { closestTarget.x - cur.x, closestTarget.y - cur.y };
             lastAttackDir = scaleToSize(lastAttackDir);
             // wanders in direction of target
         }
@@ -231,15 +307,17 @@ public class Watchtower extends Unit {
     public void huntTarget() throws GameActionException {
         // if target is within 3 tiles, do not move closer, otherwise move closer
         // check if it's in turret mode
-        if (rc.getMode() == RobotMode.TURRET) return;
+        if (rc.getMode() == RobotMode.TURRET)
+            return;
         moveToLocation(target);
-        lastAttackDir = new int[]{target.x - rc.getLocation().x, target.y - rc.getLocation().y};
+        lastAttackDir = new int[] { target.x - rc.getLocation().x, target.y - rc.getLocation().y };
         if (rc.getLocation().distanceSquaredTo(target) <= 20) {
             // check for low rubble squares to move to
             Direction lowRubble = findLowRubble();
-            if (lowRubble != null) rc.move(lowRubble);
-        }
-        else moveInDirection(lastAttackDir);
+            if (lowRubble != null)
+                rc.move(lowRubble);
+        } else
+            moveInDirection(lastAttackDir);
     }
 
     public Direction findLowRubble() throws GameActionException {
@@ -248,7 +326,8 @@ public class Watchtower extends Unit {
         int rubble;
         Direction bestDir = null;
         for (int i = 0; i < 8; i++) {
-            if (!rc.canMove(directions[i])) continue;
+            if (!rc.canMove(directions[i]))
+                continue;
             rubble = 1 + rc.senseRubble(cur.add(directions[i])) / 10;
             if (rubble < lowest_rubble && rc.canMove(directions[i])) {
                 lowest_rubble = rubble;
@@ -258,28 +337,28 @@ public class Watchtower extends Unit {
         return bestDir;
     }
 
-    public void defensiveMove() throws GameActionException{
+    public void defensiveMove() throws GameActionException {
         MapLocation closest = threatenedArchons[0];
         int min_dist = Integer.MAX_VALUE;
         // only find closest archon if there is more then one
         if (threatenedArchons.length > 1) {
-            for (MapLocation loc: threatenedArchons) {
+            for (MapLocation loc : threatenedArchons) {
                 if (loc.distanceSquaredTo(rc.getLocation()) < min_dist) {
                     min_dist = loc.distanceSquaredTo(rc.getLocation());
                     closest = loc;
                 }
             }
         }
-        // if you don't see the enemy, and you're not close to the archon, move towards it
+        // if you don't see the enemy, and you're not close to the archon, move towards
+        // it
         if (rc.getLocation().distanceSquaredTo(closest) > 36 || target == null) {
             moveToLocation(closest);
-        }
-        else {
+        } else {
             huntTarget();
         }
     }
 
-    public boolean archonDied() throws GameActionException{
+    public boolean archonDied() throws GameActionException {
         RobotInfo home;
         if (rc.canSenseLocation(homeArchon)) {
             home = rc.senseRobotAtLocation(homeArchon);
@@ -308,8 +387,7 @@ public class Watchtower extends Unit {
 
         if (numThreatenedArchons == 0) {
             return null;
-        }
-        else {
+        } else {
             // only return threatened archons.
             MapLocation[] threatenedArchons = new MapLocation[numThreatenedArchons];
             for (int i = 0; i < numThreatenedArchons; i++) {
@@ -318,7 +396,6 @@ public class Watchtower extends Unit {
             return threatenedArchons;
         }
     }
-
 
     public boolean attemptAttack(boolean attackMiners) throws GameActionException {
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
@@ -370,7 +447,8 @@ public class Watchtower extends Unit {
                     archon = bot;
                 }
             }
-            // make more conditional, like damaging which one would give the biggest advantage
+            // make more conditional, like damaging which one would give the biggest
+            // advantage
             if (weakestSage != null) {
                 if (rc.canAttack(weakestSage.location)) {
                     rc.attack(weakestSage.location);
@@ -378,40 +456,35 @@ public class Watchtower extends Unit {
                     broadcastTarget(weakestSage.location);
                     return true;
                 }
-            }
-            else if (weakestSoldier != null) {
+            } else if (weakestSoldier != null) {
                 if (rc.canAttack(weakestSoldier.location)) {
                     rc.attack(weakestSoldier.location);
                     target = weakestSoldier.location;
                     broadcastTarget(weakestSoldier.location);
                     return true;
                 }
-            }
-            else if (weakestTower != null) {
+            } else if (weakestTower != null) {
                 if (rc.canAttack(weakestTower.location)) {
                     rc.attack(weakestTower.location);
                     target = weakestTower.location;
                     broadcastTarget(weakestTower.location);
                     return true;
                 }
-            }
-            else if (weakestMiner != null && attackMiners) {
+            } else if (weakestMiner != null && attackMiners) {
                 if (rc.canAttack(weakestMiner.location)) {
                     rc.attack(weakestMiner.location);
                     target = weakestMiner.location;
                     broadcastTarget(weakestMiner.location);
                     return true;
                 }
-            }
-            else if (weakestBuilder != null && attackMiners) {
+            } else if (weakestBuilder != null && attackMiners) {
                 if (rc.canAttack(weakestBuilder.location)) {
                     rc.attack(weakestBuilder.location);
                     target = weakestBuilder.location;
                     broadcastTarget(weakestBuilder.location);
                     return true;
                 }
-            }
-            else if (archon != null) {
+            } else if (archon != null) {
                 if (rc.canAttack(archon.location)) {
                     rc.attack(archon.location);
                     broadcastTarget(archon.location);
@@ -421,6 +494,7 @@ public class Watchtower extends Unit {
         }
         return false;
     }
+
     public void initialize() {
         DRUSH_RSQR = (int) ((double) mapArea / 9.0);
     }
