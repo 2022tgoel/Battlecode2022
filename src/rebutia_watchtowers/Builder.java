@@ -19,6 +19,7 @@ public class Builder extends Unit {
 
     private int num_watchtowers = 0;
     private int num_labs = 0;
+    private int[] troopCounter = {0, 0, 0, 0, 0}; // miner, soldier, builder, sage, watchtower
     MapLocation target = null;
 
     private int built_units = 0;
@@ -33,6 +34,7 @@ public class Builder extends Unit {
     public void run() throws GameActionException {
         super.run();
         radio.updateCounter();
+        troopCounter = new int[]{radio.readCounter(RobotType.MINER), radio.readCounter(RobotType.SOLDIER), radio.readCounter(RobotType.BUILDER), 0, radio.readCounter(RobotType.WATCHTOWER)};
         build_order = getBuildOrder();
         switch (rank) {
             case MARTYR:
@@ -57,7 +59,6 @@ public class Builder extends Unit {
             default:
                 break;
         }
-        // rc.setIndicatorString("RANK: " + rank.toString());
     }
 
     private int[] getBuildOrder() {
@@ -68,7 +69,10 @@ public class Builder extends Unit {
         if (findUnrepaired()) {
             return MODE.REPAIRING;
         }
-        return MODE.BUILDING;
+        else if (troopCounter[4] <= (CONSTANTS.SOLDIERS_TO_TOWERS * (double) troopCounter[2])) {
+            return MODE.BUILDING;
+        }
+        else return MODE.HEALING;
     }
 
     public boolean findUnrepaired() throws GameActionException {
@@ -135,9 +139,14 @@ public class Builder extends Unit {
     }
 
     public void heal() throws GameActionException {
-        RobotInfo h = rc.senseRobotAtLocation(homeArchon);
-        if (h!=null && h.type == RobotType.ARCHON && h.health < RobotType.ARCHON.health) { //healing mode
-            if (rc.canRepair(homeArchon)) rc.repair(homeArchon);
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam());
+        for (RobotInfo bot : nearbyBots) {
+            if (bot.type == RobotType.WATCHTOWER || bot.type == RobotType.LABORATORY) {
+                if (bot.health < bot.type.health) {
+                    if (rc.canRepair(bot.location)) rc.repair(bot.location);
+                    else moveToLocation(bot.location);
+                }
+            }
         }
     }
 

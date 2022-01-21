@@ -111,7 +111,7 @@ public class Watchtower extends Unit {
             }
         }
 
-        // Priority 2 - Don't die.
+        /* // Priority 2 - Don't die.
         int[] potFleeDir = fleeDirection();
         boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
         if (!validFlee && stopFleeingRound == round_num) lastAttackDir = null;
@@ -122,15 +122,17 @@ public class Watchtower extends Unit {
                 stopFleeingRound = round_num + 6;
             }
             return MODE.FLEE;
-        }
+        } */
 
         // Priority 3 - Hunt enemies.
         findTargets();
         if (target != null) {
-            if (rc.getLocation().distanceSquaredTo(target) > 60) {
+            if (rc.getLocation().distanceSquaredTo(target) > 40) {
                 return MODE.SEEKING;
             }
             else {
+                Direction lowRubble = findLowRubble();
+                if (lowRubble != null) rc.move(lowRubble);
                 if (rc.getMode() == RobotMode.PORTABLE && rc.canTransform()) rc.transform();
                 return MODE.ATTACKING;
             }
@@ -232,7 +234,7 @@ public class Watchtower extends Unit {
         if (rc.getMode() == RobotMode.TURRET) return;
         moveToLocation(target);
         lastAttackDir = new int[]{target.x - rc.getLocation().x, target.y - rc.getLocation().y};
-        if (rc.getLocation().distanceSquaredTo(target) <= 9) {
+        if (rc.getLocation().distanceSquaredTo(target) <= 20) {
             // check for low rubble squares to move to
             Direction lowRubble = findLowRubble();
             if (lowRubble != null) rc.move(lowRubble);
@@ -242,15 +244,18 @@ public class Watchtower extends Unit {
 
     public Direction findLowRubble() throws GameActionException {
         MapLocation cur = rc.getLocation();
-        int cur_rubble = 1 + rc.senseRubble(cur) / 10;
+        int lowest_rubble = 1 + rc.senseRubble(cur) / 10;
         int rubble;
+        Direction bestDir = null;
         for (int i = 0; i < 8; i++) {
-            rubble = rc.senseRubble(cur.add(directions[i]));
-            if (rubble < cur_rubble && rc.canMove(directions[i])) {
-                return directions[i];
+            if (!rc.canMove(directions[i])) continue;
+            rubble = 1 + rc.senseRubble(cur.add(directions[i])) / 10;
+            if (rubble < lowest_rubble && rc.canMove(directions[i])) {
+                lowest_rubble = rubble;
+                bestDir = directions[i];
             }
         }
-        return null;
+        return bestDir;
     }
 
     public void defensiveMove() throws GameActionException{
