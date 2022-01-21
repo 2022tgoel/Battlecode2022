@@ -163,7 +163,8 @@ public class Comms {
     }
 
     public void incrementLeadEsimate(int increment) throws GameActionException {
-        rc.writeSharedArray(CHANNEL.LEAD_ESTIMATE.getValue(), rc.readSharedArray(CHANNEL.LEAD_ESTIMATE.getValue()) + increment);
+        rc.writeSharedArray(CHANNEL.LEAD_ESTIMATE.getValue(),
+                rc.readSharedArray(CHANNEL.LEAD_ESTIMATE.getValue()) + increment);
     }
 
     public int getMode() throws GameActionException {
@@ -192,7 +193,7 @@ public class Comms {
                 break;
             }
             // FAILURE POINT: if x and y aren't updated, then this will not work.
-            if (w == 0 && x == my.x && y == my.y && threatChannel==-1) {
+            if (w == 0 && x == my.x && y == my.y && threatChannel == -1) {
                 threatChannel = i;
                 data = 1 * 4096 + locationToInt(my);
                 rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + threatChannel, data);
@@ -202,12 +203,13 @@ public class Comms {
         return threat_index;
     }
 
-    public int totalUnderThreat() throws GameActionException{
+    public int totalUnderThreat() throws GameActionException {
         int numThreatenedArchons = 0;
         for (int i = 0; i < 4; i++) {
             // rc.writeSharedArray(, value);
             int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
-            if ((data / 4096) != 0) numThreatenedArchons++;
+            if ((data / 4096) != 0)
+                numThreatenedArchons++;
         }
         return numThreatenedArchons;
     }
@@ -225,17 +227,16 @@ public class Comms {
         if (data == 0) {
             rc.writeSharedArray(CHANNEL.ARCHON_NUMBER.getValue(), 1);
             archonNumber = 0;
-        }
-        else if (data == 1) {
+        } else if (data == 1) {
             rc.writeSharedArray(CHANNEL.ARCHON_NUMBER.getValue(), 2);
             archonNumber = 1;
-        }
-        else if (data == 2) {
+        } else if (data == 2) {
             rc.writeSharedArray(CHANNEL.ARCHON_NUMBER.getValue(), 3);
             archonNumber = 2;
-        }
-        else archonNumber = 3;
-        if (archonNumber == rc.getArchonCount() - 1) clearArchonNumbers();
+        } else
+            archonNumber = 3;
+        if (archonNumber == rc.getArchonCount() - 1)
+            clearArchonNumbers();
         return archonNumber;
     }
 
@@ -244,14 +245,12 @@ public class Comms {
         int loc_int;
         if (rank == RANK.DEFAULT) {
             return;
-        }
-        else {
+        } else {
             // all locations are within 60, so can be compressed to 6 bits.
             loc_int = rank.getValue() * 4096 + locationToInt(loc);
             if (rc.getRoundNum() % 2 == 0) {
                 rc.writeSharedArray(CHANNEL.SEND_RANKS1.getValue(), loc_int);
-            }
-            else {
+            } else {
                 rc.writeSharedArray(CHANNEL.SEND_RANKS2.getValue(), loc_int);
             }
         }
@@ -260,8 +259,7 @@ public class Comms {
     public void clearRanks() throws GameActionException {
         if (rc.getRoundNum() % 2 == 0) {
             rc.writeSharedArray(CHANNEL.SEND_RANKS1.getValue(), 0);
-        }
-        else {
+        } else {
             rc.writeSharedArray(CHANNEL.SEND_RANKS2.getValue(), 0);
         }
     }

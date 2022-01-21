@@ -274,6 +274,9 @@ public class Archon extends Unit {
             for (int i = 0; i < 10; i++)
                 avg += amountMined[i];
             avg = avg / 10;
+            if (avg == 0) {
+                return false;
+            }
             int numTurnsToResources = (50 - curLead) / avg;
             int numTurnsToAct = rc.getActionCooldownTurns()
                     + (int) ((cooldownMultiplier(rc.getLocation()) * rc.getType().actionCooldown) / 10);
