@@ -64,14 +64,16 @@ public class Archon extends Unit {
             case THREATENED:
                 threatChannel = radio.sendThreatAlert();
                 int tot = radio.totalUnderThreat();
-                
                 if (round_num % tot !=threatChannel){ //alternate between those under threat
                     break;
                 }
-                Direction[] enemyDirs = getEnemyDirs();
-                for (Direction dir: enemyDirs) {
-                    buildSoldier(dir);
+                if (checkForResources(RobotType.SOLDIER.buildCostLead)) {
+                    Direction[] enemyDirs = getEnemyDirs();
+                    for (Direction dir: enemyDirs) {
+                        buildSoldier(dir);
+                    }
                 }
+                else attemptHeal();
                 break;
             case INITIAL:
                 if (round_num % num_archons_alive != archonNumber) break;
@@ -92,7 +94,10 @@ public class Archon extends Unit {
                 }
                 break;
             case OTHER_THREATENED: 
-                if (rc.getTeamLeadAmount(rc.getTeam()) < 600) break; //save for attacked archons
+                if (rc.getTeamLeadAmount(rc.getTeam()) < 600) {
+                    attemptHeal();
+                    break; //save for attacked archons
+                }
             case DEFAULT:
                 attemptHeal();
                 if (round_num % num_archons_alive != archonNumber || round_num % 4 != 0) break;
@@ -165,7 +170,6 @@ public class Archon extends Unit {
             rc.buildRobot(RobotType.MINER, dir);
             built_units++;
             num_miners++;
-            leadLastCall -= RobotType.MINER.buildCostLead;
             return true;
         }
         return false;
@@ -176,7 +180,6 @@ public class Archon extends Unit {
             rc.buildRobot(RobotType.SOLDIER, dir);
             built_units++;
             num_soldiers++;
-            leadLastCall -= RobotType.SOLDIER.buildCostLead;
             return true;
         }
         return false;
@@ -187,7 +190,6 @@ public class Archon extends Unit {
             rc.buildRobot(RobotType.BUILDER, dir);
             built_units++;
             num_builders++;
-            leadLastCall -= RobotType.BUILDER.buildCostLead;
             return true;
         }
         return false;
@@ -208,8 +210,10 @@ public class Archon extends Unit {
     static int[] amountMined = new int[10]; //10 turn avg
     public void updateAmountMined(){
         curLead = rc.getTeamLeadAmount(rc.getTeam());
-        int minedLastCall = curLead - leadLastCall;
-        amountMined[round_num % amountMined.length] = minedLastCall;
+        if (curLead > leadLastCall){ //otherwise, something was spent
+            int minedLastCall = curLead - leadLastCall;
+            amountMined[round_num % amountMined.length] = minedLastCall;
+        }
         leadLastCall = curLead;
     }
 
@@ -222,11 +226,11 @@ public class Archon extends Unit {
     }
 
     public boolean checkForResources(int buildCost) throws GameActionException { //CHANGE TO INCORPORATE GOLD ONCE WE USE SAGES
-        if (curLead >= buildCost || round_num < 10){
+        if (curLead >= buildCost || round_num < 20){
             return true;
         }
         else {
-            int numTurnsToResources = (buildCost - curLead)/getAvgMined();
+            int numTurnsToResources = (buildCost - curLead)/ (getAvgMined());
             int numTurnsToAct = rc.getActionCooldownTurns() + (int) ((cooldownMultiplier(rc.getLocation()) * rc.getType().actionCooldown)/10);
             if (numTurnsToResources > numTurnsToAct) {
                 return false;
@@ -324,4 +328,29 @@ public class Archon extends Unit {
             }
         }
     }
+    /*
+    final static RobotType[] healingOrder = new RobotType[]{RobotType.SOLDIER, RobotType.MINER, RobotType.SAGE, RobotType.WATCHTOWER};
+    public void attemptHeal() throws GameActionException {
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(rc.getType().actionRadiusSquared, rc.getTeam());
+        // if there are any nearby enemy robots, attack the one with the least health
+        RobotInfo weakestBot = null;
+        for (RobotType typeToHeal : healingOrder){
+            for (RobotInfo bot : nearbyBots) {
+                if (bot.type == typeToHeal)
+                    if ((weakestBot == null && bot.health < typeToHeal.health) || 
+                        (weakestBot != null && bot.health < weakestBot.health)) {
+                        weakestBot = bot;
+                    }
+            }
+            if (weakestBot!=null) {
+                if (rc.canRepair(weakestBot.location)) {
+                  //  rc.setIndicatorString("Succesful Heal!");
+                    rc.repair(weakestBot.location);
+                }
+                return;
+            }
+        }
+    }
+    */
+    
 }
