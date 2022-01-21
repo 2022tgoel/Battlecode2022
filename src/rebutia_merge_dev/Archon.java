@@ -5,8 +5,8 @@ import java.util.*;
 
 public class Archon extends Unit {
 
-    private enum MODE {
-        // INITIAL,
+    enum MODE {
+        INITIAL,
         DEFAULT,
         SOLDIER_HUB,
         MAKE_BUILDER,
@@ -14,9 +14,6 @@ public class Archon extends Unit {
         OTHER_THREATENED,
         REINFORCE_WATCHTOWER;
     }
-
-    boolean miningAreaGridSquares[][];
-    int activeMiningAreaGridSquaresCount;
 
     int round_num;
     int archonNumber = -1;
@@ -34,13 +31,12 @@ public class Archon extends Unit {
 
     int num_soldiers_hub = 0;
 
+    int[] defaultBuildOrder;
     int threatChannel = -1;
 
     private int[] troopCounter = { 0, 0, 0, 0, 0 }; // miner, soldier, builder, sage, watchtower
-
-    static final double MINERS_PER_DEPOSIT = 2;
-    static final int EXPLORATORY_MINER_COUNT = 3;
-    static final int DEPOSIT_SIZE = 6;
+    private int desiredNumMiners = 1000;
+    private boolean initial = true;
 
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
@@ -48,36 +44,10 @@ public class Archon extends Unit {
         num_archons_alive = rc.getArchonCount();
         num_archons_init = num_archons_alive;
         dirs = sortedDirections();
+        defaultBuildOrder = chooseBuildOrder();
         archonNumber = radio.getArchonNum();
         radio.initalizeArchonLoc(archonNumber, rc.getLocation());
         addLeadEstimate();
-
-        // designate MINERS_PER_DEPOSIT miners per plentiful grid square, and then add
-        // some for exploration
-        // deposit size that can be handled by a miner: 6x6
-        // int depositsX = (int) Math.ceil((double) rc.getMapWidth() / DEPOSIT_SIZE) +
-        // 5;
-        // int depositsY = (int) Math.ceil((double) rc.getMapHeight() / DEPOSIT_SIZE) +
-        // 5;
-
-        miningAreaGridSquares = new boolean[12][12];
-    }
-
-    private void recordNewMiningDeposits() throws GameActionException {
-        for (int i = 0; i < CHANNEL.NUM_MININGS; i++) {
-            int val = rc.readSharedArray(CHANNEL.MINING1.getValue() + i);
-            if (val != 0) {
-                int x = val / 64;
-                int y = val % 64;
-                int depositXIndex = x / DEPOSIT_SIZE;
-                int depositYIndex = y / DEPOSIT_SIZE;
-                boolean wasAlreadyDiscovered = miningAreaGridSquares[depositXIndex][depositYIndex];
-                if (!wasAlreadyDiscovered) {
-                    miningAreaGridSquares[depositXIndex][depositYIndex] = true;
-                    activeMiningAreaGridSquaresCount++;
-                }
-            }
-        }
     }
 
     @Override
@@ -87,10 +57,9 @@ public class Archon extends Unit {
         radio.clearThreat();
         radio.clearMiningAreas();
         radio.clearTargetAreas();
-        recordNewMiningDeposits();
 
         archonNumber = radio.getArchonNum();
-        boolean b = checkForResources();
+
         troopCounter = new int[] {
                 radio.readCounter(RobotType.MINER),
                 radio.readCounter(RobotType.SOLDIER),
@@ -99,19 +68,14 @@ public class Archon extends Unit {
                 radio.readCounter(RobotType.WATCHTOWER)
         };
 
-        // if (round_num == 2) {
-        // int leadEstimate = radio.getLeadEstimate();
-        // desiredNumMiners = determineMinerNum(leadEstimate);
-        // }
+        if (round_num == 2) {
+            int leadEstimate = radio.getLeadEstimate();
+            desiredNumMiners = determineMinerNum(leadEstimate);
+        }
 
         System.out.println(
                 "Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
         MODE mode = determineMode();
-
-        int expectedMinerCount = EXPLORATORY_MINER_COUNT
-                + (int) (MINERS_PER_DEPOSIT * activeMiningAreaGridSquaresCount);
-
-        boolean shouldBuildMiners = (troopCounter[0] < expectedMinerCount);
 
         switch (mode) {
             case THREATENED:
@@ -121,19 +85,27 @@ public class Archon extends Unit {
                 if (tot != 0 && round_num % tot != threatChannel) { // alternate between those under threat
                     break;
                 }
-                Direction[] enemyDirs = getEnemyDirs();
-                for (Direction dir : enemyDirs) {
-                    buildSoldier(dir);
-                }
+                if (checkForResources(RobotType.SOLDIER.buildCostLead)) {
+                    Direction[] enemyDirs = getEnemyDirs();
+                    for (Direction dir : enemyDirs) {
+                        buildSoldier(dir);
+                    }
+                } else
+                    attemptHeal();
+                break;
+            case INITIAL:
+                if (round_num % num_archons_alive != archonNumber)
+                    break;
+                build(chooseInitialBuildOrder());
                 break;
             case SOLDIER_HUB:
-                if (b) {
+                if (checkForResources(RobotType.SOLDIER.buildCostLead)) {
                     boolean soldier_built = build(new int[] { 0, 1, 0 });
-                    if (soldier_built) {
+                    if (soldier_built)
                         num_soldiers_hub++;
-                    }
                 } else {
                     attemptHeal();
+                    // rc.setIndicatorString("ATTEMPTING HEALING");
                 }
                 if (num_soldiers_hub > 20) {
                     radio.broadcastMode((archonNumber + 1) % num_archons_alive);
@@ -141,39 +113,50 @@ public class Archon extends Unit {
                 }
                 break;
             case OTHER_THREATENED:
-                if (rc.getTeamLeadAmount(rc.getTeam()) < 600)
+                if (rc.getTeamLeadAmount(rc.getTeam()) < 600) {
+                    attemptHeal();
                     break; // save for attacked archons
+                }
             case DEFAULT:
                 attemptHeal();
                 if (round_num % num_archons_alive != archonNumber || round_num % 4 != 0)
                     break;
-
-                build(new int[] { 4, shouldBuildMiners ? 0 : 1, 0 });
-
+                // if (b){
+                build(new int[] { 4, 1, 0 }); // defaultBuildOrder);
+                // }
                 break;
         }
         num_archons_alive = rc.getArchonCount();
-        rc.setIndicatorString("mode: " + mode.toString() + " " + leadLastCall + " ");
+        rc.setIndicatorString("mode: " + mode.toString() + " " + leadLastCall + " " + getAvgMined());
     }
 
     public boolean build(int[] build_order) throws GameActionException {
-        System.out.println("building at rate " + build_order[0] + ", " + build_order[1] + ", " + build_order[2]);
         boolean unit_built = false;
         for (Direction dir : dirs) {
             switch (counter % 3) {
                 case 0:
                     if (built_units < build_order[counter % 3]) {
+                        // rc.setIndicatorString("Trying to build a miner" + " built_units: " +
+                        // built_units + " " + build_order[counter % 3]);
                         unit_built = buildMiner(dir);
+                        // System.out.println("MINER BUILT: " + unit_built + " Roundnum: " +
+                        // rc.getRoundNum());
                     }
                     break;
                 case 1:
                     if (built_units < build_order[counter % 3]) {
+                        // rc.setIndicatorString("Trying to build a soldier" + " built_units: " +
+                        // built_units + " " + build_order[counter % 3]);
                         unit_built = buildSoldier(dir);
+                        // System.out.println("SOLDIER BUILT: " + unit_built);
                     }
                     break;
                 case 2:
                     if (built_units < build_order[counter % 3]) {
+                        // rc.setIndicatorString("Trying to build a builder" + " built_units: " +
+                        // built_units + " " + build_order[counter % 3]);
                         unit_built = buildBuilder(dir);
+                        // System.out.println("BUILDER BUILT: " + unit_built);
                     }
                     break;
             }
@@ -188,35 +171,39 @@ public class Archon extends Unit {
     }
 
     public MODE determineMode() throws GameActionException {
-        if (underThreat()) {
+        if (underThreat())
             return MODE.THREATENED;
-        } else if (radio.totalUnderThreat() > 0) {
+        else if (radio.totalUnderThreat() > 0)
             return MODE.OTHER_THREATENED;
+        else if (troopCounter[0] < desiredNumMiners && initial == true)
+            return MODE.INITIAL;
+        else {
+            initial = false;
         }
-        // else {
-        // // initial = false;
-        // }
 
-        if (radio.getMode() == archonNumber && round_num > 25) {
+        if (radio.getMode() == archonNumber)
             return MODE.SOLDIER_HUB;
-        }
-
-        return MODE.DEFAULT;
+        else
+            return MODE.DEFAULT;
     }
 
     public int determineMinerNum(int leadEstimate) throws GameActionException {
-        int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
+        int sizeBracket = (int) Math.ceil((double) mapArea / 1000.0);
         int numMinersMap = sizeBracket * 2;
         if (leadEstimate > 2000) {
             return 12 + numMinersMap;
-        } else if (leadEstimate > 1000) {
-            return 10 + numMinersMap;
-        } else if (leadEstimate > 500) {
+        }
+        else if (leadEstimate > 1000) {
             return 8 + numMinersMap;
-        } else if (leadEstimate > 100) {
-            return 7 + numMinersMap;
-        } else {
-            return 6 + numMinersMap;
+        }
+        else if (leadEstimate > 500) {
+            return 4 + numMinersMap;
+        }
+        else if (leadEstimate > 100) {
+            return 2 + numMinersMap;
+        }
+        else {
+            return 2 + numMinersMap;
         }
     }
 
@@ -236,7 +223,6 @@ public class Archon extends Unit {
             radio.updateCounter(RobotType.MINER);
             built_units++;
             num_miners++;
-            leadLastCall -= RobotType.MINER.buildCostLead;
             troopCounter[0]++;
             return true;
         }
@@ -249,7 +235,6 @@ public class Archon extends Unit {
             radio.updateCounter(RobotType.SOLDIER);
             built_units++;
             num_soldiers++;
-            leadLastCall -= RobotType.SOLDIER.buildCostLead;
             troopCounter[1]++;
             return true;
         }
@@ -262,7 +247,6 @@ public class Archon extends Unit {
             radio.updateCounter(RobotType.BUILDER);
             built_units++;
             num_builders++;
-            leadLastCall -= RobotType.BUILDER.buildCostLead;
             troopCounter[2]++;
             return true;
         }
@@ -280,34 +264,44 @@ public class Archon extends Unit {
     }
 
     //////////////////////////////////////////////////////////////////////
+    static int curLead = 200;
     static int leadLastCall = 200;
     static int[] amountMined = new int[10]; // 10 turn avg
 
-    public boolean checkForResources() throws GameActionException { // CHANGE TO INCORPORATE GOLD ONCE WE USE SAGES
-        // calculated if you'll have enough resources to build something anytime soon
-        int curLead = rc.getTeamLeadAmount(rc.getTeam());
-        int minedLastCall = curLead - leadLastCall;
-        amountMined[round_num % 10] = minedLastCall;
+    public void updateAmountMined() {
+        curLead = rc.getTeamLeadAmount(rc.getTeam());
+        if (curLead >= leadLastCall) { // otherwise, something was spent
+            int minedLastCall = curLead - leadLastCall;
+            amountMined[round_num % amountMined.length] = minedLastCall;
+        }
         leadLastCall = curLead;
-        if (curLead >= 50 || round_num < 10) {
+    }
+
+    public double getAvgMined() {
+        double avg = 0;
+        for (int i = 0; i < amountMined.length; i++)
+            avg += (double) amountMined[i];
+        avg = avg / (double) amountMined.length;
+        return avg;
+
+    }
+
+    public boolean checkForResources(int buildCost) throws GameActionException { // CHANGE TO INCORPORATE GOLD ONCE WE
+                                                                                 // USE SAGES
+        if (curLead >= buildCost || round_num < 20) {
             return true;
         } else {
-            int avg = 0;
-            for (int i = 0; i < 10; i++)
-                avg += amountMined[i];
-            avg = avg / 10;
-            if (avg == 0) {
-                return false;
-            }
-            int numTurnsToResources = (50 - curLead) / avg;
+            int numTurnsToResources = (int) (((double) buildCost - (double) curLead) / Math.max(getAvgMined(), 2.0));
             int numTurnsToAct = rc.getActionCooldownTurns()
                     + (int) ((cooldownMultiplier(rc.getLocation()) * rc.getType().actionCooldown) / 10);
+            if (numTurnsToResources > numTurnsToAct) {
+                return false;
+            }
             if (numTurnsToResources > numTurnsToAct) {
                 return false;
             } else
                 return true;
         }
-
     }
 
     public MapLocation getAvgEnemyLocation() throws GameActionException {
@@ -353,8 +347,18 @@ public class Archon extends Unit {
         return dirs;
     }
 
+    public int[] chooseBuildOrder() {
+        if (mapArea < 1400) {
+            return new int[] { 1, 6, 0 }; // miners, soldiers, builders
+        } else if (mapArea < 2200) {
+            return new int[] { 1, 6, 0 }; // miners, soldiers, builders
+        } else {
+            return new int[] { 1, 6, 0 }; // miners, soldiers, builders
+        }
+    }
+
     public int[] chooseInitialBuildOrder() throws GameActionException {
-        return new int[] { 2, 1, 0 };
+        return new int[] { 1, 0, 0 };
     }
 
     public void attemptHeal() throws GameActionException {

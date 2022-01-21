@@ -150,7 +150,8 @@ public class Comms {
         MapLocation[] locs = new MapLocation[num_archons];
         for (int i = 0; i < num_archons; i++) {
             int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
-            int x = (data % 4096) / 64;
+            int w = data / 4096;
+            int x = (data - w * 4096) / 64;
             int y = data % 64;
             locs[i] = new MapLocation(x, y);
         }
@@ -183,7 +184,6 @@ public class Comms {
             int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
             // go through channels until you find an empty one to communicate with.
             int w = data / 4096;
-            data = data % 4096;
             int x = data / 64;
             int y = data % 64;
             // already alerted.

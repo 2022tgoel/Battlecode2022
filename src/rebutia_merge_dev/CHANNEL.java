@@ -23,19 +23,12 @@ public enum CHANNEL {
 
     ORDERS(61),
     SEND_RANKS1(62),
-    SEND_RANKS2(63),
+    SEND_RANKS2(63), 
     ;
-
+    
     public static final int NUM_TARGETS = 5;
-    public static final int NUM_MININGS = 5;
 
     private final int id;
-
-    CHANNEL(int id) {
-        this.id = id;
-    }
-
-    public int getValue() {
-        return id;
-    }
+    CHANNEL(int id) { this.id = id; }
+    public int getValue() { return id; }
 }
