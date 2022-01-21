@@ -174,6 +174,25 @@ public class Unit {
         return transformInto(RobotMode.PORTABLE);
     }
 
+    public Direction getLeastRubbleBuildableDirection(RobotType robotType) throws GameActionException {
+        int bestDirectionIdx = -1;
+        int bestDirectionRubble = 100000;
+        MapLocation me = rc.getLocation();
+        for (int i = 0; i < directions.length; i++) {
+            int rubbleHere = rc.senseRubble(me.add(directions[i]));
+            if (rubbleHere < bestDirectionRubble && rc.canBuildRobot(robotType, directions[i])) {
+                bestDirectionRubble = rubbleHere;
+                bestDirectionIdx = i;
+            }
+        }
+
+        if (bestDirectionIdx == -1) {
+            return null;
+        } else {
+            return directions[bestDirectionIdx];
+        }
+    }
+
     public int numFriendlyMiners() {
         RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
         int c = 0;
