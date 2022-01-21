@@ -350,6 +350,10 @@ public class Unit {
         return (int) Math.floor((1 + rc.senseRubble(loc) / 10.0) * rc.getType().movementCooldown);
     }
 
+    public double cooldownMultiplier(MapLocation loc) throws GameActionException{
+        return (1.0+(double)rc.senseRubble(loc)/10.0);
+    }
+
     public int[] getExploratoryDir() {
         return getExploratoryDir(5, new MapLocation(rc.getMapWidth() / 2, rc.getMapHeight() / 2));
     }

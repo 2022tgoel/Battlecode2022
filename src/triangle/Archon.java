@@ -272,7 +272,6 @@ public class Archon extends Unit {
     }
 
     public Direction[] sortedDirections() {
-        
         Direction[] dirs = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
         Arrays.sort(dirs, (a,b) -> distToWall(b) - distToWall(a));
         return dirs;

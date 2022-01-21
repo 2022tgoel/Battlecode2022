@@ -35,6 +35,8 @@ public class Archon extends Unit {
     int threatChannel = -1;
 
     private int[] troopCounter = { 0, 0, 0, 0, 0 }; // miner, soldier, builder, sage, watchtower
+    private int desiredNumMiners = 1000;
+    private boolean initial = true;
 
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
@@ -44,6 +46,8 @@ public class Archon extends Unit {
         dirs = sortedDirections();
         defaultBuildOrder = chooseBuildOrder();
         archonNumber = radio.getArchonNum();
+        radio.initalizeArchonLoc(archonNumber, rc.getLocation());
+        addLeadEstimate();
     }
 
     @Override
@@ -63,6 +67,11 @@ public class Archon extends Unit {
                 0,
                 radio.readCounter(RobotType.WATCHTOWER)
         };
+
+        if (round_num == 2) {
+            int leadEstimate = radio.getLeadEstimate();
+            desiredNumMiners = determineMinerNum(leadEstimate);
+        }
 
         System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
         MODE mode = determineMode();
@@ -155,6 +164,24 @@ public class Archon extends Unit {
         else if (num_miners < numMinersInitial) return MODE.INITIAL; 
         else if (radio.getMode() == archonNumber) return MODE.SOLDIER_HUB;
         else return  MODE.DEFAULT;
+    }
+
+    public int determineMinerNum(int leadEstimate) throws GameActionException {
+        if (leadEstimate > 2000) {
+            return 12;
+        }
+        else if (leadEstimate > 1000) {
+            return 10;
+        }
+        else if (leadEstimate > 500) {
+            return 8;
+        }
+        else if (leadEstimate > 100) {
+            return 6;
+        }
+        else {
+            return 4;
+        }
     }
 
     public boolean underThreat() throws GameActionException{
@@ -330,5 +357,58 @@ public class Archon extends Unit {
                 }
             }
         }
+    }
+    
+    public void addLeadEstimate() throws GameActionException {
+        MapLocation[] leadLocs = rc.senseNearbyLocationsWithLead();
+        MapLocation[] friendlyArchonLocs = radio.getFriendlyArchons(num_archons_alive);
+        int total_value = 0;
+        if (archonNumber != 0) {
+            MapLocation[] prevArchons = firstN(friendlyArchonLocs, archonNumber - 1);
+            MapLocation[] leadLocsUncounted = leadLocsNotCounted(leadLocs, prevArchons);
+            for (MapLocation loc : leadLocsUncounted) {
+                total_value += rc.senseLead(loc);
+            }
+        }
+        else {
+            for (MapLocation loc : leadLocs) {
+                total_value += rc.senseLead(loc);
+            }
+        }
+        if (total_value > 0) {
+            radio.incrementLeadEsimate(total_value);
+        }
+    }
+
+    public MapLocation[] leadLocsNotCounted(MapLocation[] leadLocs, MapLocation[] archons) throws GameActionException {
+        MapLocation[] locs = new MapLocation[leadLocs.length];
+        int uncounted = 0;
+        for (int i = 0; i < leadLocs.length; i++) {
+            boolean counted = false;
+            // check if lead is visible by any of the archons
+            for (int j = 0; j < archons.length; j++) {
+                if (leadLocs[i].distanceSquaredTo(archons[j]) <= RobotType.ARCHON.visionRadiusSquared) {
+                    counted = true;
+                }
+            }
+            // if not visible, add to list
+            if (!counted) {
+                locs[uncounted] = leadLocs[i];
+                uncounted++;
+            }
+        }
+        MapLocation[] leadLocsUncounted = new MapLocation[uncounted];
+        for (int i = 0; i < uncounted; i++) {
+            leadLocsUncounted[i] = locs[i];
+        }
+        return leadLocsUncounted;
+    }
+
+    public MapLocation[] firstN(MapLocation[] locs, int n) throws GameActionException{
+        MapLocation[] newLocs = new MapLocation[n];
+        for (int i = 0; i < n; i++) {
+            newLocs[i] = locs[i];
+        }
+        return newLocs;
     }
 }

@@ -141,6 +141,31 @@ public class Comms {
         }
     }
 
+    public void initalizeArchonLoc(int archonIndex, MapLocation loc) throws GameActionException {
+        int locInt = locationToInt(loc);
+        rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + archonIndex, locInt);
+    }
+
+    public MapLocation[] getFriendlyArchons(int num_archons) throws GameActionException {
+        MapLocation[] locs = new MapLocation[num_archons];
+        for (int i = 0; i < num_archons; i++) {
+            int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
+            int w = data / 4096;
+            int x = (data - w * 4096) / 64;
+            int y = data % 64;
+            locs[i] = new MapLocation(x, y);
+        }
+        return locs;
+    }
+
+    public int getLeadEstimate() throws GameActionException {
+        return rc.readSharedArray(CHANNEL.LEAD_ESTIMATE.getValue());
+    }
+
+    public void incrementLeadEsimate(int increment) throws GameActionException {
+        rc.writeSharedArray(CHANNEL.LEAD_ESTIMATE.getValue(), rc.readSharedArray(CHANNEL.LEAD_ESTIMATE.getValue()) + increment);
+    }
+
     public int getMode() throws GameActionException {
         return rc.readSharedArray(CHANNEL.ARCHON_MODE.getValue());
     }
@@ -152,24 +177,29 @@ public class Comms {
     public int sendThreatAlert() throws GameActionException {
         MapLocation my = rc.getLocation();
         int threatChannel = -1;
+        int threat_index = 0;
         for (int i = 0; i < 4; i++) {
             // rc.writeSharedArray(, value);
             int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
             // go through channels until you find an empty one to communicate with.
+            int w = data / 4096;
             int x = data / 64;
             int y = data % 64;
             // already alerted.
-            if (x == my.x && y == my.y) {
+            if (w == 1 && x == my.x && y == my.y) {
                 threatChannel = i;
-                return threatChannel;
+                threat_index++;
+                break;
             }
-            if (data == 0 && threatChannel == -1) {
+            // FAILURE POINT: if x and y aren't updated, then this will not work.
+            if (w == 0 && x == my.x && y == my.y && threatChannel==-1) {
                 threatChannel = i;
+                data = 1 * 4096 + locationToInt(my);
+                rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + threatChannel, data);
             }
         }
-        if (threatChannel == -1) threatChannel = 4; //override
-        rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + threatChannel, locationToInt(my));
-        return threatChannel;
+
+        return threat_index;
     }
 
     public int totalUnderThreat() throws GameActionException{
@@ -177,7 +207,7 @@ public class Comms {
         for (int i = 0; i < 4; i++) {
             // rc.writeSharedArray(, value);
             int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
-            if (data != 0) numThreatenedArchons++;
+            if ((data / 4096) != 0) numThreatenedArchons++;
         }
         return numThreatenedArchons;
     }
