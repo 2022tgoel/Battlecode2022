@@ -19,6 +19,7 @@ public class Builder extends Unit {
     private int num_labs = 0;
     private int built_units = 0;
     private int[] build_order;
+
     public Builder(RobotController rc) throws GameActionException {
         super(rc);
         rank = getBuilderRank();
@@ -50,7 +51,7 @@ public class Builder extends Unit {
     }
 
     private int[] getBuildOrder() {
-        return new int[]{1, 0}; // laboratories, watchtowers
+        return new int[] { 1, 0 }; // laboratories, watchtowers
     }
 
     public MODE getMode() {
@@ -69,31 +70,34 @@ public class Builder extends Unit {
     }
 
     public Direction[] sortedDirections() {
-        Direction[] dirs = {Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH, Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST};
-        Arrays.sort(dirs, (a,b) -> distToWall(b) - distToWall(a));
+        Direction[] dirs = { Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH,
+                Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST };
+        Arrays.sort(dirs, (a, b) -> distToWall(b) - distToWall(a));
         return dirs;
     }
 
-    public void build(int[] build_order) throws GameActionException{
-        for (Direction dir: dirs) {
+    public void build(int[] build_order) throws GameActionException {
+        for (Direction dir : dirs) {
             switch (counter % 2) {
                 case 0:
-                    rc.setIndicatorString("Trying to build a laboratory" + " built_units: " + built_units + " " + build_order[counter % 2]);
+                    rc.setIndicatorString("Trying to build a laboratory" + " built_units: " + built_units + " "
+                            + build_order[counter % 2]);
                     buildLaboratory(dir);
                     break;
                 case 1:
-                    rc.setIndicatorString("Trying to build a watchtower" + " built_units: " + built_units + " " + build_order[counter % 2]);
+                    rc.setIndicatorString("Trying to build a watchtower" + " built_units: " + built_units + " "
+                            + build_order[counter % 2]);
                     buildWatchtower(dir);
                     break;
             }
-            if (built_units >= build_order[counter % 2]){
+            if (built_units >= build_order[counter % 2]) {
                 counter++;
                 built_units = 0;
-            }   
+            }
         }
     }
 
-    public void buildLaboratory(Direction dir) throws GameActionException{
+    public void buildLaboratory(Direction dir) throws GameActionException {
         if (rc.canBuildRobot(RobotType.LABORATORY, dir)) {
             rc.buildRobot(RobotType.LABORATORY, dir);
             built_units++;
@@ -101,7 +105,7 @@ public class Builder extends Unit {
         }
     }
 
-    public void buildWatchtower(Direction dir) throws GameActionException{ 
+    public void buildWatchtower(Direction dir) throws GameActionException {
         if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
             rc.buildRobot(RobotType.SOLDIER, dir);
             built_units++;
@@ -111,8 +115,9 @@ public class Builder extends Unit {
 
     public void heal() throws GameActionException {
         RobotInfo h = rc.senseRobotAtLocation(homeArchon);
-        if (h!=null && h.type == RobotType.ARCHON && h.health < RobotType.ARCHON.health) { //healing mode
-            if (rc.canRepair(homeArchon)) rc.repair(homeArchon);
+        if (h != null && h.type == RobotType.ARCHON && h.health < RobotType.ARCHON.health) { // healing mode
+            if (rc.canRepair(homeArchon))
+                rc.repair(homeArchon);
         }
     }
 
@@ -127,10 +132,12 @@ public class Builder extends Unit {
         int minDistSquared = 10000;
         for (int dx = -4; dx <= 4; dx++) {
             for (int dy = -4; dy <= 4; dy++) {
-                if (dx == 0 && dy == 0) continue;
+                if (dx == 0 && dy == 0)
+                    continue;
                 if (validCoords(cur.x + dx, cur.y + dy)) {
                     MapLocation loc = new MapLocation(cur.x + dx, cur.y + dy);
-                    if (loc.equals(homeArchon)) continue;
+                    if (loc.equals(homeArchon))
+                        continue;
                     if (rc.canSenseLocation(loc)) {
                         int numLead = rc.senseLead(loc);
                         if (numLead == 0) {
@@ -148,11 +155,11 @@ public class Builder extends Unit {
         if (target != null) {
             fuzzyMove(target);
             rc.setIndicatorString("target: " + target.x + " " + target.y);
-        }
-        else moveInDirection(exploratoryDir);
+        } else
+            moveInDirection(exploratoryDir);
     }
 
-    public RANK getBuilderRank() throws GameActionException{
+    public RANK getBuilderRank() throws GameActionException {
         RANK new_rank = findRank();
         if (new_rank == RANK.DEFAULT || new_rank == RANK.MARTYR) {
             return new_rank;
