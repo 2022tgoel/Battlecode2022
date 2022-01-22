@@ -330,7 +330,7 @@ public class Miner extends Unit {
     public int mine() throws GameActionException{
         //prioritize gold
         int amountMined = 0;
-        for (MapLocation loc : rc.senseNearbyLocationsWithGold(1)) {
+        for (MapLocation loc : rc.senseNearbyLocationsWithGold(RobotType.MINER.actionRadiusSquared)) {
             // Notice that the Miner's action cooldown is very low.
             // You can mine multiple times per turn!
             while (rc.canMineGold(loc)) {
@@ -339,7 +339,7 @@ public class Miner extends Unit {
             }
         }
         //then go to lead
-        for (MapLocation loc : rc.senseNearbyLocationsWithLead(1)) {
+        for (MapLocation loc : rc.senseNearbyLocationsWithLead(RobotType.MINER.actionRadiusSquared)) {
             // Notice that the Miner's action cooldown is very low.
             // You can mine multiple times per turn;
             while (rc.canMineLead(loc) && rc.senseLead(loc) > 1) {
