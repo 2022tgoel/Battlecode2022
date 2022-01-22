@@ -590,48 +590,40 @@ public class Unit {
                     archon = bot;
                 }
             }
+            MapLocation attackLocation = null;
             // make more conditional, like damaging which one would give the biggest advantage
             if (weakestSage != null) {
                 if (rc.canAttack(weakestSage.location)) {
-                    rc.attack(weakestSage.location);
-                    target = weakestSage.location;
-                    broadcastTarget(weakestSage.location, enemySoldierCount);
-                    return true;
+                    attackLocation = weakestSage.location;
                 }
             } else if (weakestSoldier != null) {
                 if (rc.canAttack(weakestSoldier.location)) {
-                    rc.attack(weakestSoldier.location);
-                    target = weakestSoldier.location;
-                    broadcastTarget(weakestSoldier.location, enemySoldierCount);
-                    return true;
+                    attackLocation = weakestSoldier.location;
                 }
             } else if (weakestTower != null) {
                 if (rc.canAttack(weakestTower.location)) {
-                    rc.attack(weakestTower.location);
-                    target = weakestTower.location;
-                    broadcastTarget(weakestTower.location, enemySoldierCount);
-                    return true;
+                    attackLocation = weakestTower.location;
                 }
             } else if (weakestMiner != null && attackMiners) {
                 if (rc.canAttack(weakestMiner.location)) {
-                    rc.attack(weakestMiner.location);
-                    target = weakestMiner.location;
-                    broadcastTarget(weakestMiner.location, enemySoldierCount);
-                    return true;
+                    attackLocation = weakestMiner.location;
                 }
             } else if (weakestBuilder != null && attackMiners) {
                 if (rc.canAttack(weakestBuilder.location)) {
-                    rc.attack(weakestBuilder.location);
-                    target = weakestBuilder.location;
-                    broadcastTarget(weakestBuilder.location, enemySoldierCount);
-                    return true;
+                    attackLocation = weakestBuilder.location;
                 }
             } else if (archon != null) {
                 if (rc.canAttack(archon.location)) {
                     rc.attack(archon.location);
-                    broadcastTarget(archon.location, enemySoldierCount);
+                    broadcastTarget(archon.location, 10);
                     return true;
                 }
+            }
+            if (attackLocation != null) {
+                rc.attack(attackLocation);
+                target = attackLocation;
+                broadcastTarget(attackLocation, enemySoldierCount);
+                return true;
             }
         }
         return false;

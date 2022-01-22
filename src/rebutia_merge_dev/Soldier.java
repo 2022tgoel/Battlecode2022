@@ -55,6 +55,9 @@ public class Soldier extends Unit {
                 continue;
             }
             int data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + i);
+            if (data == 0) {
+                continue;
+            }
             int x = data/64;
             int y = data%64;
             MapLocation archon = new MapLocation(x, y);
@@ -100,10 +103,31 @@ public class Soldier extends Unit {
                 target = null;
                 break;
             case SEARCHING_ENEMIES:
+                // if it finds an enemy, stop moving and attack
                 if (adjacentToEdge()) { //TODO: bots occasionally get stuck somehow
                     lastAttackDir = flip(lastAttackDir);
                 }
-                moveInDirection(lastAttackDir);
+                // check if we're within N squares of the target
+                RobotInfo[] ri = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
+                boolean canAttackSoldier = false;
+                for (RobotInfo r : ri) {
+                    if (r.type == RobotType.SOLDIER) {
+                        canAttackSoldier = true;
+                        break;
+                    }
+                }
+                if (!canAttackSoldier) {
+                    moveInDirection(lastAttackDir);
+                } else {
+                    attacked = attemptAttack(false);
+                    if (attacked) {
+                        MapLocation me= rc.getLocation();
+                        lastAttackDir = new int[] {
+                            target.x - me.x,
+                            target.y - me.y
+                        };
+                    }
+                }
                 break;
             case DEFENSIVE_RUSH:
                 defensiveMove();
@@ -122,7 +146,11 @@ public class Soldier extends Unit {
                     }
                 }
                 MapLocation closestHealingCenter = findClosestNonModeArchon();
-                moveToLocation(closestHealingCenter);
+                if (closestHealingCenter == null) {
+                    rc.disintegrate();
+                } else {
+                    moveToLocation(closestHealingCenter);
+                }
                 break;
         }
 
@@ -152,7 +180,6 @@ public class Soldier extends Unit {
     }
 
     public MODE determineMode() throws GameActionException {
-        
         // Priority 1 - Defend.
         threatenedArchons = findThreatenedArchons();
         if (threatenedArchons != null) {
@@ -164,6 +191,13 @@ public class Soldier extends Unit {
         }
 
         // Priority 2 - Don't die.
+        if (needsHealing) {
+            return MODE.DYING;
+        } else if (rc.getHealth() <= 14) {
+            needsHealing = true;
+            return MODE.DYING;
+        }
+
         int[] potFleeDir = fleeDirection();
         boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
         if (!validFlee && stopFleeingRound == round_num) {
@@ -178,22 +212,15 @@ public class Soldier extends Unit {
             }
             return MODE.FLEE;
         }
-
-        if (needsHealing) {
-            return MODE.DYING;
-        } else if (rc.getHealth() < 10) {
-            needsHealing = true;
-            return MODE.DYING;
-        }
         
         // Priority 3 - Hunt enemies.
         if (target != null) {
             return MODE.HUNTING;
-        }
-        else if (lastAttackDir != null){
+        } else if (lastAttackDir != null) {
             return MODE.SEARCHING_ENEMIES;
         }
-        else return MODE.EXPLORATORY;
+        
+        return MODE.EXPLORATORY;
     }
 
     /**
@@ -298,8 +325,6 @@ public class Soldier extends Unit {
     }
 
     public void readBroadcastedTargets() throws GameActionException {
-
-
         int data;
         int closestDist = 100000;
         MapLocation cur = rc.getLocation();
