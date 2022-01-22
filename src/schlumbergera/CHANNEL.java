@@ -15,9 +15,12 @@ public enum CHANNEL {
     // channels 20 - 24
     TARGET(20),
     ARCHON_MODE(26),
-    ARCHON_MOVE(27),
+    //channels for archon moving specifically
+    ARCHON_MOVE(27), //for where to move
     //channels 30 - 33
     ARCHON_POSITION(30),
+    ARCHON_MOVING(34), //for whether one is moving
+    //
     ORDERS(61),
     SEND_RANKS1(62),
     SEND_RANKS2(63), 

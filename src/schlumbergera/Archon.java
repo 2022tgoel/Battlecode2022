@@ -11,6 +11,7 @@ public class Archon extends Unit {
         SOLDIER_HUB,
         THREATENED,
         OTHER_THREATENED,
+        MOVING,
         ;
     }
 
@@ -62,7 +63,11 @@ public class Archon extends Unit {
 
         //System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
         MODE mode = determineMode();
-        
+            
+        if (mode != MODE.MOVING){
+            if (rc.getMode()== RobotType.PORTABLE && rc.canTransform()) rc.transform();
+        }
+
         switch (mode) {
             case THREATENED:
                 threatChannel = radio.sendThreatAlert();
@@ -91,12 +96,10 @@ public class Archon extends Unit {
                     attemptHeal();
                  //   rc.setIndicatorString("ATTEMPTING HEALING");
                 }
-            
-                if (num_soldiers_hub > 20) {
-                    radio.broadcastMode((archonNumber + 1) % num_archons_alive);
-                    num_soldiers_hub = 0;
-                }
-                
+                break;
+            case MOVING:
+                moveToLocation(move);
+                radio.sendMovingAlert();
                 break;
             case OTHER_THREATENED: 
                 if (rc.getTeamLeadAmount(rc.getTeam()) < 600) {
@@ -104,7 +107,6 @@ public class Archon extends Unit {
                     break; //save for attacked archons
                 }
             case DEFAULT:
-                moveArchon();
                 attemptHeal();
                 if (round_num % num_archons_alive != archonNumber || round_num % 4 != 0) break;
                 //if (b){
@@ -166,15 +168,17 @@ public class Archon extends Unit {
                 else return MODE.DEFAULT;
             }
             else {
-                //archon is in move mode
-                if ()
-                if (isClosestArchon()) return MODE.SOLDIER_HUB;
-                else return 
+                if (isClosestArchon(move)) {
+                    return robotModeSwitch();
+                }
+                else {
+                    if (archonMoving()){ //soldier hub delegation passed to second closest while it is moving
+                        if (isSecondClosestArchon()) return MODE.SOLDIER_HUB;
+                    }
+                    else return MODE.DEFAULT;
+                } 
             }
         }
-            if ()
-        else if (radio.getMode() == archonNumber) return MODE.SOLDIER_HUB;
-        else return  MODE.DEFAULT;
     }
 
     public boolean underThreat() throws GameActionException{
@@ -197,8 +201,7 @@ public class Archon extends Unit {
         else return null;
     }
 
-    public MapLocation shouldMove() throws GameActionException{ //gets the position you should move to
-        MapLocation loc = getArchonMovementLocation();
+    public MapLocation isClosestArchon(MapLocation loc) throws GameActionException{ //gets the position you should move to
         if (loc != null){
             // return only if you are the closest archon
             MapLocation closest = null;
@@ -209,24 +212,35 @@ public class Archon extends Unit {
                     closest = cur;
                 }
             }
-            if (closest.equals(rc.getLocation())) return loc;
+            if (closest.equals(rc.getLocation())) return true;
         }
-        return null;
+        return false;
     }
 
-    public boolean isClosestArchon() throws GameActionException{ //gets the position you should move to
-               
-        MapLocation closest = null;
-        for (int i = 0; i < num_archons_alive; i++){
-            MapLocation cur = radio.readArchonLocation(i);
-            if (closest == null || 
-                (closest!=null && loc.distanceSquaredTo(cur) < loc.distanceSquaredTo(closest))){
-                closest = cur;
+    public MapLocation isSecondClosestArchon(MapLocation loc) throws GameActionException {
+        if (loc != null){
+            // return only if you are the closest archon
+            MapLocation closest = null;
+            MapLocation secondClosest = null;
+            for (int i = 0; i < num_archons_alive; i++){
+                MapLocation cur = radio.readArchonLocation(i);
+                if (closest == null || 
+                    (closest!=null && loc.distanceSquaredTo(cur) < loc.distanceSquaredTo(closest))){
+                    secondClosest = closest;
+                    closest = cur;
+                }
+                else if (secondClosest==null ||
+                        (secondClosest!=null && loc.distanceSquaredTo(cur) < loc.distanceSquaredTo(secondClosest))){
+                    secondClosest = cur;
+                }
             }
+            if (secondClosest.equals(rc.getLocation())) return true;
         }
-        if (closest.equals(rc.getLocation())) return loc;
-        }
-        return null;
+        return false;
+    }
+
+    public boolean archonMoving() throws GameActionException {
+        return (rc.readSharedArray(CHANNEL.ARCHON_MOVING) > 0);
     }
 
     MapLocation move = null;
@@ -234,27 +248,28 @@ public class Archon extends Unit {
     final int maxTurnsMoving = 60;
     int turnsWaiting = 60;
     final int minTurnsWaiting = 60;
-    public void moveArchon() throws GameActionException{
+    public MODE robotModeSwitch() throws GameActionException{
         if (rc.getMode() == RobotMode.PORTABLE){
-            if (rc.getLocation().distanceSquaredTo(move) < 15 || turnsMoving >= maxTurnsMoving){ 
+            if (rc.getLocation().distanceSquaredTo(move) < 20 || turnsMoving >= maxTurnsMoving){ 
                 //TODO: factor in rubble, don't settle on low rubble
-                // also make sure you're not moving all the time
                 if (rc.getMode() == RobotMode.PORTABLE){
                     if (rc.canTransform()) rc.transform();
                     turnsMoving = 0; // reset
                 }
             }
             else {
-                moveToLocation(move);
                 turnsMoving++;
             }
         }
-        else if (rc.getMode() == RobotMode.TURRET){
-            if (turnsWaiting >= minTurnsWaiting){
+        else { //turret mode
+            if (rc.getLocation().distanceSquaredTo(move) > 20 && turnsWaiting >= minTurnsWaiting ){
                 if (rc.canTransform()) rc.transform();
+                turnsWaiting = 0;
             }
-            turnsWaiting++;
+            else turnsWaiting++;
         }
+        if (rc.getMode() == RobotMode.PORTABLE) return MODE.MOVING;
+        else return MODE.SOLDIER_HUB;
     }
     
     /////////////////////////////////////////////////////////////////////
