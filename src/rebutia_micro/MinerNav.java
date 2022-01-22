@@ -1,4 +1,4 @@
-
+package rebutia_micro;
 
 import battlecode.common.*;
 public class MinerNav {
