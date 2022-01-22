@@ -394,21 +394,9 @@ public class Unit {
 
     public int[] getExploratoryDir(int span, MapLocation loc) {
         // presumes span is odd.
-        int[] dir;
         MapLocation cur = rc.getLocation();
-        if (loc.x - cur.x > 0) {
-            if (loc.y - cur.y > 0) {
-                dir = new int[] { 8, 8 };
-            } else {
-                dir = new int[] { 8, -8 };
-            }
-        } else {
-            if (loc.y - cur.y > 0) {
-                dir = new int[] { -8, 8 };
-            } else {
-                dir = new int[] { -8, -8 };
-            }
-        }
+        Direction dTemp = cur.directionTo(loc);
+        int[] dir = new int[] { dTemp.dx * 8, dTemp.dy * 8};
         int[][] dirs = new int[span][2];
         int counter = 0;
 
