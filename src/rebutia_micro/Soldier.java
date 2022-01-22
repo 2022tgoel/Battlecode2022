@@ -50,7 +50,8 @@ public class Soldier extends Unit {
         radio.updateCounter();
         attacked = attemptAttack(false);
         findTargets();
-        senseMiningArea();
+        int amountSensed = senseMiningArea();
+        // System.out.println("S: " + amountSensed);
 
         mode = determineMode();
         visualize();

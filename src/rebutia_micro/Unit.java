@@ -268,9 +268,11 @@ public class Unit {
             }
             if (data == 0) {
                 bestInd = i;
+                lowestDemand = 0;
                 break;
             }
             if (d < lowestDemand) {
+                lowestDemand = d;
                 bestInd = i;
             }
         }
