@@ -78,7 +78,7 @@ public class Soldier extends Unit {
                 defensiveMove();
                 break;
             case FLEE:
-                fleeLowRubble(fleeDirection);
+                moveLowRubble(fleeDirection);
                 break;
             default:
                 break;
@@ -279,38 +279,17 @@ public class Soldier extends Unit {
     }
 
     public void huntTarget() throws GameActionException {
-        /* // if target is within 3 tiles, do not move closer, otherwise move closer
         MapLocation cur = rc.getLocation();
-        RobotInfo[] friendlySoldiers = rc.senseNearbyRobots(-1, rc.getTeam());
-        int[] dir = new int[2];
-        int dx = 0;
-        int dy = 0;
-        int num_soldiers = 0;
-        if (friendlySoldiers != null) {
-            for (RobotInfo robot: friendlySoldiers) {
-                if (robot.type == RobotType.SOLDIER) {
-                    dir[0] += (target.x - robot.location.x);
-                    dir[1] += (target.y - robot.location.y);
-                    num_soldiers++;
-                }
-            }
-        }
-        dx += (target.x - cur.x);
-        dy += (target.y - cur.y);
-        // this is stupid. make it just go to the target
-        dir[0] = (dir[0] + dx) / (num_soldiers + 1);
-        dir[1] = (dir[1] + dy) / (num_soldiers + 1);
-        if (dir[0] != 0 || dir[1] != 0) lastAttackDir = scaleToSize(dir);
-        else  {
-            dir = new int[]{dx, dy};
-            lastAttackDir = scaleToSize(dir);
-        } */
         if (rc.getLocation().distanceSquaredTo(target) <= 13) {
             // check for low rubble squares to move to
-            Direction lowRubble = findLowRubble();
-            if (lowRubble != null) rc.move(lowRubble);
+            moveLowRubble(new int[] {-target.x + cur.x, -target.y + cur.y}, 20);
         }
-        else moveToLocation(target);
+        else if (rc.getLocation().distanceSquaredTo(target) <= 25) {
+            moveLowRubble(new int[] {target.x - cur.x, target.y - cur.y}, 15);
+        }
+        else {
+            moveToLocation(target);
+        }
     }
 
     public Direction findLowRubble() throws GameActionException {
@@ -329,12 +308,16 @@ public class Soldier extends Unit {
         return bestDir;
     }
 
-    public void fleeLowRubble(int[] dir) throws GameActionException {
+    public void moveLowRubble(int[] dir) throws GameActionException {
+        moveLowRubble(dir, 20);
+    }
+
+    public void moveLowRubble(int[] dir, int threshold) throws GameActionException {
         MapLocation cur = rc.getLocation();
         Direction d = cur.directionTo(new MapLocation(cur.x + dir[0], cur.y + dir[1]));
         Direction[] sorted_dirs = {d, d.rotateLeft(), d.rotateRight(), d.rotateLeft().rotateLeft(), d.rotateRight().rotateRight(), d.opposite().rotateRight(), d.opposite().rotateLeft(), d.opposite()};
         int a = 6;
-        int lowestCost = a * (1 + (rc.senseRubble(rc.getLocation()) / 10)) + 50;
+        int lowestCost = a * (1 + (rc.senseRubble(rc.getLocation()) / 10)) + threshold;
         Direction bestDir = null;
         for (int i = 0; i < 8; i++) {
             if (!rc.canMove(sorted_dirs[i])) continue;
