@@ -35,8 +35,10 @@ public class Soldier extends Unit {
     private int[] exploratoryDir;
 
     //for attacking and searching enemies modes
-    private MapLocation target = null;
+    private int targetOffset=-1;
     private int[] lastAttackDir = null;
+    // exists because we want to heal until we're above a certain threshold
+    private boolean needsHealing = false;
 
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
@@ -46,6 +48,12 @@ public class Soldier extends Unit {
     @Override
     public void run() throws GameActionException {
         super.run();
+        // make sure soldiers heal up to a certain threshold
+        // instead of leaving the healing mode as soon as they
+        // get above 10 hp
+        if (needsHealing && rc.getHealth() > 40) {
+            needsHealing = false;
+        }
         round_num = rc.getRoundNum();
         radio.updateCounter();
         attacked = attemptAttack(false);
@@ -80,7 +88,9 @@ public class Soldier extends Unit {
             case FLEE:
                 fleeLowRubble(fleeDirection);
                 break;
-            default:
+            case DYING:
+                // move to home archon. maybe it can get healed.
+                moveToLocation(homeArchon);
                 break;
         }
 
@@ -135,6 +145,13 @@ public class Soldier extends Unit {
                 stopFleeingRound = round_num + 6;
             }
             return MODE.FLEE;
+        }
+
+        if (needsHealing) {
+            return MODE.DYING;
+        } else if (rc.getHealth() < 10) {
+            needsHealing = true;
+            return MODE.DYING;
         }
         
         // Priority 3 - Hunt enemies.
@@ -249,6 +266,8 @@ public class Soldier extends Unit {
     }
 
     public void readBroadcastedTargets() throws GameActionException {
+
+
         int data;
         int closestDist = 100000;
         MapLocation cur = rc.getLocation();
@@ -277,6 +296,7 @@ public class Soldier extends Unit {
             if (cur.distanceSquaredTo(closestTarget) <= mapArea / 16) {
                 if (target == null) {
                     target = closestTarget;
+                    targetOffset = closestTargetI;
                     // update the counter
                     int new_encoded_target_data;
                     if (closestDesired > 0) {
@@ -446,105 +466,6 @@ public class Soldier extends Unit {
         else {
             return false;
         }
-    }
-
-    public boolean attemptAttack(boolean attackMiners) throws GameActionException {
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
-        int weakestSoldierHealth = 100000;
-        int weakestMinerHealth = 100000;
-        int weakestSageHealth = 100000;
-        int weakestTowerHealth = 100000;
-        int weakestBuilerHealth = 100000;
-        RobotInfo weakestSoldier = null;
-        RobotInfo weakestTower = null;
-        RobotInfo weakestSage = null;
-        RobotInfo weakestMiner = null;
-        RobotInfo weakestBuilder = null;
-        RobotInfo archon = null;
-        // if there are any nearby enemy robots, attack the one with the least health
-        int enemySoldierCount = 0;
-        if (nearbyBots.length > 0) {
-            for (RobotInfo bot : nearbyBots) {
-                if (bot.type == RobotType.SOLDIER) {
-                    if (bot.health < weakestSoldierHealth) {
-                        weakestSoldier = bot;
-                        weakestSoldierHealth = bot.health;
-                        enemySoldierCount++;
-                    }
-                }
-                if (bot.type == RobotType.MINER) {
-                    if (bot.health < weakestMinerHealth) {
-                        weakestMiner = bot;
-                        weakestMinerHealth = bot.health;
-                    }
-                }
-                if (bot.type == RobotType.WATCHTOWER) {
-                    if (bot.health < weakestTowerHealth) {
-                        weakestTower = bot;
-                        weakestTowerHealth = bot.health;
-                    }
-                }
-                if (bot.type == RobotType.SAGE) {
-                    if (bot.health < weakestSageHealth) {
-                        weakestSage = bot;
-                        weakestSageHealth = bot.health;
-                    }
-                }
-                if (bot.type == RobotType.BUILDER) {
-                    if (bot.health < weakestBuilerHealth) {
-                        weakestBuilder = bot;
-                        weakestBuilerHealth = bot.health;
-                    }
-                }
-                if (bot.type == RobotType.ARCHON) {
-                    archon = bot;
-                }
-            }
-            // make more conditional, like damaging which one would give the biggest advantage
-            if (weakestSage != null) {
-                if (rc.canAttack(weakestSage.location)) {
-                    rc.attack(weakestSage.location);
-                    target = weakestSage.location;
-                    broadcastTarget(weakestSage.location, enemySoldierCount);
-                    return true;
-                }
-            } else if (weakestSoldier != null) {
-                if (rc.canAttack(weakestSoldier.location)) {
-                    rc.attack(weakestSoldier.location);
-                    target = weakestSoldier.location;
-                    broadcastTarget(weakestSoldier.location, enemySoldierCount);
-                    return true;
-                }
-            } else if (weakestTower != null) {
-                if (rc.canAttack(weakestTower.location)) {
-                    rc.attack(weakestTower.location);
-                    target = weakestTower.location;
-                    broadcastTarget(weakestTower.location, enemySoldierCount);
-                    return true;
-                }
-            } else if (weakestMiner != null && attackMiners) {
-                if (rc.canAttack(weakestMiner.location)) {
-                    rc.attack(weakestMiner.location);
-                    target = weakestMiner.location;
-                    broadcastTarget(weakestMiner.location, enemySoldierCount);
-                    return true;
-                }
-            } else if (weakestBuilder != null && attackMiners) {
-                if (rc.canAttack(weakestBuilder.location)) {
-                    rc.attack(weakestBuilder.location);
-                    target = weakestBuilder.location;
-                    broadcastTarget(weakestBuilder.location, enemySoldierCount);
-                    return true;
-                }
-            } else if (archon != null) {
-                if (rc.canAttack(archon.location)) {
-                    rc.attack(archon.location);
-                    broadcastTarget(archon.location, enemySoldierCount);
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     public void initialize() {

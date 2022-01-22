@@ -1,13 +1,16 @@
 package rebutia_merge_dev;
 
-import battlecode.common.*;
-import java.util.*;
+import battlecode.common.Direction;
+import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
+import battlecode.common.RobotController;
+import battlecode.common.RobotInfo;
+import battlecode.common.RobotType;
 
 public class Miner extends Unit {
     enum MODE {
         EXPLORING,
         MINE_DISCOVERED,
-        MINING,
         FLEEING;
     }
 
@@ -55,7 +58,13 @@ public class Miner extends Unit {
                 break;
         }
         amountMined+=mine();
-        senseMiningArea();
+        int deposit_value = senseMiningArea();
+        int num_friends = numFriendlyMiners(2);
+        if (amountMined > 0) {
+            if (((double) deposit_value / (double) (num_friends + 1)) >= 15) {
+                radio.updateCounter(BiCHANNEL.USEFUL_MINERS);
+            }
+        }
         rc.setIndicatorString(" " + mode + " " + amountMined + " " + target);
     }
 
@@ -114,8 +123,8 @@ public class Miner extends Unit {
         double cys = 0;
         double cxm = 0;
         double cym = 0;
-        double numSoldiers = 0;
-        double numMiners = 0;
+        int numSoldiers = 0;
+        int numMiners = 0;
         for (RobotInfo enemy: enemies) {
             if (enemy.type == RobotType.SOLDIER) {
                 cxs += enemy.location.x;
@@ -129,16 +138,16 @@ public class Miner extends Unit {
             }
         }
         if (numMiners > 0) {
-            cxm /= numMiners;
-            cym /= numMiners;
+            cxm /= (double) numMiners;
+            cym /= (double) numMiners;
             MapLocation enemy_center = new MapLocation((int)cxs, (int)cys);
-            broadcastTarget(enemy_center);
+            broadcastTarget(enemy_center, numSoldiers * 2);
         }
         if (numSoldiers > 0) {
-            cxs /= numSoldiers;
-            cys /= numSoldiers;
+            cxs /= (double) numSoldiers;
+            cys /= (double) numSoldiers;
             MapLocation enemy_center = new MapLocation((int)cxs, (int)cys);
-            broadcastTarget(enemy_center);
+            broadcastTarget(enemy_center, numSoldiers * 2);
             Direction d = rc.getLocation().directionTo(enemy_center).opposite();
             return new int[] {d.getDeltaX() * 5, d.getDeltaY() * 5};
         }

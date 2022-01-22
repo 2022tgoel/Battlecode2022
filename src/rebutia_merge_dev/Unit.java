@@ -15,6 +15,7 @@ public class Unit {
     int seed_increment = 4;
     MapLocation homeArchon;
     public MapLocation archon_target;
+    MapLocation target;
     public int mapArea;
     /** Array containing all the possible movement directions. */
     static final Direction[] directions = {
@@ -194,7 +195,11 @@ public class Unit {
     }
 
     public int numFriendlyMiners() {
-        RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
+        return numFriendlyMiners(-1);
+    }
+
+    public int numFriendlyMiners(int rsqr) {
+        RobotInfo[] allies = rc.senseNearbyRobots(rsqr, rc.getTeam());
         int c = 0;
         for (RobotInfo r : allies) {
             if (r.type == RobotType.MINER)
@@ -203,7 +208,7 @@ public class Unit {
         return c;
     }
 
-    public boolean senseMiningArea() throws GameActionException {
+    public int senseMiningArea() throws GameActionException {
         int value = 0;
         int cx = 0;
         int cy = 0;
@@ -219,16 +224,16 @@ public class Unit {
             cx += margin * loc.x;
             cy += margin * loc.y;
         }
+
         if (value >= 25) {
             MapLocation dest = new MapLocation(cx / value, cy / value);
             // demand disabled for now
             int demand = value / minerToLeadRate - numFriendlyMiners();
             if (demand > 0) {
                 broadcastMiningArea(dest, demand);
-                return true;
             }
         }
-        return false;
+        return value;
     }
 
     public void broadcastMiningArea(MapLocation loc, int demand) throws GameActionException {
@@ -531,6 +536,105 @@ public class Unit {
                 break;
 
         }
+    }
+
+    public boolean attemptAttack(boolean attackMiners) throws GameActionException {
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
+        int weakestSoldierHealth = 100000;
+        int weakestMinerHealth = 100000;
+        int weakestSageHealth = 100000;
+        int weakestTowerHealth = 100000;
+        int weakestBuilerHealth = 100000;
+        RobotInfo weakestSoldier = null;
+        RobotInfo weakestTower = null;
+        RobotInfo weakestSage = null;
+        RobotInfo weakestMiner = null;
+        RobotInfo weakestBuilder = null;
+        RobotInfo archon = null;
+        // if there are any nearby enemy robots, attack the one with the least health
+        int enemySoldierCount = 0;
+        if (nearbyBots.length > 0) {
+            for (RobotInfo bot : nearbyBots) {
+                if (bot.type == RobotType.SOLDIER) {
+                    if (bot.health < weakestSoldierHealth) {
+                        weakestSoldier = bot;
+                        weakestSoldierHealth = bot.health;
+                        enemySoldierCount++;
+                    }
+                }
+                if (bot.type == RobotType.MINER) {
+                    if (bot.health < weakestMinerHealth) {
+                        weakestMiner = bot;
+                        weakestMinerHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.WATCHTOWER) {
+                    if (bot.health < weakestTowerHealth) {
+                        weakestTower = bot;
+                        weakestTowerHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.SAGE) {
+                    if (bot.health < weakestSageHealth) {
+                        weakestSage = bot;
+                        weakestSageHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.BUILDER) {
+                    if (bot.health < weakestBuilerHealth) {
+                        weakestBuilder = bot;
+                        weakestBuilerHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.ARCHON) {
+                    archon = bot;
+                }
+            }
+            // make more conditional, like damaging which one would give the biggest advantage
+            if (weakestSage != null) {
+                if (rc.canAttack(weakestSage.location)) {
+                    rc.attack(weakestSage.location);
+                    target = weakestSage.location;
+                    broadcastTarget(weakestSage.location, enemySoldierCount);
+                    return true;
+                }
+            } else if (weakestSoldier != null) {
+                if (rc.canAttack(weakestSoldier.location)) {
+                    rc.attack(weakestSoldier.location);
+                    target = weakestSoldier.location;
+                    broadcastTarget(weakestSoldier.location, enemySoldierCount);
+                    return true;
+                }
+            } else if (weakestTower != null) {
+                if (rc.canAttack(weakestTower.location)) {
+                    rc.attack(weakestTower.location);
+                    target = weakestTower.location;
+                    broadcastTarget(weakestTower.location, enemySoldierCount);
+                    return true;
+                }
+            } else if (weakestMiner != null && attackMiners) {
+                if (rc.canAttack(weakestMiner.location)) {
+                    rc.attack(weakestMiner.location);
+                    target = weakestMiner.location;
+                    broadcastTarget(weakestMiner.location, enemySoldierCount);
+                    return true;
+                }
+            } else if (weakestBuilder != null && attackMiners) {
+                if (rc.canAttack(weakestBuilder.location)) {
+                    rc.attack(weakestBuilder.location);
+                    target = weakestBuilder.location;
+                    broadcastTarget(weakestBuilder.location, enemySoldierCount);
+                    return true;
+                }
+            } else if (archon != null) {
+                if (rc.canAttack(archon.location)) {
+                    rc.attack(archon.location);
+                    broadcastTarget(archon.location, enemySoldierCount);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void broadcastTarget(MapLocation enemy, int reconRequested) throws GameActionException {
