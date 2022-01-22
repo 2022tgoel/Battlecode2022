@@ -50,7 +50,7 @@ deltaToDir= {1 : "Direction.EAST",
 			1-GRID : "Direction.SOUTHEAST" ,
 			-1-GRID : "Direction.SOUTHWEST" ,}
 
-with open("src/lophophora/Navigation.java", "w") as f:
+with open("Navigation.java", "w") as f:
 	def writeInstantiations(indent=1):
 		s = "\t"*indent
 		for n in nodes:
@@ -87,19 +87,26 @@ with open("src/lophophora/Navigation.java", "w") as f:
 		f.write(f"{s}{'}'}\n")
 		return; # temporary
 
-	def writeNodeCalculation(node, visited, indent=2):
-		if (node == CENTER):
+	def writeNodeCalculation(node, visited, indent=2, ensure_unoccupied=True):
+		if node == CENTER:
 			return
+		
 		s = "\t"*indent
 		f.write(f"{s}if (rc.onTheMap(l{node})) {'{'}\n")
-		if (node - CENTER in deltas): 
+
+		check_for_occupation = (node - CENTER in deltas) and ensure_unoccupied
+
+		if check_for_occupation: 
 			f.write(f"{s}\tif (!rc.isLocationOccupied(l{node})) {'{'}\n")
+
 		f.write(f"{s}\t\tp{node} = Math.floor((1.0 + (double)rc.senseRubble(l{node})/10.0)*cooldown);\n")
 		for prev in visited:
 			if (node - prev) in deltas:
 				writeEdgeRelaxation(node, prev)
-		if (node - CENTER in deltas):
+
+		if check_for_occupation:
 			f.write(f"{s}\t{'}'}\n")
+
 		f.write(f"{s}{'}'}\n")
 
 	def writeCasework(indent=2):
@@ -138,34 +145,39 @@ with open("src/lophophora/Navigation.java", "w") as f:
 				f.write(f"{s}{'}'}\n")
 		f.write(f"{s}return ans;\n")
 
-	def writeFunction():
-		f.write("\tDirection getBestDir(MapLocation target) throws GameActionException{\n")
+	def writeFunction(ensure_unoccupied=True):
+		fn_name = "getBestDir_withOccupied" if not ensure_unoccupied else "getBestDir"
+		f.write("\tDirection " + fn_name + "(MapLocation target) throws GameActionException{\n")
 		writeValueSetting()
 		visited = []
 		for n in nodes:
-			writeNodeCalculation(n, visited)
+			writeNodeCalculation(n, visited, ensure_unoccupied=ensure_unoccupied)
 			visited.append(n)
 		writeCasework()
 		writeHeuristicEstimation()
 		f.write("\t}\n")
 
 
-	lines = ["import battlecode.common.*;",
-			"public class Navigation {", 
-			"\tstatic RobotController rc;",
-			"\tstatic int cooldown;",
-			"\tNavigation(RobotController rc) {",
-			"\t\tthis.rc= rc;",
-			"\t\tthis.cooldown= rc.getType().movementCooldown;",
-			"\t}"]
-	for line in lines:
-		f.write(line+"\n")
-	f.write("\n")
+	f.write("""
+
+import battlecode.common.*;
+public class Navigation {
+	static RobotController rc;
+	static int cooldown;
+	Navigation(RobotController rc) {
+		this.rc = rc;
+		this.cooldown = rc.getType().movementCooldown;
+	}
+
+""")
 
 	writeInstantiations()
 	f.write("\n")
 
 	writeFunction()
+	f.write("\n")
+
+	writeFunction(ensure_unoccupied=False)
 	f.write("\n")
 
 	f.write("}")
