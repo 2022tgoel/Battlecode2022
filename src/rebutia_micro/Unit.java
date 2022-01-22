@@ -234,27 +234,54 @@ public class Unit {
         return value;
     }
 
+    public int senseDepositValue() throws GameActionException {
+        int value = 0;
+        for (MapLocation loc : rc.senseNearbyLocationsWithGold()) {
+            int margin = rc.senseGold(loc) * goldToLeadConversionRate;
+            value += margin;
+        }
+        for (MapLocation loc : rc.senseNearbyLocationsWithLead()) {
+            int margin = rc.senseLead(loc) - 1;
+            value += margin;
+        }
+        return value;
+    }
+
     public void broadcastMiningArea(MapLocation loc, int demand) throws GameActionException {
-        int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
+        int bestInd = -1;
+        int lowestDemand = 100000;
         // fuzzy location
         int x_loc = Math.min((int) Math.round((double) loc.x / 4.0), 15);
         int y_loc = Math.min((int) Math.round((double) loc.y / 4.0), 15);
         for (int i = 0; i < 5; i++) {
             int data = rc.readSharedArray(CHANNEL.MINING1.getValue() + i);
+            int d = (data >> 8) & 255;
             int x = (data >> 4) & 15;
             int y = data & 15;
             if (x_loc == x && y_loc == y) {
-                return;
+                // erase depleted deposits from targets
+                int val = senseDepositValue();
+                if (val < 25) {
+                    rc.writeSharedArray(CHANNEL.MINING1.getValue() + i, 0);
+                    return;
+                }
             }
             if (data == 0) {
-                indToPut = i;
+                bestInd = i;
+                break;
+            }
+            if (d < lowestDemand) {
+                bestInd = i;
             }
         }
-        int value = (demand << 8) + (x_loc << 4) + y_loc;
-        rc.setIndicatorDot(new MapLocation(x_loc * 4, y_loc * 4), 255, 0, 0);
-        // System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 +
-        // " " + demand + " " + rc.getRoundNum());
-        rc.writeSharedArray(CHANNEL.MINING1.getValue() + indToPut, value);
+
+        if (demand > lowestDemand) {
+            int value = (demand << 8) + (x_loc << 4) + y_loc;
+            rc.setIndicatorDot(new MapLocation(x_loc * 4, y_loc * 4), 255, 0, 0);
+            // System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 +
+            // " " + demand + " " + rc.getRoundNum());
+            rc.writeSharedArray(CHANNEL.MINING1.getValue() + bestInd, value);
+        }
     }
 
     public MapLocation findNearestArchon() throws GameActionException {

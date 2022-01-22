@@ -14,6 +14,7 @@ public class Miner extends Unit {
     int[] exploratoryDir;
     int round_num;
     MODE mode;
+    private MapLocation exploratoryTarget;
     private MapLocation target;
     private boolean isBroadcast; //whether the target you are pursuing was taken off broadcast
     private int[] fleeDirection;
@@ -23,6 +24,7 @@ public class Miner extends Unit {
 	public Miner(RobotController rc) throws GameActionException {
         super(rc);
         exploratoryDir = getExploratoryDir(7);
+        exploratoryTarget = getExploratoryTarget();
         rank = findRankMiner();
     }
     @Override
@@ -37,6 +39,13 @@ public class Miner extends Unit {
                 switch (mode) {
                     case EXPLORING:
                         moveInDirection(exploratoryDir);
+                        /* if (rc.getLocation().isAdjacentTo(exploratoryTarget)) {
+                            // rc.setIndicatorString("moving away");
+                            exploratoryTarget = getExploratoryTarget();
+                        }
+                        else {
+                            moveToLocation(exploratoryTarget);
+                        } */
                         break;
                     case MINE_DISCOVERED:
                         rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 255);
@@ -44,6 +53,7 @@ public class Miner extends Unit {
                         break;
                     case FLEEING:
                         moveInDirection(fleeDirection);
+                        exploratoryTarget = getExploratoryTarget();
                         break;
                 }
                 senseArchon();
@@ -63,6 +73,12 @@ public class Miner extends Unit {
             }
         }
         rc.setIndicatorString(" " + mode + " " + amountMined + " " + target);
+    }
+
+    private MapLocation getExploratoryTarget() {
+        int randx = rng.nextInt(rc.getMapWidth());
+        int randy = rng.nextInt(rc.getMapHeight());
+        return new MapLocation(randx, randy);
     }
 
     public RANK findRankMiner() throws GameActionException{
