@@ -52,9 +52,9 @@ public class Miner extends Unit {
                         } */
                         break;
                     case MINE_DISCOVERED:
-                        rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 255);
-                        if (rc.getLocation().distanceSquaredTo(target) <= 9) {
-                            findMiningSpot(target);
+                        if (miningSpot != null) {
+                            rc.setIndicatorLine(rc.getLocation(), miningSpot, 255, 0, 255);
+                            moveToLocation(miningSpot);
                         }
                         else {
                             moveToLocation(target);
