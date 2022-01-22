@@ -49,7 +49,12 @@ public class Miner extends Unit {
                         break;
                     case MINE_DISCOVERED:
                         rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 255);
-                        moveToLocation(target);
+                        if (rc.getLocation().distanceSquaredTo(target) <= 9) {
+                            findMiningSpot(target);
+                        }
+                        else {
+                            moveToLocation(target);
+                        }
                         break;
                     case FLEEING:
                         moveInDirection(fleeDirection);
@@ -73,6 +78,29 @@ public class Miner extends Unit {
             }
         }
         rc.setIndicatorString(" " + mode + " " + amountMined + " " + target);
+    }
+
+    public void findMiningSpot(MapLocation target) throws GameActionException {
+        int minRubble = 10000;
+        int rubble;
+        MapLocation[] leadLocs = rc.senseNearbyLocationsWithLead(target, 2, 2);
+        MapLocation bestSpot = null;
+        for (MapLocation leadLoc : leadLocs) {
+            for (Direction d: CONSTANTS.directions) {
+                MapLocation loc = leadLoc.add(d);
+                if (rc.canSenseLocation(loc)) {
+                    rubble = 1 + rc.senseRubble(loc) / 10;
+                    if (rubble < minRubble) {
+                        minRubble = rubble;
+                        bestSpot = loc;
+                    }
+                }
+            }
+        }
+        if (bestSpot != null) {
+            rc.setIndicatorLine(rc.getLocation(), target, 255, 0, 255);
+            moveToLocation(bestSpot);
+        }
     }
 
     private MapLocation getExploratoryTarget() {
