@@ -91,10 +91,12 @@ public class Archon extends Unit {
                     attemptHeal();
                  //   rc.setIndicatorString("ATTEMPTING HEALING");
                 }
+            
                 if (num_soldiers_hub > 20) {
                     radio.broadcastMode((archonNumber + 1) % num_archons_alive);
                     num_soldiers_hub = 0;
                 }
+                
                 break;
             case OTHER_THREATENED: 
                 if (rc.getTeamLeadAmount(rc.getTeam()) < 600) {
@@ -149,12 +151,28 @@ public class Archon extends Unit {
         return false;
     }
 
+    
     public MODE determineMode() throws GameActionException {
         int sizeBracket = (int) Math.ceil((double) mapArea / 1000);
         int numMinersInitial = Math.max((sizeBracket*3)/num_archons_init, 1);
         if (underThreat()) return MODE.THREATENED;
         else if (radio.totalUnderThreat() > 0) return MODE.OTHER_THREATENED;
         else if (num_miners < numMinersInitial) return MODE.INITIAL; 
+        else {
+            move = getArchonMovementLocation();
+            if (move == null){
+                //no soldier action anywhere
+                if (archonNumber == 0) return MODE.SOLDIER_HUB;
+                else return MODE.DEFAULT;
+            }
+            else {
+                //archon is in move mode
+                if ()
+                if (isClosestArchon()) return MODE.SOLDIER_HUB;
+                else return 
+            }
+        }
+            if ()
         else if (radio.getMode() == archonNumber) return MODE.SOLDIER_HUB;
         else return  MODE.DEFAULT;
     }
@@ -196,20 +214,46 @@ public class Archon extends Unit {
         return null;
     }
 
+    public boolean isClosestArchon() throws GameActionException{ //gets the position you should move to
+               
+        MapLocation closest = null;
+        for (int i = 0; i < num_archons_alive; i++){
+            MapLocation cur = radio.readArchonLocation(i);
+            if (closest == null || 
+                (closest!=null && loc.distanceSquaredTo(cur) < loc.distanceSquaredTo(closest))){
+                closest = cur;
+            }
+        }
+        if (closest.equals(rc.getLocation())) return loc;
+        }
+        return null;
+    }
+
+    MapLocation move = null;
+    int turnsMoving = 0;
+    final int maxTurnsMoving = 60;
+    int turnsWaiting = 60;
+    final int minTurnsWaiting = 60;
     public void moveArchon() throws GameActionException{
-        MapLocation move = shouldMove();
-        if (move!=null){
-            if (rc.getLocation().distanceSquaredTo(move) < 15){ 
+        if (rc.getMode() == RobotMode.PORTABLE){
+            if (rc.getLocation().distanceSquaredTo(move) < 15 || turnsMoving >= maxTurnsMoving){ 
                 //TODO: factor in rubble, don't settle on low rubble
                 // also make sure you're not moving all the time
                 if (rc.getMode() == RobotMode.PORTABLE){
                     if (rc.canTransform()) rc.transform();
+                    turnsMoving = 0; // reset
                 }
             }
-            else if (rc.getMode() == RobotMode.TURRET){
+            else {
+                moveToLocation(move);
+                turnsMoving++;
+            }
+        }
+        else if (rc.getMode() == RobotMode.TURRET){
+            if (turnsWaiting >= minTurnsWaiting){
                 if (rc.canTransform()) rc.transform();
             }
-            else moveToLocation(move);
+            turnsWaiting++;
         }
     }
     
