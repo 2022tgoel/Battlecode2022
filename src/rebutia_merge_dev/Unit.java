@@ -533,13 +533,13 @@ public class Unit {
         }
     }
 
-    public void broadcastTarget(MapLocation enemy) throws GameActionException {
+    public void broadcastTarget(MapLocation enemy, int reconRequested) throws GameActionException {
         int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
         // fuzzy location
         int x_loc = enemy.x;
         int y_loc = enemy.y;
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
-            int data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
+            int data = rc.readSharedArray(CHANNEL.TARGET1.getValue() + i);
             int x = (data >> 4) & 15;
             int y = data & 15;
             if (x_loc == x && y_loc == y) {
@@ -549,9 +549,10 @@ public class Unit {
                 indToPut = i;
             }
         }
-        int value = x_loc * 64 + y_loc;
-        rc.setIndicatorDot(new MapLocation(x_loc, y_loc), 0, 100, 0);
-        rc.writeSharedArray(CHANNEL.TARGET.getValue() + indToPut, value);
+        reconRequested = Math.min(15, reconRequested);
+        int value = (reconRequested << 12) | (x_loc << 6) | y_loc;
+        rc.setIndicatorDot(new MapLocation(x_loc, y_loc), 0, 10 * reconRequested, 0);
+        rc.writeSharedArray(CHANNEL.TARGET1.getValue() + indToPut, value);
         // System.out.println("I broadcasted an enemy at " + enemy.toString());
     }
 }

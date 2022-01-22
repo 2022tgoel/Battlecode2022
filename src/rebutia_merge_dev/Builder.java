@@ -7,7 +7,8 @@ public class Builder extends Unit {
     public enum MODE {
         HEALING,
         BUILDING,
-        REPAIRING
+        REPAIRING,
+        SEARCHING_FOR_INJURIES
     }
 
     int travel_counter = 0;
@@ -21,6 +22,7 @@ public class Builder extends Unit {
     private int num_labs = 0;
     private int[] troopCounter = { 0, 0, 0, 0, 0 }; // miner, soldier, builder, sage, watchtower
     MapLocation target = null;
+    MapLocation soldier_target= null;
 
     private int built_units = 0;
     private int[] build_order;
@@ -31,6 +33,24 @@ public class Builder extends Unit {
         dirs = sortedDirections();
     }
 
+    private MapLocation getNearestBroadcastedTarget() throws GameActionException {
+        MapLocation nearest_target = null;
+        int nearest_distance = Integer.MAX_VALUE;
+        for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
+            int loc = rc.readSharedArray(CHANNEL.TARGET1.getValue() + i);
+            if (loc == 0) continue;
+            int x = loc / 64;
+            int y = loc % 64;
+            MapLocation target = new MapLocation(x, y);
+            int distance = rc.getLocation().distanceSquaredTo(target);
+            if (distance < nearest_distance) {
+                nearest_distance = distance;
+                nearest_target = target;
+            }
+        }
+        return nearest_target;
+    }
+
     @Override
     public void run() throws GameActionException {
         super.run();
@@ -38,30 +58,29 @@ public class Builder extends Unit {
         troopCounter = new int[] { radio.readCounter(RobotType.MINER), radio.readCounter(RobotType.SOLDIER),
                 radio.readCounter(RobotType.BUILDER), 0, radio.readCounter(RobotType.WATCHTOWER) };
         build_order = getBuildOrder();
-        switch (rank) {
-            case MARTYR:
-                forTheGreaterGood();
-                break;
-            case DEFAULT:
-                mode = getMode();
-                switch (mode) {
-                    case HEALING:
-                        heal();
-                        break;
-                    case BUILDING:
-                        build(build_order);
-                        break;
-                    case REPAIRING:
-                        if (rc.canRepair(target))
-                            rc.repair(target);
-                        else
-                            moveToLocation(target);
-                        target = null;
-                        break;
-                }
-                break;
-            default:
-                break;
+        soldier_target = getNearestBroadcastedTarget();
+        if (rank == RANK.MARTYR) {
+            forTheGreaterGood();
+        } else {
+            mode = getMode();
+            switch (mode) {
+                case HEALING:
+                    heal();
+                    break;
+                case BUILDING:
+                    build(build_order);
+                    break;
+                case REPAIRING:
+                    if (rc.canRepair(target)) {
+                        rc.repair(target);
+                    } else {
+                        moveToLocation(target);
+                    }
+                    target = null;
+                    break;
+                case SEARCHING_FOR_INJURIES:
+                    break;
+            }
         }
     }
 
@@ -70,15 +89,19 @@ public class Builder extends Unit {
     }
 
     public MODE getMode() throws GameActionException {
-        if (findUnrepaired()) {
-            return MODE.REPAIRING;
-        } else if (troopCounter[4] <= (CONSTANTS.SOLDIERS_TO_TOWERS * (double) troopCounter[2])) {
-            return MODE.BUILDING;
-        } else
-            return MODE.HEALING;
+        // Test builders without watchtowers for now.
+        // Search for ppl to heal.
+        return MODE.HEALING;
+        // if (findPrototypeWatchtower()) {
+        //     return MODE.REPAIRING;
+        // } else if (troopCounter[4] <= (CONSTANTS.SOLDIERS_TO_TOWERS * (double) troopCounter[2])) {
+        //     return MODE.BUILDING;
+        // } else {
+        //     return MODE.HEALING;
+        // }
     }
 
-    public boolean findUnrepaired() throws GameActionException {
+    public boolean findPrototypeWatchtower() throws GameActionException {
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam());
         for (RobotInfo bot : nearbyBots) {
             if (bot.type == RobotType.WATCHTOWER && bot.mode == RobotMode.PROTOTYPE) {

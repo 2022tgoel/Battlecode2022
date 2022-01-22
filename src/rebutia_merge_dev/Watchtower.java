@@ -280,7 +280,7 @@ public class Watchtower extends Unit {
         MapLocation cur = rc.getLocation();
         MapLocation closestTarget = null;
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
-            data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
+            data = rc.readSharedArray(CHANNEL.TARGET1.getValue() + i);
             if (data != 0) {
                 int x = (data >> 4) & 15;
                 int y = data & 15;

@@ -18,8 +18,16 @@ public enum CHANNEL {
     UNIT_BUILT(29),
 
     MINING1(30),
-    TARGET(35),
+    // update: use targets to indicate how many more soldiers are required
+    TARGET1(35),
+    TARGET5(39),
     ARCHON_MODE(40),
+    // // indicates a location and a # of enemy units
+    // // cleared every three rounds in case the calling soldier dies
+    // // therefore, every soldier must call on a N%3=0 round, calls
+    // // are tallied on a N%3=1 round, and calls are decided on a N%3=2 round.
+    // RUSH_INDICATOR1(41),
+    // RUSH_INDICATOR5(45),
 
     ORDERS(61),
     SEND_RANKS1(62),

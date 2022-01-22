@@ -49,7 +49,7 @@ public class Soldier extends Unit {
         round_num = rc.getRoundNum();
         radio.updateCounter();
         attacked = attemptAttack(false);
-        findTargets();
+        readBroadcastedTargets();
         senseMiningArea();
 
         mode = determineMode();
@@ -248,21 +248,26 @@ public class Soldier extends Unit {
         }
     }
 
-    public void findTargets() throws GameActionException {
+    public void readBroadcastedTargets() throws GameActionException {
         int data;
         int closestDist = 100000;
         MapLocation cur = rc.getLocation();
         MapLocation closestTarget = null;
+        int closestDesired = 0;
+        int closestTargetI = -1;
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
-            data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
+            data = rc.readSharedArray(CHANNEL.TARGET1.getValue() + i);
             if (data != 0) {
-                int x = data/64;
-                int y = data%64;
+                int n_desired = data>>12;
+                int x = (data>>6)&63;
+                int y = data&63;
                 // System.out.println("I received an enemy at " + x*4 + " " + y*4 + " on round " + round_num);
                 MapLocation potentialTarget = new MapLocation(x, y);
                 if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
                     closestDist = cur.distanceSquaredTo(potentialTarget);
                     closestTarget = potentialTarget;
+                    closestTargetI = i;
+                    closestDesired = n_desired;
                 }
             }
         }
@@ -270,7 +275,20 @@ public class Soldier extends Unit {
         // finds closest target, and advances towards it.
         if (closestTarget != null) {
             if (cur.distanceSquaredTo(closestTarget) <= mapArea / 16) {
-                target = closestTarget;
+                if (target == null) {
+                    target = closestTarget;
+                    // update the counter
+                    int new_encoded_target_data;
+                    if (closestDesired > 0) {
+                        new_encoded_target_data = (closestDesired - 1) << 12;
+                        new_encoded_target_data |= closestTarget.x << 6;
+                        new_encoded_target_data |= closestTarget.y;
+                    } else {
+                        // clears the target if it has all desired soldiers
+                        new_encoded_target_data = 0;
+                    }
+                    rc.writeSharedArray(CHANNEL.TARGET1.getValue() + closestTargetI, new_encoded_target_data);
+                }
             }
             lastAttackDir = new int[]{closestTarget.x - cur.x, closestTarget.y - cur.y};
             lastAttackDir = scaleToSize(lastAttackDir);
@@ -444,12 +462,14 @@ public class Soldier extends Unit {
         RobotInfo weakestBuilder = null;
         RobotInfo archon = null;
         // if there are any nearby enemy robots, attack the one with the least health
+        int enemySoldierCount = 0;
         if (nearbyBots.length > 0) {
             for (RobotInfo bot : nearbyBots) {
                 if (bot.type == RobotType.SOLDIER) {
                     if (bot.health < weakestSoldierHealth) {
                         weakestSoldier = bot;
                         weakestSoldierHealth = bot.health;
+                        enemySoldierCount++;
                     }
                 }
                 if (bot.type == RobotType.MINER) {
@@ -485,46 +505,41 @@ public class Soldier extends Unit {
                 if (rc.canAttack(weakestSage.location)) {
                     rc.attack(weakestSage.location);
                     target = weakestSage.location;
-                    broadcastTarget(weakestSage.location);
+                    broadcastTarget(weakestSage.location, enemySoldierCount);
                     return true;
                 }
-            }
-            else if (weakestSoldier != null) {
+            } else if (weakestSoldier != null) {
                 if (rc.canAttack(weakestSoldier.location)) {
                     rc.attack(weakestSoldier.location);
                     target = weakestSoldier.location;
-                    broadcastTarget(weakestSoldier.location);
+                    broadcastTarget(weakestSoldier.location, enemySoldierCount);
                     return true;
                 }
-            }
-            else if (weakestTower != null) {
+            } else if (weakestTower != null) {
                 if (rc.canAttack(weakestTower.location)) {
                     rc.attack(weakestTower.location);
                     target = weakestTower.location;
-                    broadcastTarget(weakestTower.location);
+                    broadcastTarget(weakestTower.location, enemySoldierCount);
                     return true;
                 }
-            }
-            else if (weakestMiner != null && attackMiners) {
+            } else if (weakestMiner != null && attackMiners) {
                 if (rc.canAttack(weakestMiner.location)) {
                     rc.attack(weakestMiner.location);
                     target = weakestMiner.location;
-                    broadcastTarget(weakestMiner.location);
+                    broadcastTarget(weakestMiner.location, enemySoldierCount);
                     return true;
                 }
-            }
-            else if (weakestBuilder != null && attackMiners) {
+            } else if (weakestBuilder != null && attackMiners) {
                 if (rc.canAttack(weakestBuilder.location)) {
                     rc.attack(weakestBuilder.location);
                     target = weakestBuilder.location;
-                    broadcastTarget(weakestBuilder.location);
+                    broadcastTarget(weakestBuilder.location, enemySoldierCount);
                     return true;
                 }
-            }
-            else if (archon != null) {
+            } else if (archon != null) {
                 if (rc.canAttack(archon.location)) {
                     rc.attack(archon.location);
-                    broadcastTarget(archon.location);
+                    broadcastTarget(archon.location, enemySoldierCount);
                     return true;
                 }
             }
