@@ -55,7 +55,7 @@ public class Archon extends Unit {
         radio.clearMiningAreas();
         radio.clearTargetAreas();
         radio.clearArchonMovementLocation();
-
+        radio.clearArchonMoving();
 
         archonNumber = radio.getArchonNum();
         radio.postArchonLocation(archonNumber);
@@ -164,11 +164,11 @@ public class Archon extends Unit {
             move = getArchonMovementLocation();
             if (move == null){
                 //no soldier action anywhere
-                if (archonNumber == 0) return MODE.SOLDIER_HUB;
+                if (archonNumber == 0) return MODE.SOLDIER_HUB; //TODO: change to closest to the center
                 else return MODE.DEFAULT;
             }
             else {
-                if (isClosestArchon(move)) {
+                if (isClosestArchon(move)) { 
                     return robotModeSwitch();
                 }
                 else {
@@ -245,9 +245,9 @@ public class Archon extends Unit {
 
     MapLocation move = null;
     int turnsMoving = 0;
-    final int maxTurnsMoving = 60;
-    int turnsWaiting = 60;
-    final int minTurnsWaiting = 60;
+    final int maxTurnsMoving = 200;
+    int turnsWaiting = 150;
+    final int minTurnsWaiting = 150;
     public MODE robotModeSwitch() throws GameActionException{
         if (rc.getMode() == RobotMode.PORTABLE){
             if (rc.getLocation().distanceSquaredTo(move) < 20 || turnsMoving >= maxTurnsMoving){ 
@@ -263,8 +263,10 @@ public class Archon extends Unit {
         }
         else { //turret mode
             if (rc.getLocation().distanceSquaredTo(move) > 20 && turnsWaiting >= minTurnsWaiting ){
-                if (rc.canTransform()) rc.transform();
-                turnsWaiting = 0;
+                if (rc.canTransform()) {
+                    rc.transform();
+                    turnsWaiting = 0;
+                }
             }
             else turnsWaiting++;
         }

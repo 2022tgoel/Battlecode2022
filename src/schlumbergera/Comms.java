@@ -77,8 +77,14 @@ public class Comms {
     }
 
     public void clearArchonMovementLocation() throws GameActionException {
-        if (round_num % 15 == 0){
+        if (round_num % 75 == 0){
             rc.writeSharedArray(CHANNEL.ARCHON_MOVE.getValue(), 0);
+        }
+    }
+
+    public void clearArchonMoving() throws GameActionException {
+        if (round_num % 15 == 0){
+            rc.writeSharedArray(CHANNEL.ARCHON_MOVING.getValue(), 0);
         }
     }
 
