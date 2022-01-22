@@ -15,12 +15,14 @@ public class Miner extends Unit {
     int round_num;
     MODE mode;
     private MapLocation exploratoryTarget;
+    private MapLocation miningSpot;
     private MapLocation target;
     static MinerNav mNav;
     private boolean isBroadcast; //whether the target you are pursuing was taken off broadcast
     private int[] fleeDirection;
     RANK rank;
     private int stopFleeingRound = 10000;
+    private MapLocation deposit;
     
 	public Miner(RobotController rc) throws GameActionException {
         super(rc);
@@ -82,7 +84,7 @@ public class Miner extends Unit {
         rc.setIndicatorString(" " + mode + " " + amountMined + " " + target);
     }
 
-    public void findMiningSpot(MapLocation target) throws GameActionException {
+    public MapLocation findMiningSpot(MapLocation target) throws GameActionException {
         int minRubble = 10000;
         int rubble;
         MapLocation[] leadLocs = rc.senseNearbyLocationsWithLead(target, 2, 2);
@@ -94,13 +96,11 @@ public class Miner extends Unit {
                 if (rubble < minRubble) {
                     minRubble = rubble;
                     bestSpot = spot;
+                    deposit = leadLoc;
                 }
             }
         }
-        if (bestSpot != null) {
-            rc.setIndicatorLine(rc.getLocation(), target, 255, 0, 255);
-            moveToLocation(bestSpot);
-        }
+        return bestSpot;
     }
 
     private MapLocation getExploratoryTarget() {
@@ -139,9 +139,22 @@ public class Miner extends Unit {
         }
         //choose location to pursue
         if (target!=null){
+            if (miningSpot == null) {
+                miningSpot = findMiningSpot(target);
+            }
+            if (deposit != null) {
+                if (rc.canSenseLocation(deposit)) {
+                    if (getValue(deposit) <= 1) {
+                        deposit = null;
+                        miningSpot = findMiningSpot(target);
+                    }
+                }
+            }
             return MODE.MINE_DISCOVERED;
         }
         else {
+            miningSpot = null;
+            deposit = null;
             MapLocation loc = findMiningAreaWithSensing();
             if (loc!=null){
                 target = loc;
