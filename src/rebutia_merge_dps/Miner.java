@@ -1,7 +1,6 @@
-package rebutia_micro;
+package rebutia_merge_dps;
 
 import battlecode.common.*;
-import java.util.*;
 
 public class Miner extends Unit {
     enum MODE {
@@ -14,7 +13,6 @@ public class Miner extends Unit {
     int[] exploratoryDir;
     int round_num;
     MODE mode;
-    private MapLocation exploratoryTarget;
     private MapLocation target;
     private boolean isBroadcast; //whether the target you are pursuing was taken off broadcast
     private int[] fleeDirection;
@@ -24,7 +22,6 @@ public class Miner extends Unit {
 	public Miner(RobotController rc) throws GameActionException {
         super(rc);
         exploratoryDir = getExploratoryDir(7);
-        exploratoryTarget = getExploratoryTarget();
         rank = findRankMiner();
     }
     @Override
@@ -39,26 +36,13 @@ public class Miner extends Unit {
                 switch (mode) {
                     case EXPLORING:
                         moveInDirection(exploratoryDir);
-                        /* if (rc.getLocation().isAdjacentTo(exploratoryTarget)) {
-                            // rc.setIndicatorString("moving away");
-                            exploratoryTarget = getExploratoryTarget();
-                        }
-                        else {
-                            moveToLocation(exploratoryTarget);
-                        } */
                         break;
                     case MINE_DISCOVERED:
                         rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 255);
-                        if (rc.getLocation().distanceSquaredTo(target) <= 9) {
-                            findMiningSpot(target);
-                        }
-                        else {
-                            moveToLocation(target);
-                        }
+                        moveToLocation(target);
                         break;
                     case FLEEING:
                         moveInDirection(fleeDirection);
-                        exploratoryTarget = getExploratoryTarget();
                         break;
                 }
                 senseArchon();
@@ -78,35 +62,6 @@ public class Miner extends Unit {
             }
         }
         rc.setIndicatorString(" " + mode + " " + amountMined + " " + target);
-    }
-
-    public void findMiningSpot(MapLocation target) throws GameActionException {
-        int minRubble = 10000;
-        int rubble;
-        MapLocation[] leadLocs = rc.senseNearbyLocationsWithLead(target, 2, 2);
-        MapLocation bestSpot = null;
-        for (MapLocation leadLoc : leadLocs) {
-            for (Direction d: CONSTANTS.directions) {
-                MapLocation loc = leadLoc.add(d);
-                if (rc.canSenseLocation(loc)) {
-                    rubble = 1 + rc.senseRubble(loc) / 10;
-                    if (rubble < minRubble) {
-                        minRubble = rubble;
-                        bestSpot = loc;
-                    }
-                }
-            }
-        }
-        if (bestSpot != null) {
-            rc.setIndicatorLine(rc.getLocation(), target, 255, 0, 255);
-            moveToLocation(bestSpot);
-        }
-    }
-
-    private MapLocation getExploratoryTarget() {
-        int randx = rng.nextInt(rc.getMapWidth());
-        int randy = rng.nextInt(rc.getMapHeight());
-        return new MapLocation(randx, randy);
     }
 
     public RANK findRankMiner() throws GameActionException{
@@ -358,7 +313,7 @@ public class Miner extends Unit {
     public int mine() throws GameActionException{
         //prioritize gold
         int amountMined = 0;
-        for (MapLocation loc : rc.senseNearbyLocationsWithGold(RobotType.MINER.actionRadiusSquared)) {
+        for (MapLocation loc : rc.senseNearbyLocationsWithGold(1)) {
             // Notice that the Miner's action cooldown is very low.
             // You can mine multiple times per turn!
             while (rc.canMineGold(loc)) {
@@ -367,7 +322,7 @@ public class Miner extends Unit {
             }
         }
         //then go to lead
-        for (MapLocation loc : rc.senseNearbyLocationsWithLead(RobotType.MINER.actionRadiusSquared)) {
+        for (MapLocation loc : rc.senseNearbyLocationsWithLead(1)) {
             // Notice that the Miner's action cooldown is very low.
             // You can mine multiple times per turn;
             while (rc.canMineLead(loc) && rc.senseLead(loc) > 1) {
