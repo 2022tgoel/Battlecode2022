@@ -88,9 +88,10 @@ public class Soldier extends Unit {
     }
 
     public void visualize() throws GameActionException {
-        rc.setIndicatorString("MODE: " + mode.toString());
+        rc.setIndicatorString("MODE: " + mode);
         if (mode == MODE.EXPLORATORY){
-            rc.setIndicatorDot(exploreLoc, 100, 100, 0);
+            rc.setIndicatorString("MODE: " + mode + " " + exploreLoc.x + " " + exploreLoc.y);
+            // rc.setIndicatorDot(exploreLoc, 100, 100, 0);
         }
         else if (mode == MODE.HUNTING){
             rc.setIndicatorLine(rc.getLocation(), target, 0, 100, 0);
