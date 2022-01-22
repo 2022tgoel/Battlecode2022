@@ -1,4 +1,4 @@
-package rebutia_merge_dev;
+package rebutia_micro_dev;
 
 import battlecode.common.*;
 import java.util.Random;

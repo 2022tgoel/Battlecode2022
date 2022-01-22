@@ -1,4 +1,4 @@
-package rebutia_merge_dev;
+package rebutia_micro_dev;
 import battlecode.common.*;
 public class Navigation {
 	static RobotController rc;

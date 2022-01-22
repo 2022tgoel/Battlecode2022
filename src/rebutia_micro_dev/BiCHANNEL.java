@@ -1,4 +1,4 @@
-package rebutia_merge_dev;
+package rebutia_micro_dev;
 
 /**
  * For BiCHANNEL communications using one-round lagging updates.
