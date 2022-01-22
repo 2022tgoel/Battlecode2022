@@ -35,55 +35,21 @@ public class Soldier extends Unit {
     private int[] exploratoryDir;
 
     //for attacking and searching enemies modes
-    private int targetOffset=-1;
+    private MapLocation target = null;
     private int[] lastAttackDir = null;
-    // exists because we want to heal until we're above a certain threshold
-    private boolean needsHealing = false;
 
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
         initialize();
         exploreLoc = getInitialExploratoryLocation();
     }
-
-    public MapLocation findClosestNonModeArchon() throws GameActionException {
-        MapLocation closest = null;
-        int closest_distance = Integer.MAX_VALUE;
-        int mode = rc.readSharedArray(CHANNEL.ARCHON_MODE.getValue());
-        for (int i = 0; i < rc.getArchonCount(); i++) {
-            if (i == mode) {
-                continue;
-            }
-            int data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + i);
-            if (data == 0) {
-                continue;
-            }
-            int x = data/64;
-            int y = data%64;
-            MapLocation archon = new MapLocation(x, y);
-            
-            int distance = rc.getLocation().distanceSquaredTo(archon);
-            if (distance < closest_distance) {
-                closest_distance = distance;
-                closest = archon;
-            }
-        }
-        return closest;
-    }
-
     @Override
     public void run() throws GameActionException {
         super.run();
-        // make sure soldiers heal up to a certain threshold
-        // instead of leaving the healing mode as soon as they
-        // get above 10 hp
-        if (needsHealing && rc.getHealth() > 40) {
-            needsHealing = false;
-        }
         round_num = rc.getRoundNum();
         radio.updateCounter();
         attacked = attemptAttack(false);
-        readBroadcastedTargets();
+        findTargets();
         senseMiningArea();
 
         mode = determineMode();
@@ -128,6 +94,7 @@ public class Soldier extends Unit {
                         };
                     }
                 }
+                moveInDirection(lastAttackDir);
                 break;
             case DEFENSIVE_RUSH:
                 defensiveMove();
@@ -135,22 +102,7 @@ public class Soldier extends Unit {
             case FLEE:
                 fleeLowRubble(fleeDirection);
                 break;
-            case DYING:
-                // move to non-mode Archon. maybe it can get healed.
-                // if it can't because there's only one Archon alive, it moves to the home archon
-                // and self-destructs
-                if (rc.getArchonCount() == 1) {
-                    if (rc.getLocation().isWithinDistanceSquared(homeArchon, 4)) {
-                        rc.disintegrate();
-                        break;
-                    }
-                }
-                MapLocation closestHealingCenter = findClosestNonModeArchon();
-                if (closestHealingCenter == null) {
-                    rc.disintegrate();
-                } else {
-                    moveToLocation(closestHealingCenter);
-                }
+            default:
                 break;
         }
 
@@ -160,7 +112,7 @@ public class Soldier extends Unit {
     public void visualize() throws GameActionException {
         rc.setIndicatorString("MODE: " + mode.toString());
         if (mode == MODE.EXPLORATORY){
-            rc.setIndicatorLine(rc.getLocation(), exploreLoc, 100, 100, 0);
+            rc.setIndicatorDot(exploreLoc, 100, 100, 0);
         }
         else if (mode == MODE.HUNTING){
             rc.setIndicatorLine(rc.getLocation(), target, 0, 100, 0);
@@ -180,6 +132,7 @@ public class Soldier extends Unit {
     }
 
     public MODE determineMode() throws GameActionException {
+        
         // Priority 1 - Defend.
         threatenedArchons = findThreatenedArchons();
         if (threatenedArchons != null) {
@@ -191,13 +144,6 @@ public class Soldier extends Unit {
         }
 
         // Priority 2 - Don't die.
-        if (needsHealing) {
-            return MODE.DYING;
-        } else if (rc.getHealth() <= 14) {
-            needsHealing = true;
-            return MODE.DYING;
-        }
-
         int[] potFleeDir = fleeDirection();
         boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
         if (!validFlee && stopFleeingRound == round_num) {
@@ -216,11 +162,11 @@ public class Soldier extends Unit {
         // Priority 3 - Hunt enemies.
         if (target != null) {
             return MODE.HUNTING;
-        } else if (lastAttackDir != null) {
+        }
+        else if (lastAttackDir != null){
             return MODE.SEARCHING_ENEMIES;
         }
-        
-        return MODE.EXPLORATORY;
+        else return MODE.EXPLORATORY;
     }
 
     /**
@@ -301,7 +247,7 @@ public class Soldier extends Unit {
         double a = 6 * ratio;
         int unit_advantage = (int) (a * Math.pow(unit_difference,2) * Math.signum(unit_difference));
 
-        // System.out.println("Unit advantage: " + unit_advantage + " Ratio: " + ratio + " numFriendHits " + numFriendHits + " numEnemyHits " + numEnemyHits + "round_num " + round_num + " id " + rc.getID());
+        // System.out.println("Unit advantage: " + unit_advantage + " Ratio: " + ratio + " numFriendHits " + numFriendHits + " numEnemyHits " + numEnemyHits + "round_num " + round_num);
 
         if (numFriendHits + unit_advantage < numEnemyHits) {
             double dx = -(cxse - cur.x) * 3;
@@ -324,48 +270,29 @@ public class Soldier extends Unit {
         }
     }
 
-    public void readBroadcastedTargets() throws GameActionException {
+    public void findTargets() throws GameActionException {
         int data;
         int closestDist = 100000;
         MapLocation cur = rc.getLocation();
         MapLocation closestTarget = null;
-        int closestDesired = 0;
-        int closestTargetI = -1;
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
-            data = rc.readSharedArray(CHANNEL.TARGET1.getValue() + i);
+            data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             if (data != 0) {
-                int n_desired = data>>12;
-                int x = (data>>6)&63;
-                int y = data&63;
+                int x = data/64;
+                int y = data%64;
                 // System.out.println("I received an enemy at " + x*4 + " " + y*4 + " on round " + round_num);
                 MapLocation potentialTarget = new MapLocation(x, y);
                 if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
                     closestDist = cur.distanceSquaredTo(potentialTarget);
                     closestTarget = potentialTarget;
-                    closestTargetI = i;
-                    closestDesired = n_desired;
                 }
             }
         }
 
         // finds closest target, and advances towards it.
         if (closestTarget != null) {
-            if (cur.distanceSquaredTo(closestTarget) <= mapArea / 16) {
-                if (target == null) {
-                    target = closestTarget;
-                    targetOffset = closestTargetI;
-                    // update the counter
-                    int new_encoded_target_data;
-                    if (closestDesired > 0) {
-                        new_encoded_target_data = (closestDesired - 1) << 12;
-                        new_encoded_target_data |= closestTarget.x << 6;
-                        new_encoded_target_data |= closestTarget.y;
-                    } else {
-                        // clears the target if it has all desired soldiers
-                        new_encoded_target_data = 0;
-                    }
-                    rc.writeSharedArray(CHANNEL.TARGET1.getValue() + closestTargetI, new_encoded_target_data);
-                }
+            if (cur.distanceSquaredTo(closestTarget) <= mapArea / 8) {
+                target = closestTarget;
             }
             lastAttackDir = new int[]{closestTarget.x - cur.x, closestTarget.y - cur.y};
             lastAttackDir = scaleToSize(lastAttackDir);
@@ -374,7 +301,7 @@ public class Soldier extends Unit {
     }
 
     public void huntTarget() throws GameActionException {
-        // if target is within 3 tiles, do not move closer, otherwise move closer
+        /* // if target is within 3 tiles, do not move closer, otherwise move closer
         MapLocation cur = rc.getLocation();
         RobotInfo[] friendlySoldiers = rc.senseNearbyRobots(-1, rc.getTeam());
         int[] dir = new int[2];
@@ -399,13 +326,13 @@ public class Soldier extends Unit {
         else  {
             dir = new int[]{dx, dy};
             lastAttackDir = scaleToSize(dir);
-        }
+        } */
         if (rc.getLocation().distanceSquaredTo(target) <= 13) {
             // check for low rubble squares to move to
             Direction lowRubble = findLowRubble();
             if (lowRubble != null) rc.move(lowRubble);
         }
-        else moveInDirection(lastAttackDir);
+        else moveToLocation(target);
     }
 
     public Direction findLowRubble() throws GameActionException {
@@ -429,7 +356,7 @@ public class Soldier extends Unit {
         Direction d = cur.directionTo(new MapLocation(cur.x + dir[0], cur.y + dir[1]));
         Direction[] sorted_dirs = {d, d.rotateLeft(), d.rotateRight(), d.rotateLeft().rotateLeft(), d.rotateRight().rotateRight(), d.opposite().rotateRight(), d.opposite().rotateLeft(), d.opposite()};
         int a = 6;
-        int lowestCost = a * (1 + (rc.senseRubble(rc.getLocation()) / 10)) + 60;
+        int lowestCost = a * (1 + (rc.senseRubble(rc.getLocation()) / 10)) + 50;
         Direction bestDir = null;
         for (int i = 0; i < 8; i++) {
             if (!rc.canMove(sorted_dirs[i])) continue;
@@ -442,7 +369,7 @@ public class Soldier extends Unit {
                 cost+=5;
             }
             if (i >= 3) {
-                cost += 30;
+                cost += 15;
             }
             if (i >=5){
                 cost+=30;
@@ -523,6 +450,108 @@ public class Soldier extends Unit {
         else {
             return false;
         }
+    }
+
+    public boolean attemptAttack(boolean attackMiners) throws GameActionException {
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
+        int weakestSoldierHealth = 100000;
+        int weakestMinerHealth = 100000;
+        int weakestSageHealth = 100000;
+        int weakestTowerHealth = 100000;
+        int weakestBuilerHealth = 100000;
+        RobotInfo weakestSoldier = null;
+        RobotInfo weakestTower = null;
+        RobotInfo weakestSage = null;
+        RobotInfo weakestMiner = null;
+        RobotInfo weakestBuilder = null;
+        RobotInfo archon = null;
+        // if there are any nearby enemy robots, attack the one with the least health
+        if (nearbyBots.length > 0) {
+            for (RobotInfo bot : nearbyBots) {
+                if (bot.type == RobotType.SOLDIER) {
+                    if (bot.health < weakestSoldierHealth) {
+                        weakestSoldier = bot;
+                        weakestSoldierHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.MINER) {
+                    if (bot.health < weakestMinerHealth) {
+                        weakestMiner = bot;
+                        weakestMinerHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.WATCHTOWER) {
+                    if (bot.health < weakestTowerHealth) {
+                        weakestTower = bot;
+                        weakestTowerHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.SAGE) {
+                    if (bot.health < weakestSageHealth) {
+                        weakestSage = bot;
+                        weakestSageHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.BUILDER) {
+                    if (bot.health < weakestBuilerHealth) {
+                        weakestBuilder = bot;
+                        weakestBuilerHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.ARCHON) {
+                    archon = bot;
+                }
+            }
+            // make more conditional, like damaging which one would give the biggest advantage
+            if (weakestSage != null) {
+                if (rc.canAttack(weakestSage.location)) {
+                    rc.attack(weakestSage.location);
+                    target = weakestSage.location;
+                    broadcastTarget(weakestSage.location);
+                    return true;
+                }
+            }
+            else if (weakestSoldier != null) {
+                if (rc.canAttack(weakestSoldier.location)) {
+                    rc.attack(weakestSoldier.location);
+                    target = weakestSoldier.location;
+                    broadcastTarget(weakestSoldier.location);
+                    return true;
+                }
+            }
+            else if (weakestTower != null) {
+                if (rc.canAttack(weakestTower.location)) {
+                    rc.attack(weakestTower.location);
+                    target = weakestTower.location;
+                    broadcastTarget(weakestTower.location);
+                    return true;
+                }
+            }
+            else if (weakestMiner != null && attackMiners) {
+                if (rc.canAttack(weakestMiner.location)) {
+                    rc.attack(weakestMiner.location);
+                    target = weakestMiner.location;
+                    broadcastTarget(weakestMiner.location);
+                    return true;
+                }
+            }
+            else if (weakestBuilder != null && attackMiners) {
+                if (rc.canAttack(weakestBuilder.location)) {
+                    rc.attack(weakestBuilder.location);
+                    target = weakestBuilder.location;
+                    broadcastTarget(weakestBuilder.location);
+                    return true;
+                }
+            }
+            else if (archon != null) {
+                if (rc.canAttack(archon.location)) {
+                    rc.attack(archon.location);
+                    broadcastTarget(archon.location);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void initialize() {
