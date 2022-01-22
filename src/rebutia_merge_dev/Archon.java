@@ -121,10 +121,10 @@ public class Archon extends Unit {
                             radio.broadcastMode((archonNumber + 1) % num_archons_alive);
                             num_soldiers_hub = 0;
                         }
-                        break;
                     }
+                } else {
+                    attemptHeal();
                 }
-                attemptHeal();
                 break;
             case OTHER_THREATENED:
                 if (rc.getTeamLeadAmount(rc.getTeam()) < 600) {

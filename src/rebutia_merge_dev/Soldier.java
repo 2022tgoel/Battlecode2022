@@ -45,6 +45,29 @@ public class Soldier extends Unit {
         initialize();
         exploreLoc = getInitialExploratoryLocation();
     }
+
+    public MapLocation findClosestNonModeArchon() throws GameActionException {
+        MapLocation closest = null;
+        int closest_distance = Integer.MAX_VALUE;
+        int mode = rc.readSharedArray(CHANNEL.ARCHON_MODE.getValue());
+        for (int i = 0; i < rc.getArchonCount(); i++) {
+            if (i == mode) {
+                continue;
+            }
+            int data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + i);
+            int x = data/64;
+            int y = data%64;
+            MapLocation archon = new MapLocation(x, y);
+            
+            int distance = rc.getLocation().distanceSquaredTo(archon);
+            if (distance < closest_distance) {
+                closest_distance = distance;
+                closest = archon;
+            }
+        }
+        return closest;
+    }
+
     @Override
     public void run() throws GameActionException {
         super.run();
@@ -89,8 +112,17 @@ public class Soldier extends Unit {
                 fleeLowRubble(fleeDirection);
                 break;
             case DYING:
-                // move to home archon. maybe it can get healed.
-                moveToLocation(homeArchon);
+                // move to non-mode Archon. maybe it can get healed.
+                // if it can't because there's only one Archon alive, it moves to the home archon
+                // and self-destructs
+                if (rc.getArchonCount() == 1) {
+                    if (rc.getLocation().isWithinDistanceSquared(homeArchon, 4)) {
+                        rc.disintegrate();
+                        break;
+                    }
+                }
+                MapLocation closestHealingCenter = findClosestNonModeArchon();
+                moveToLocation(closestHealingCenter);
                 break;
         }
 
