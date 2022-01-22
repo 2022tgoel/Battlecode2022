@@ -180,6 +180,20 @@ public class Comms {
         return archonNumber;
     }
 
+    public void postArchonLocation(int archonNumber)throws GameActionException{
+        MapLocation my = rc.getLocation();
+        int data = my.x*64 + my.y;
+        rc.writeSharedArray(CHANNEL.ARCHON_POSITION.getValue() + archonNumber, data);
+    }
+
+    public MapLocation readArchonLocation(int archonNumber) throws GameActionException{
+        int data = rc.readSharedArray(CHANNEL.ARCHON_POSITION.getValue() + archonNumber);
+        if (data == 0){
+            System.out.println("this archon position has not been updated yet");
+        }
+        return new MapLocation(data/64, data%64);
+    }
+
     public void postRank(RANK rank) throws GameActionException {
         MapLocation loc = rc.getLocation();
         int loc_int;

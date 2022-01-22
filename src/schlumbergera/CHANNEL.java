@@ -16,6 +16,8 @@ public enum CHANNEL {
     TARGET(20),
     ARCHON_MODE(26),
     ARCHON_MOVE(27),
+    //channels 30 - 33
+    ARCHON_POSITION(30),
     ORDERS(61),
     SEND_RANKS1(62),
     SEND_RANKS2(63), 

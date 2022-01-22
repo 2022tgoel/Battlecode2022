@@ -55,7 +55,9 @@ public class Archon extends Unit {
         radio.clearTargetAreas();
         radio.clearArchonMovementLocation();
 
+
         archonNumber = radio.getArchonNum();
+        radio.postArchonLocation(archonNumber);
         updateAmountMined();
 
         //System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
@@ -100,6 +102,7 @@ public class Archon extends Unit {
                     break; //save for attacked archons
                 }
             case DEFAULT:
+                moveArchon();
                 attemptHeal();
                 if (round_num % num_archons_alive != archonNumber || round_num % 4 != 0) break;
                 //if (b){
@@ -174,6 +177,40 @@ public class Archon extends Unit {
             return new MapLocation(x, y);
         }
         else return null;
+    }
+
+    public MapLocation shouldMove() throws GameActionException{ //gets the position you should move to
+        MapLocation loc = getArchonMovementLocation();
+        if (loc != null){
+            // return only if you are the closest archon
+            MapLocation closest = null;
+            for (int i = 0; i < num_archons_alive; i++){
+                MapLocation cur = radio.readArchonLocation(i);
+                if (closest == null || 
+                    (closest!=null && loc.distanceSquaredTo(cur) < loc.distanceSquaredTo(closest))){
+                    closest = cur;
+                }
+            }
+            if (closest.equals(rc.getLocation())) return loc;
+        }
+        return null;
+    }
+
+    public void moveArchon() throws GameActionException{
+        MapLocation move = shouldMove();
+        if (move!=null){
+            if (rc.getLocation().distanceSquaredTo(move) < 15){ 
+                //TODO: factor in rubble, don't settle on low rubble
+                // also make sure you're not moving all the time
+                if (rc.getMode() == RobotMode.PORTABLE){
+                    if (rc.canTransform()) rc.transform();
+                }
+            }
+            else if (rc.getMode() == RobotMode.TURRET){
+                if (rc.canTransform()) rc.transform();
+            }
+            else moveToLocation(move);
+        }
     }
     
     /////////////////////////////////////////////////////////////////////
