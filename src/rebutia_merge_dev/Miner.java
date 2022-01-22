@@ -1,16 +1,13 @@
 package rebutia_merge_dev;
 
-import battlecode.common.Direction;
-import battlecode.common.GameActionException;
-import battlecode.common.MapLocation;
-import battlecode.common.RobotController;
-import battlecode.common.RobotInfo;
-import battlecode.common.RobotType;
+import battlecode.common.*;
+import java.util.*;
 
 public class Miner extends Unit {
     enum MODE {
         EXPLORING,
         MINE_DISCOVERED,
+        MINING,
         FLEEING;
     }
 
@@ -123,8 +120,8 @@ public class Miner extends Unit {
         double cys = 0;
         double cxm = 0;
         double cym = 0;
-        int numSoldiers = 0;
-        int numMiners = 0;
+        double numSoldiers = 0;
+        double numMiners = 0;
         for (RobotInfo enemy: enemies) {
             if (enemy.type == RobotType.SOLDIER) {
                 cxs += enemy.location.x;
@@ -138,16 +135,16 @@ public class Miner extends Unit {
             }
         }
         if (numMiners > 0) {
-            cxm /= (double) numMiners;
-            cym /= (double) numMiners;
+            cxm /= numMiners;
+            cym /= numMiners;
             MapLocation enemy_center = new MapLocation((int)cxs, (int)cys);
-            broadcastTarget(enemy_center, numSoldiers * 2);
+            broadcastTarget(enemy_center);
         }
         if (numSoldiers > 0) {
-            cxs /= (double) numSoldiers;
-            cys /= (double) numSoldiers;
+            cxs /= numSoldiers;
+            cys /= numSoldiers;
             MapLocation enemy_center = new MapLocation((int)cxs, (int)cys);
-            broadcastTarget(enemy_center, numSoldiers * 2);
+            broadcastTarget(enemy_center);
             Direction d = rc.getLocation().directionTo(enemy_center).opposite();
             return new int[] {d.getDeltaX() * 5, d.getDeltaY() * 5};
         }

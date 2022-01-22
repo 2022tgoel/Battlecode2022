@@ -128,7 +128,7 @@ public class Comms {
     public void clearTargetAreas() throws GameActionException {
         if (round_num % 3 == 0) {
             for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
-                rc.writeSharedArray(CHANNEL.TARGET1.getValue() + i, 0);
+                rc.writeSharedArray(CHANNEL.TARGET.getValue() + i, 0);
             }
         }
     }

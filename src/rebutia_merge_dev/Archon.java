@@ -115,15 +115,15 @@ public class Archon extends Unit {
             case SOLDIER_HUB:
                 if (checkForResources(RobotType.SOLDIER.buildCostLead)) {
                     boolean soldier_built = build(new int[] { 0, 1, 0 });
-                    if (soldier_built) {
+                    if (soldier_built)
                         num_soldiers_hub++;
-                        if (num_soldiers_hub > 20) {
-                            radio.broadcastMode((archonNumber + 1) % num_archons_alive);
-                            num_soldiers_hub = 0;
-                        }
-                    }
                 } else {
                     attemptHeal();
+                    // rc.setIndicatorString("ATTEMPTING HEALING");
+                }
+                if (num_soldiers_hub > 20) {
+                    radio.broadcastMode((archonNumber + 1) % num_archons_alive);
+                    num_soldiers_hub = 0;
                 }
                 break;
             case OTHER_THREATENED:
@@ -223,7 +223,7 @@ public class Archon extends Unit {
     public boolean underThreat() throws GameActionException {
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         if (enemies.length > 0) {
-            broadcastTarget(enemies[0].location, enemies.length);
+            broadcastTarget(enemies[0].location);
             return true;
         }
         return false;

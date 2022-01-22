@@ -280,7 +280,7 @@ public class Watchtower extends Unit {
         MapLocation cur = rc.getLocation();
         MapLocation closestTarget = null;
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
-            data = rc.readSharedArray(CHANNEL.TARGET1.getValue() + i);
+            data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             if (data != 0) {
                 int x = (data >> 4) & 15;
                 int y = data & 15;
@@ -394,6 +394,104 @@ public class Watchtower extends Unit {
             }
             return threatenedArchons;
         }
+    }
+
+    public boolean attemptAttack(boolean attackMiners) throws GameActionException {
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
+        int weakestSoldierHealth = 100000;
+        int weakestMinerHealth = 100000;
+        int weakestSageHealth = 100000;
+        int weakestTowerHealth = 100000;
+        int weakestBuilerHealth = 100000;
+        RobotInfo weakestSoldier = null;
+        RobotInfo weakestTower = null;
+        RobotInfo weakestSage = null;
+        RobotInfo weakestMiner = null;
+        RobotInfo weakestBuilder = null;
+        RobotInfo archon = null;
+        // if there are any nearby enemy robots, attack the one with the least health
+        if (nearbyBots.length > 0) {
+            for (RobotInfo bot : nearbyBots) {
+                if (bot.type == RobotType.SOLDIER) {
+                    if (bot.health < weakestSoldierHealth) {
+                        weakestSoldier = bot;
+                        weakestSoldierHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.MINER) {
+                    if (bot.health < weakestMinerHealth) {
+                        weakestMiner = bot;
+                        weakestMinerHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.WATCHTOWER) {
+                    if (bot.health < weakestTowerHealth) {
+                        weakestTower = bot;
+                        weakestTowerHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.SAGE) {
+                    if (bot.health < weakestSageHealth) {
+                        weakestSage = bot;
+                        weakestSageHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.BUILDER) {
+                    if (bot.health < weakestBuilerHealth) {
+                        weakestBuilder = bot;
+                        weakestBuilerHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.ARCHON) {
+                    archon = bot;
+                }
+            }
+            // make more conditional, like damaging which one would give the biggest
+            // advantage
+            if (weakestSage != null) {
+                if (rc.canAttack(weakestSage.location)) {
+                    rc.attack(weakestSage.location);
+                    target = weakestSage.location;
+                    broadcastTarget(weakestSage.location);
+                    return true;
+                }
+            } else if (weakestSoldier != null) {
+                if (rc.canAttack(weakestSoldier.location)) {
+                    rc.attack(weakestSoldier.location);
+                    target = weakestSoldier.location;
+                    broadcastTarget(weakestSoldier.location);
+                    return true;
+                }
+            } else if (weakestTower != null) {
+                if (rc.canAttack(weakestTower.location)) {
+                    rc.attack(weakestTower.location);
+                    target = weakestTower.location;
+                    broadcastTarget(weakestTower.location);
+                    return true;
+                }
+            } else if (weakestMiner != null && attackMiners) {
+                if (rc.canAttack(weakestMiner.location)) {
+                    rc.attack(weakestMiner.location);
+                    target = weakestMiner.location;
+                    broadcastTarget(weakestMiner.location);
+                    return true;
+                }
+            } else if (weakestBuilder != null && attackMiners) {
+                if (rc.canAttack(weakestBuilder.location)) {
+                    rc.attack(weakestBuilder.location);
+                    target = weakestBuilder.location;
+                    broadcastTarget(weakestBuilder.location);
+                    return true;
+                }
+            } else if (archon != null) {
+                if (rc.canAttack(archon.location)) {
+                    rc.attack(archon.location);
+                    broadcastTarget(archon.location);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public void initialize() {

@@ -15,7 +15,6 @@ public class Unit {
     int seed_increment = 4;
     MapLocation homeArchon;
     public MapLocation archon_target;
-    MapLocation target;
     public int mapArea;
     /** Array containing all the possible movement directions. */
     static final Direction[] directions = {
@@ -193,7 +192,6 @@ public class Unit {
             return directions[bestDirectionIdx];
         }
     }
-
     public int numFriendlyMiners() {
         return numFriendlyMiners(-1);
     }
@@ -308,8 +306,8 @@ public class Unit {
         MapLocation dest = new MapLocation(loc.x + toDest[0], loc.y + toDest[1]);
         Direction d = mover.getBestDir(dest);
         // System.out.println(d);
-        if (d != null && rc.canMove(d)) {
-            rc.move(d);
+        if (d != null) {
+            if (rc.canMove(d)) rc.move(d);
         }
         // fuzzyMove(dest);
         // rc.setIndicatorString("I JUST MOVED TO " + toDest[0] + " " + toDest[1]);
@@ -538,117 +536,28 @@ public class Unit {
         }
     }
 
-    public boolean attemptAttack(boolean attackMiners) throws GameActionException {
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
-        int weakestSoldierHealth = 100000;
-        int weakestMinerHealth = 100000;
-        int weakestSageHealth = 100000;
-        int weakestTowerHealth = 100000;
-        int weakestBuilerHealth = 100000;
-        RobotInfo weakestSoldier = null;
-        RobotInfo weakestTower = null;
-        RobotInfo weakestSage = null;
-        RobotInfo weakestMiner = null;
-        RobotInfo weakestBuilder = null;
-        RobotInfo archon = null;
-        // if there are any nearby enemy robots, attack the one with the least health
-        int enemySoldierCount = 0;
-        if (nearbyBots.length > 0) {
-            for (RobotInfo bot : nearbyBots) {
-                if (bot.type == RobotType.SOLDIER) {
-                    if (bot.health < weakestSoldierHealth) {
-                        weakestSoldier = bot;
-                        weakestSoldierHealth = bot.health;
-                        enemySoldierCount++;
-                    }
-                }
-                if (bot.type == RobotType.MINER) {
-                    if (bot.health < weakestMinerHealth) {
-                        weakestMiner = bot;
-                        weakestMinerHealth = bot.health;
-                    }
-                }
-                if (bot.type == RobotType.WATCHTOWER) {
-                    if (bot.health < weakestTowerHealth) {
-                        weakestTower = bot;
-                        weakestTowerHealth = bot.health;
-                    }
-                }
-                if (bot.type == RobotType.SAGE) {
-                    if (bot.health < weakestSageHealth) {
-                        weakestSage = bot;
-                        weakestSageHealth = bot.health;
-                    }
-                }
-                if (bot.type == RobotType.BUILDER) {
-                    if (bot.health < weakestBuilerHealth) {
-                        weakestBuilder = bot;
-                        weakestBuilerHealth = bot.health;
-                    }
-                }
-                if (bot.type == RobotType.ARCHON) {
-                    archon = bot;
-                }
-            }
-            MapLocation attackLocation = null;
-            // make more conditional, like damaging which one would give the biggest advantage
-            if (weakestSage != null) {
-                if (rc.canAttack(weakestSage.location)) {
-                    attackLocation = weakestSage.location;
-                }
-            } else if (weakestSoldier != null) {
-                if (rc.canAttack(weakestSoldier.location)) {
-                    attackLocation = weakestSoldier.location;
-                }
-            } else if (weakestTower != null) {
-                if (rc.canAttack(weakestTower.location)) {
-                    attackLocation = weakestTower.location;
-                }
-            } else if (weakestMiner != null && attackMiners) {
-                if (rc.canAttack(weakestMiner.location)) {
-                    attackLocation = weakestMiner.location;
-                }
-            } else if (weakestBuilder != null && attackMiners) {
-                if (rc.canAttack(weakestBuilder.location)) {
-                    attackLocation = weakestBuilder.location;
-                }
-            } else if (archon != null) {
-                if (rc.canAttack(archon.location)) {
-                    rc.attack(archon.location);
-                    broadcastTarget(archon.location, 10);
-                    return true;
-                }
-            }
-            if (attackLocation != null) {
-                rc.attack(attackLocation);
-                target = attackLocation;
-                broadcastTarget(attackLocation, enemySoldierCount);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public void broadcastTarget(MapLocation enemy, int reconRequested) throws GameActionException {
+    public void broadcastTarget(MapLocation enemy) throws GameActionException {
         int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
         // fuzzy location
         int x_loc = enemy.x;
         int y_loc = enemy.y;
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
-            int data = rc.readSharedArray(CHANNEL.TARGET1.getValue() + i);
+            int data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             int x = (data >> 4) & 15;
             int y = data & 15;
             if (x_loc == x && y_loc == y) {
                 return;
             }
+            MapLocation loc = new MapLocation(x, y);
+            // don't store closeby targets
+            if (loc.distanceSquaredTo(enemy) < 6) return;
             if (data == 0) {
                 indToPut = i;
             }
         }
-        reconRequested = Math.min(15, reconRequested);
-        int value = (reconRequested << 12) | (x_loc << 6) | y_loc;
-        rc.setIndicatorDot(new MapLocation(x_loc, y_loc), 0, 10 * reconRequested, 0);
-        rc.writeSharedArray(CHANNEL.TARGET1.getValue() + indToPut, value);
+        int value = x_loc * 64 + y_loc;
+        rc.setIndicatorDot(new MapLocation(x_loc, y_loc), 0, 100, 0);
+        rc.writeSharedArray(CHANNEL.TARGET.getValue() + indToPut, value);
         // System.out.println("I broadcasted an enemy at " + enemy.toString());
     }
 }
