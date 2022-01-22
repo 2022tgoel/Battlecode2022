@@ -192,9 +192,12 @@ public class Unit {
             return directions[bestDirectionIdx];
         }
     }
-
     public int numFriendlyMiners() {
-        RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
+        return numFriendlyMiners(-1);
+    }
+
+    public int numFriendlyMiners(int rsqr) {
+        RobotInfo[] allies = rc.senseNearbyRobots(rsqr, rc.getTeam());
         int c = 0;
         for (RobotInfo r : allies) {
             if (r.type == RobotType.MINER)
@@ -203,7 +206,7 @@ public class Unit {
         return c;
     }
 
-    public boolean senseMiningArea() throws GameActionException {
+    public int senseMiningArea() throws GameActionException {
         int value = 0;
         int cx = 0;
         int cy = 0;
@@ -219,16 +222,16 @@ public class Unit {
             cx += margin * loc.x;
             cy += margin * loc.y;
         }
+
         if (value >= 25) {
             MapLocation dest = new MapLocation(cx / value, cy / value);
             // demand disabled for now
             int demand = value / minerToLeadRate - numFriendlyMiners();
             if (demand > 0) {
                 broadcastMiningArea(dest, demand);
-                return true;
             }
         }
-        return false;
+        return value;
     }
 
     public void broadcastMiningArea(MapLocation loc, int demand) throws GameActionException {
@@ -545,6 +548,9 @@ public class Unit {
             if (x_loc == x && y_loc == y) {
                 return;
             }
+            MapLocation loc = new MapLocation(x, y);
+            // don't store closeby targets
+            if (loc.distanceSquaredTo(enemy) < 6) return;
             if (data == 0) {
                 indToPut = i;
             }

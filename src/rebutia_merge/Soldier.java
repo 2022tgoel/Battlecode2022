@@ -90,7 +90,7 @@ public class Soldier extends Unit {
     public void visualize() throws GameActionException {
         rc.setIndicatorString("MODE: " + mode.toString());
         if (mode == MODE.EXPLORATORY){
-            rc.setIndicatorLine(rc.getLocation(), exploreLoc, 100, 100, 0);
+            rc.setIndicatorDot(exploreLoc, 100, 100, 0);
         }
         else if (mode == MODE.HUNTING){
             rc.setIndicatorLine(rc.getLocation(), target, 0, 100, 0);
@@ -279,7 +279,7 @@ public class Soldier extends Unit {
     }
 
     public void huntTarget() throws GameActionException {
-        // if target is within 3 tiles, do not move closer, otherwise move closer
+        /* // if target is within 3 tiles, do not move closer, otherwise move closer
         MapLocation cur = rc.getLocation();
         RobotInfo[] friendlySoldiers = rc.senseNearbyRobots(-1, rc.getTeam());
         int[] dir = new int[2];
@@ -304,13 +304,13 @@ public class Soldier extends Unit {
         else  {
             dir = new int[]{dx, dy};
             lastAttackDir = scaleToSize(dir);
-        }
+        } */
         if (rc.getLocation().distanceSquaredTo(target) <= 13) {
             // check for low rubble squares to move to
             Direction lowRubble = findLowRubble();
             if (lowRubble != null) rc.move(lowRubble);
         }
-        else moveInDirection(lastAttackDir);
+        else moveToLocation(target);
     }
 
     public Direction findLowRubble() throws GameActionException {
