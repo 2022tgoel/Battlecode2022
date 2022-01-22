@@ -1,4 +1,4 @@
-package rebutia_micro_dev;
+package sch_healers;
 
 import battlecode.common.*;
 import java.util.*;
@@ -27,9 +27,7 @@ public class Miner extends Unit {
     }
     @Override
     public void run() throws GameActionException {
-        super.run();
         round_num = rc.getRoundNum();
-        radio.updateCounter();
         int amountMined = mine();
         mode = getMode(amountMined);
         switch (rank) {
@@ -55,13 +53,7 @@ public class Miner extends Unit {
                 break;
         }
         amountMined+=mine();
-        int deposit_value = senseMiningArea();
-        int num_friends = numFriendlyMiners(2);
-        if (amountMined > 0) {
-            if (((double) deposit_value / (double) (num_friends + 1)) >= 15) {
-                radio.updateCounter(BiCHANNEL.USEFUL_MINERS);
-            }
-        }
+        senseMiningArea();
         rc.setIndicatorString(" " + mode + " " + amountMined + " " + target);
     }
 

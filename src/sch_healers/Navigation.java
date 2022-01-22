@@ -1,4 +1,4 @@
-package rebutia_micro_dev;
+package sch_healers;
 import battlecode.common.*;
 public class Navigation {
 	static RobotController rc;

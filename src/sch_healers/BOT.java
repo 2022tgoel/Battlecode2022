@@ -1,4 +1,4 @@
-package rebutia_micro_dev;
+package sch_healers;
 
 public enum BOT {
     NONE(0),

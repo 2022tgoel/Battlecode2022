@@ -1,8 +1,6 @@
-package rebutia_micro_dev;
+package sch_healers;
 
 import battlecode.common.*;
-
-import java.util.*;
 
 public class Soldier extends Unit {
 
@@ -22,11 +20,13 @@ public class Soldier extends Unit {
     RANK rank;
 
     MapLocation[] threatenedArchons;
+    MapLocation closestHealingCenter = null;
 
     private int[] fleeDirection = {Integer.MAX_VALUE, Integer.MAX_VALUE};
     private int stopFleeingRound = -1;
     private int DRUSH_RSQR = 400;
-    private int ARUSH_RSQR = 900;
+    int ARUSH_RSQR = 900;
+    boolean needsHealing = false;
 
     MODE mode;
 
@@ -40,18 +40,21 @@ public class Soldier extends Unit {
 
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
+        rank = findRankSoldier();
         initialize();
         exploreLoc = getInitialExploratoryLocation();
     }
     @Override
     public void run() throws GameActionException {
-        super.run();
         round_num = rc.getRoundNum();
-        radio.updateCounter();
         attacked = attemptAttack(false);
         findTargets();
         senseMiningArea();
-
+        senseFriendlySoldiersArea();
+        if (needsHealing && rc.getHealth() > 40) {
+            needsHealing = false;
+            closestHealingCenter = null;
+        }
         mode = determineMode();
         visualize();
         switch (mode) {
@@ -78,9 +81,20 @@ public class Soldier extends Unit {
                 defensiveMove();
                 break;
             case FLEE:
-                moveLowRubble(fleeDirection);
+                fleeLowRubble(fleeDirection);
                 break;
-            default:
+            case DYING:
+                // move towards closest home archon
+                MapLocation to = radio.getClosestNonMode();
+                if (to != null) {
+                    closestHealingCenter = to;
+                }
+                if (closestHealingCenter != null) {
+                    moveToLocation(closestHealingCenter);
+                    if (rc.getLocation().isWithinDistanceSquared(closestHealingCenter, 5)) {
+                        closestHealingCenter = null;
+                    }
+                }
                 break;
         }
 
@@ -90,7 +104,7 @@ public class Soldier extends Unit {
     public void visualize() throws GameActionException {
         rc.setIndicatorString("MODE: " + mode.toString());
         if (mode == MODE.EXPLORATORY){
-            rc.setIndicatorDot(exploreLoc, 100, 100, 0);
+            rc.setIndicatorLine(rc.getLocation(), exploreLoc, 100, 100, 0);
         }
         else if (mode == MODE.HUNTING){
             rc.setIndicatorLine(rc.getLocation(), target, 0, 100, 0);
@@ -135,6 +149,10 @@ public class Soldier extends Unit {
                 stopFleeingRound = round_num + 6;
             }
             return MODE.FLEE;
+        }
+        if (rc.getHealth() < 10 || needsHealing) {
+            needsHealing = true;
+            return MODE.DYING;
         }
         
         // Priority 3 - Hunt enemies.
@@ -225,7 +243,7 @@ public class Soldier extends Unit {
         double a = 6 * ratio;
         int unit_advantage = (int) (a * Math.pow(unit_difference,2) * Math.signum(unit_difference));
 
-        // System.out.println("Unit advantage: " + unit_advantage + " Ratio: " + ratio + " numFriendHits " + numFriendHits + " numEnemyHits " + numEnemyHits + "round_num " + round_num);
+        // System.out.println("Unit advantage: " + unit_advantage + " Ratio: " + ratio + " numFriendHits " + numFriendHits + " numEnemyHits " + numEnemyHits + "round_num " + round_num + " id " + rc.getID());
 
         if (numFriendHits + unit_advantage < numEnemyHits) {
             double dx = -(cxse - cur.x) * 3;
@@ -269,7 +287,7 @@ public class Soldier extends Unit {
 
         // finds closest target, and advances towards it.
         if (closestTarget != null) {
-            if (cur.distanceSquaredTo(closestTarget) <= mapArea / 8) {
+            if (cur.distanceSquaredTo(closestTarget) <= mapArea / 16) {
                 target = closestTarget;
             }
             lastAttackDir = new int[]{closestTarget.x - cur.x, closestTarget.y - cur.y};
@@ -279,17 +297,38 @@ public class Soldier extends Unit {
     }
 
     public void huntTarget() throws GameActionException {
+        // if target is within 3 tiles, do not move closer, otherwise move closer
         MapLocation cur = rc.getLocation();
+        RobotInfo[] friendlySoldiers = rc.senseNearbyRobots(-1, rc.getTeam());
+        int[] dir = new int[2];
+        int dx = 0;
+        int dy = 0;
+        int num_soldiers = 0;
+        if (friendlySoldiers != null) {
+            for (RobotInfo robot: friendlySoldiers) {
+                if (robot.type == RobotType.SOLDIER) {
+                    dir[0] += (target.x - robot.location.x);
+                    dir[1] += (target.y - robot.location.y);
+                    num_soldiers++;
+                }
+            }
+        }
+        dx += (target.x - cur.x);
+        dy += (target.y - cur.y);
+        // this is stupid. make it just go to the target
+        dir[0] = (dir[0] + dx) / (num_soldiers + 1);
+        dir[1] = (dir[1] + dy) / (num_soldiers + 1);
+        if (dir[0] != 0 || dir[1] != 0) lastAttackDir = scaleToSize(dir);
+        else  {
+            dir = new int[]{dx, dy};
+            lastAttackDir = scaleToSize(dir);
+        }
         if (rc.getLocation().distanceSquaredTo(target) <= 13) {
             // check for low rubble squares to move to
-            moveLowRubble(new int[] {-target.x + cur.x, -target.y + cur.y}, 20);
+            Direction lowRubble = findLowRubble();
+            if (lowRubble != null) rc.move(lowRubble);
         }
-        else if (rc.getLocation().distanceSquaredTo(target) <= 25) {
-            moveLowRubble(new int[] {target.x - cur.x, target.y - cur.y}, 15);
-        }
-        else {
-            moveToLocation(target);
-        }
+        else moveInDirection(lastAttackDir);
     }
 
     public Direction findLowRubble() throws GameActionException {
@@ -308,16 +347,12 @@ public class Soldier extends Unit {
         return bestDir;
     }
 
-    public void moveLowRubble(int[] dir) throws GameActionException {
-        moveLowRubble(dir, 20);
-    }
-
-    public void moveLowRubble(int[] dir, int threshold) throws GameActionException {
+    public void fleeLowRubble(int[] dir) throws GameActionException {
         MapLocation cur = rc.getLocation();
         Direction d = cur.directionTo(new MapLocation(cur.x + dir[0], cur.y + dir[1]));
         Direction[] sorted_dirs = {d, d.rotateLeft(), d.rotateRight(), d.rotateLeft().rotateLeft(), d.rotateRight().rotateRight(), d.opposite().rotateRight(), d.opposite().rotateLeft(), d.opposite()};
         int a = 6;
-        int lowestCost = a * (1 + (rc.senseRubble(rc.getLocation()) / 10)) + threshold;
+        int lowestCost = 100000;
         Direction bestDir = null;
         for (int i = 0; i < 8; i++) {
             if (!rc.canMove(sorted_dirs[i])) continue;
@@ -330,7 +365,7 @@ public class Soldier extends Unit {
                 cost+=5;
             }
             if (i >= 3) {
-                cost += 15;
+                cost += 30;
             }
             if (i >=5){
                 cost+=30;
@@ -419,12 +454,10 @@ public class Soldier extends Unit {
         int weakestMinerHealth = 100000;
         int weakestSageHealth = 100000;
         int weakestTowerHealth = 100000;
-        int weakestBuilerHealth = 100000;
         RobotInfo weakestSoldier = null;
         RobotInfo weakestTower = null;
         RobotInfo weakestSage = null;
         RobotInfo weakestMiner = null;
-        RobotInfo weakestBuilder = null;
         RobotInfo archon = null;
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
@@ -451,12 +484,6 @@ public class Soldier extends Unit {
                     if (bot.health < weakestSageHealth) {
                         weakestSage = bot;
                         weakestSageHealth = bot.health;
-                    }
-                }
-                if (bot.type == RobotType.BUILDER) {
-                    if (bot.health < weakestBuilerHealth) {
-                        weakestBuilder = bot;
-                        weakestBuilerHealth = bot.health;
                     }
                 }
                 if (bot.type == RobotType.ARCHON) {
@@ -493,14 +520,6 @@ public class Soldier extends Unit {
                     rc.attack(weakestMiner.location);
                     target = weakestMiner.location;
                     broadcastTarget(weakestMiner.location);
-                    return true;
-                }
-            }
-            else if (weakestBuilder != null && attackMiners) {
-                if (rc.canAttack(weakestBuilder.location)) {
-                    rc.attack(weakestBuilder.location);
-                    target = weakestBuilder.location;
-                    broadcastTarget(weakestBuilder.location);
                     return true;
                 }
             }
