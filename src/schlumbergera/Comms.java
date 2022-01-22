@@ -91,7 +91,7 @@ public class Comms {
     }
 
     public void sendMovingAlert() throws GameActionException {
-        rc.writeSharedArray(CHANNEL.ARCHON_MOVING, 1);
+        rc.writeSharedArray(CHANNEL.ARCHON_MOVING.getValue(), 1);
     }
 
     public int sendThreatAlert() throws GameActionException {

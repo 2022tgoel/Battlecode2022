@@ -65,7 +65,7 @@ public class Archon extends Unit {
         MODE mode = determineMode();
             
         if (mode != MODE.MOVING){
-            if (rc.getMode()== RobotType.PORTABLE && rc.canTransform()) rc.transform();
+            if (rc.getMode()== RobotMode.PORTABLE && rc.canTransform()) rc.transform();
         }
 
         switch (mode) {
@@ -173,9 +173,9 @@ public class Archon extends Unit {
                 }
                 else {
                     if (archonMoving()){ //soldier hub delegation passed to second closest while it is moving
-                        if (isSecondClosestArchon()) return MODE.SOLDIER_HUB;
+                        if (isSecondClosestArchon(move)) return MODE.SOLDIER_HUB;
                     }
-                    else return MODE.DEFAULT;
+                    return MODE.DEFAULT;
                 } 
             }
         }
@@ -201,7 +201,7 @@ public class Archon extends Unit {
         else return null;
     }
 
-    public MapLocation isClosestArchon(MapLocation loc) throws GameActionException{ //gets the position you should move to
+    public boolean isClosestArchon(MapLocation loc) throws GameActionException{ //gets the position you should move to
         if (loc != null){
             // return only if you are the closest archon
             MapLocation closest = null;
@@ -217,7 +217,7 @@ public class Archon extends Unit {
         return false;
     }
 
-    public MapLocation isSecondClosestArchon(MapLocation loc) throws GameActionException {
+    public boolean isSecondClosestArchon(MapLocation loc) throws GameActionException {
         if (loc != null){
             // return only if you are the closest archon
             MapLocation closest = null;
@@ -240,7 +240,7 @@ public class Archon extends Unit {
     }
 
     public boolean archonMoving() throws GameActionException {
-        return (rc.readSharedArray(CHANNEL.ARCHON_MOVING) > 0);
+        return (rc.readSharedArray(CHANNEL.ARCHON_MOVING.getValue()) > 0);
     }
 
     MapLocation move = null;
