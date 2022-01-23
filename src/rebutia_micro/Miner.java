@@ -11,10 +11,13 @@ public class Miner extends Unit {
         FLEEING;
     }
 
-    int[] exploratoryDir;
+    
     int round_num;
     MODE mode;
+
+    int[] exploratoryDir;
     private MapLocation exploratoryTarget;
+
     private MapLocation miningSpot;
     private MapLocation target;
     static MinerNav mNav;
@@ -26,8 +29,7 @@ public class Miner extends Unit {
     
 	public Miner(RobotController rc) throws GameActionException {
         super(rc);
-        exploratoryDir = getExploratoryDir(7);
-        exploratoryTarget = getExploratoryTarget();
+        exploratoryTarget = calcExploreDirs(7);
         rank = findRankMiner();
         mNav = new MinerNav(rc);
     }
@@ -43,9 +45,9 @@ public class Miner extends Unit {
                 switch (mode) {
                     case EXPLORING:
                         // moveInDirection(exploratoryDir);
-                        if (rc.getLocation().isAdjacentTo(exploratoryTarget)) {
+                        if (adjacentToEdge()) {
                             // rc.setIndicatorString("moving away");
-                            exploratoryTarget = getExploratoryTarget();
+                            exploratoryTarget = calcExploreDirs(7);
                         }
                         else {
                             moveToLocation(exploratoryTarget);
@@ -67,9 +69,6 @@ public class Miner extends Unit {
                         break;
                 }
                 senseArchon();
-                if (adjacentToEdge()) {
-                    exploratoryDir = getExploratoryDir(7);
-                }
                 break;
             default:
                 break;
@@ -82,7 +81,7 @@ public class Miner extends Unit {
                 radio.updateCounter(BiCHANNEL.USEFUL_MINERS);
             }
         }
-        rc.setIndicatorString(" " + mode + " " + amountMined + " " + target + " exploratoryDir: " + exploratoryDir[0] + " " + exploratoryDir[1]);
+        rc.setIndicatorString(" " + mode + " " + amountMined + " " + target);
     }
 
     public MapLocation findMiningSpot(MapLocation target) throws GameActionException {
@@ -117,7 +116,7 @@ public class Miner extends Unit {
     public MODE getMode(int amountMined) throws GameActionException {
         int[] potFleeDirection = enemiesDetected();
         // if you just escaped an enemy, explore in a new direction
-        if (potFleeDirection == null && stopFleeingRound == round_num) exploratoryDir = getExploratoryDir(7);
+        if (potFleeDirection == null && stopFleeingRound == round_num) exploratoryTarget = calcExploreDirs(7);
         
         // if there are enemies nearby or there were recently, flee
         if (potFleeDirection != null || stopFleeingRound <= round_num) {
@@ -265,64 +264,6 @@ public class Miner extends Unit {
         }
 
         // if our best location is outside of the mining range, return it
-        if (maxRes >=1 && bestLocation != null) {
-            return bestLocation;
-        }
-
-        return null;
-    }
-
-
-
-    static final int[] dx = {0, 0, 0, 1, 1, 1, -1,-1, -1};
-    static final int[] dy = {0, 1, -1, 0, 1, -1, 0, 1, -1};
-    public MapLocation findMiningAreaWithSensingIntensive() throws GameActionException{ //currently too bytecode intensive
-        int maxRes = 1;
-        MapLocation bestLocation = null;
-        
-        MapLocation my = rc.getLocation();
-        //look at surrounding area
-        MapLocation[] goldLocs = rc.senseNearbyLocationsWithGold();
-        MapLocation[] leadLocs = rc.senseNearbyLocationsWithLead(rc.getType().visionRadiusSquared, 2);
-        
-        int[][] value = new int[9][9];
-        for (MapLocation loc: goldLocs) {
-            int x = (loc.x-my.x)+4;
-            int y = (loc.y-my.y)+4;
-            assert(x >= 0 && x < 9 && y>=0 && y < 9);
-            int upd = rc.senseGold(loc)*goldToLeadConversionRate;
-            for (int i= 0; i < dx.length; i++){
-                int nx = x + dx[i];
-                int ny = y + dy[i];
-                
-                if (nx >=0 && nx < 9 && ny >=0 && ny < 9) value[nx][ny] += upd;
-            }
-            
-        }
-
-        for (MapLocation loc: leadLocs) {
-            int x = (loc.x-my.x)+4;
-            int y = (loc.y-my.y)+4;
-            assert(x >= 0 && x < 9 && y>=0 && y < 9);
-            int upd = rc.senseLead(loc) - 1;
-            for (int i= 0; i < dx.length; i++){
-                int nx = x + dx[i];
-                int ny = y + dy[i];
-                
-                if (nx >=0 && nx < 9 && ny >=0 && ny < 9) value[nx][ny] += upd;
-            }
-        }
-
-        for (int i = 0; i < 9; i++){
-            for (int j = 0; j < 9; j++){
-                MapLocation loc = new MapLocation(my.x + (i -4), my.y +(j-4));
-                if (value[i][j] > maxRes) {
-                    maxRes = value[i][j];
-                    bestLocation = loc;
-                }
-            }
-        }
-
         if (maxRes >=1 && bestLocation != null) {
             return bestLocation;
         }
