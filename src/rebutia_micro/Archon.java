@@ -52,6 +52,8 @@ public class Archon extends Unit {
     @Override
     public void run() throws GameActionException {
         round_num = rc.getRoundNum();
+        num_archons_alive = rc.getArchonCount();
+
         radio.update();
         radio.clearThreat();
         radio.clearMiningAreas();
@@ -77,6 +79,8 @@ public class Archon extends Unit {
                 }
             }
         }
+
+        System.out.println("MODE: " + radio.getMode() + ", " + archonNumber + ", " + num_archons_alive + ", " + rc.getArchonCount());
 
         troopCounter = new int[] {
                 radio.readCounter(RobotType.MINER),
@@ -104,12 +108,16 @@ public class Archon extends Unit {
                     // alternate between those under threat
                     break;
                 }
-                if (checkForResources(RobotType.SOLDIER.buildCostLead)) {
-                    Direction[] enemyDirs = getEnemyDirs();
-                    for (Direction dir : enemyDirs) {
-                        buildSoldier(dir);
+                
+                boolean built = false;
+                Direction[] enemyDirs = getEnemyDirs();
+                for (Direction dir : enemyDirs) {
+                    if (buildSoldier(dir)) {
+                        built = true;
+                        break;
                     }
-                } else {
+                }
+                if (!built) {
                     attemptHeal();
                 }
                 break;
@@ -132,13 +140,11 @@ public class Archon extends Unit {
                 System.out.println("Desired miners: " + desiredNumMiners + " Useful miners: " + useful_miners + " Ratio: " + (useful_miners / (double) troopCounter[0]));
                 break;
             case SOLDIER_HUB:
-                if (checkForResources(RobotType.SOLDIER.buildCostLead)) {
-                    boolean soldier_built = build(new int[] { 0, 1, 0 });
-                    if (soldier_built)
-                        num_soldiers_hub++;
+                boolean soldier_built = build(new int[] { 0, 1, 0 });
+                if (soldier_built) {
+                    num_soldiers_hub++;
                 } else {
                     attemptHeal();
-                    // rc.setIndicatorString("ATTEMPTING HEALING");
                 }
                 if (num_soldiers_hub > 20) {
                     radio.broadcastMode((archonNumber + 1) % num_archons_alive);
@@ -161,7 +167,6 @@ public class Archon extends Unit {
                 // if ((useful_miners / (double) troopCounter[0]) >= 0.60) build(new int[] {1, 0, 0});
                 break;
         }
-        num_archons_alive = rc.getArchonCount();
         rc.setIndicatorString("mode: " + mode.toString() + " " + leadLastCall + " " + getAvgMined());
     }
 
