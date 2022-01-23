@@ -88,13 +88,10 @@ public class Soldier extends Unit {
                     CHANNEL.FRIENDLY_ARCHON_LOC1.getValue(),
                     4, rc.getLocation()
                 );
-                System.out.println("Locations sorted by distance:");
-                for (MapLocation loc : closestArchons) {
-                    System.out.println(loc);
-                }
                 if (closestArchons.length > 0) {
                     moveToLocation(closestArchons[0]);
                 }
+                break;
         }
 
         if (!attacked) attemptAttack(true);
