@@ -1,4 +1,4 @@
-package rebutia_micro;
+package rebutia_micro_new;
 
 import battlecode.common.*;
 import java.util.*;
@@ -27,7 +27,6 @@ public class Miner extends Unit {
 	public Miner(RobotController rc) throws GameActionException {
         super(rc);
         exploratoryDir = getExploratoryDir(7);
-        exploratoryTarget = getExploratoryTarget();
         rank = findRankMiner();
         mNav = new MinerNav(rc);
     }
@@ -42,14 +41,7 @@ public class Miner extends Unit {
             case DEFAULT:
                 switch (mode) {
                     case EXPLORING:
-                        // moveInDirection(exploratoryDir);
-                        if (rc.getLocation().isAdjacentTo(exploratoryTarget)) {
-                            // rc.setIndicatorString("moving away");
-                            exploratoryTarget = getExploratoryTarget();
-                        }
-                        else {
-                            moveToLocation(exploratoryTarget);
-                        }
+                        moveInDirection(exploratoryDir);
                         break;
                     case MINE_DISCOVERED:
                         if (miningSpot != null) {
@@ -63,7 +55,6 @@ public class Miner extends Unit {
                         break;
                     case FLEEING:
                         moveInDirection(fleeDirection);
-                        exploratoryTarget = getExploratoryTarget();
                         break;
                 }
                 senseArchon();
@@ -103,13 +94,6 @@ public class Miner extends Unit {
         }
         return bestSpot;
     }
-
-    private MapLocation getExploratoryTarget() {
-        int randx = rng.nextInt(rc.getMapWidth());
-        int randy = rng.nextInt(rc.getMapHeight());
-        return new MapLocation(randx, randy);
-    }
-
     public RANK findRankMiner() throws GameActionException{
         return RANK.DEFAULT;
     }
@@ -142,7 +126,6 @@ public class Miner extends Unit {
         if (target!=null){
             if (miningSpot == null && rc.getLocation().distanceSquaredTo(target) <= 9) {
                 miningSpot = findMiningSpot(target);
-                return MODE.MINE_DISCOVERED;
             }
             else {
                 if (deposit != null) {
@@ -199,7 +182,7 @@ public class Miner extends Unit {
             cxm /= numMiners;
             cym /= numMiners;
             MapLocation enemy_center = new MapLocation((int)cxm, (int)cym);
-            broadcastTarget(enemy_center);
+            // broadcastTarget(enemy_center);
         }
         if (numSoldiers > 0) {
             cxs /= numSoldiers;
@@ -347,7 +330,7 @@ public class Miner extends Unit {
                 MapLocation dest = new MapLocation(Math.min(x*4, rc.getMapWidth() - 1), Math.min(y*4, rc.getMapHeight() - 1));
              //   System.out.println("Recieved miner request: " + x*4 + " " + y*4 + " " + demand);
                 int res = minerToLeadRate*demand;
-                if (my.distanceSquaredTo(dest) < 300 && res > maxRes && demand > 0) {
+                if (my.distanceSquaredTo(dest) < 300 && res > maxRes && demand > 0) { //within range //TODO: add not fulfilled
                     maxRes = res;
                     bestLocation = dest; 
                     channel = i;
