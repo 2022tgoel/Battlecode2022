@@ -12,6 +12,7 @@ public class Archon extends Unit {
         MAKE_BUILDER,
         THREATENED,
         OTHER_THREATENED,
+        MOVING,
         REINFORCE_WATCHTOWER;
     }
 
@@ -58,8 +59,11 @@ public class Archon extends Unit {
         radio.clearMiningAreas();
         radio.clearTargetAreas();
         updateAmountMined();
+        radio.clearArchonMovementLocation();
+        radio.clearArchonMoving();
 
         archonNumber = radio.getArchonNum();
+        radio.postArchonLocation(archonNumber);
 
         troopCounter = new int[] {
                 radio.readCounter(RobotType.MINER),
@@ -77,6 +81,11 @@ public class Archon extends Unit {
         //System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
         MODE mode = determineMode();
         double useful_miners = (double) radio.readCounter(BiCHANNEL.USEFUL_MINERS);
+
+        if (mode != MODE.MOVING){
+            if (rc.getMode()== RobotMode.PORTABLE && rc.canTransform()) rc.transform();
+        }
+
 
         switch (mode) {
             case THREATENED:
@@ -114,10 +123,10 @@ public class Archon extends Unit {
                 break;
             case SOLDIER_HUB:
                 if (checkForResources(RobotType.SOLDIER.buildCostLead)) {
-                    boolean soldier_built = build(new int[] { 0, 1, 0 });
-                    if (soldier_built)
-                        num_soldiers_hub++;
-                } else {
+                    boolean soldier_built = build(new int[]{0, 1, 0});
+                    if (soldier_built) num_soldiers_hub++;
+                }
+                else {
                     attemptHeal();
                     // rc.setIndicatorString("ATTEMPTING HEALING");
                 }
@@ -125,6 +134,10 @@ public class Archon extends Unit {
                     radio.broadcastMode((archonNumber + 1) % num_archons_alive);
                     num_soldiers_hub = 0;
                 }
+                break;
+            case MOVING:
+                moveToLocation(move);
+                radio.sendMovingAlert();
                 break;
             case OTHER_THREATENED:
                 if (rc.getTeamLeadAmount(rc.getTeam()) < 600) {
@@ -143,7 +156,7 @@ public class Archon extends Unit {
                 break;
         }
         num_archons_alive = rc.getArchonCount();
-        rc.setIndicatorString("mode: " + mode.toString() + " " + leadLastCall + " " + getAvgMined());
+        rc.setIndicatorString("mode: " + mode.toString() + " " + getArchonMovementLocation());
     }
 
     public boolean build(int[] build_order) throws GameActionException {
@@ -194,10 +207,23 @@ public class Archon extends Unit {
         else if (initial)
             return MODE.INITIAL;
 
-        if (radio.getMode() == archonNumber)
-            return MODE.SOLDIER_HUB;
-        else
-            return MODE.DEFAULT;
+        move = getArchonMovementLocation();
+        if (move == null){
+            if (radio.getMode() == archonNumber) {
+                return MODE.SOLDIER_HUB;
+            }
+        }
+        else {
+            if (isClosestArchon(move)) { 
+                return robotModeSwitch();
+            }
+            else {
+                if (archonMoving()){ //soldier hub delegation passed to second closest while it is moving
+                    if (isSecondClosestArchon(move)) return MODE.SOLDIER_HUB;
+                }
+            }
+        }
+        return MODE.DEFAULT;
     }
 
     public int determineMinerNum(int leadEstimate) throws GameActionException {
@@ -220,6 +246,59 @@ public class Archon extends Unit {
         }
     }
 
+    public MapLocation getArchonMovementLocation() throws GameActionException{
+        // read channel to see where soldiers suggest an archon moves
+        int data = rc.readSharedArray(CHANNEL.ARCHON_MOVE.getValue());
+        if (data!=0) {
+            int x = (data >> 6) & 63;
+            int y= data & 63;
+            return new MapLocation(x, y);
+        }
+        else return null;
+    }
+
+    public boolean isClosestArchon(MapLocation loc) throws GameActionException{ //gets the position you should move to
+        if (loc != null){
+            // return only if you are the closest archon
+            MapLocation closest = null;
+            for (int i = 0; i < num_archons_alive; i++){
+                MapLocation cur = radio.readArchonLocation(i);
+                if (closest == null || 
+                    (closest!=null && loc.distanceSquaredTo(cur) < loc.distanceSquaredTo(closest))){
+                    closest = cur;
+                }
+            }
+            if (closest.equals(rc.getLocation())) return true;
+        }
+        return false;
+    }
+
+    public boolean isSecondClosestArchon(MapLocation loc) throws GameActionException {
+        if (loc != null){
+            // return only if you are the closest archon
+            MapLocation closest = null;
+            MapLocation secondClosest = null;
+            for (int i = 0; i < num_archons_alive; i++){
+                MapLocation cur = radio.readArchonLocation(i);
+                if (closest == null || 
+                    (closest!=null && loc.distanceSquaredTo(cur) < loc.distanceSquaredTo(closest))){
+                    secondClosest = closest;
+                    closest = cur;
+                }
+                else if (secondClosest==null ||
+                        (secondClosest!=null && loc.distanceSquaredTo(cur) < loc.distanceSquaredTo(secondClosest))){
+                    secondClosest = cur;
+                }
+            }
+            if (secondClosest.equals(rc.getLocation())) return true;
+        }
+        return false;
+    }
+
+    public boolean archonMoving() throws GameActionException {
+        return (rc.readSharedArray(CHANNEL.ARCHON_MOVING.getValue()) > 0);
+    }
+
     public boolean underThreat() throws GameActionException {
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         if (enemies.length > 0) {
@@ -227,6 +306,36 @@ public class Archon extends Unit {
             return true;
         }
         return false;
+    }
+    MapLocation move = null;
+    int turnsMoving = 0;
+    final int maxTurnsMoving = 200;
+    int turnsWaiting = 150;
+    final int minTurnsWaiting = 150;
+    public MODE robotModeSwitch() throws GameActionException{
+        if (rc.getMode() == RobotMode.PORTABLE){
+            if (rc.getLocation().distanceSquaredTo(move) < 20 || turnsMoving >= maxTurnsMoving){ 
+                //TODO: factor in rubble, don't settle on low rubble
+                if (rc.getMode() == RobotMode.PORTABLE){
+                    if (rc.canTransform()) rc.transform();
+                    turnsMoving = 0; // reset
+                }
+            }
+            else {
+                turnsMoving++;
+            }
+        }
+        else { //turret mode
+            if (rc.getLocation().distanceSquaredTo(move) > 20 && turnsWaiting >= minTurnsWaiting ){
+                if (rc.canTransform()) {
+                    rc.transform();
+                    turnsWaiting = 0;
+                }
+            }
+            else turnsWaiting++;
+        }
+        if (rc.getMode() == RobotMode.PORTABLE) return MODE.MOVING;
+        else return MODE.SOLDIER_HUB;
     }
 
     /////////////////////////////////////////////////////////////////////

@@ -167,12 +167,28 @@ public class Comms {
                 rc.readSharedArray(CHANNEL.LEAD_ESTIMATE.getValue()) + increment);
     }
 
+    public void clearArchonMovementLocation() throws GameActionException {
+        if (round_num % 2001 == 0){ //currently doesn't clear
+            rc.writeSharedArray(CHANNEL.ARCHON_MOVE.getValue(), 0);
+        }
+    }
+
+    public void clearArchonMoving() throws GameActionException {
+        if (round_num % 15 == 0){
+            rc.writeSharedArray(CHANNEL.ARCHON_MOVING.getValue(), 0);
+        }
+    }
+
     public int getMode() throws GameActionException {
         return rc.readSharedArray(CHANNEL.ARCHON_MODE.getValue());
     }
 
     public void broadcastMode(int num) throws GameActionException {
         rc.writeSharedArray(CHANNEL.ARCHON_MODE.getValue(), num);
+    }
+
+    public void sendMovingAlert() throws GameActionException {
+        rc.writeSharedArray(CHANNEL.ARCHON_MOVING.getValue(), 1);
     }
 
     public int sendThreatAlert() throws GameActionException {
@@ -238,6 +254,20 @@ public class Comms {
         if (archonNumber == rc.getArchonCount() - 1)
             clearArchonNumbers();
         return archonNumber;
+    }
+
+    public void postArchonLocation(int archonNumber)throws GameActionException{
+        MapLocation my = rc.getLocation();
+        int data = my.x*64 + my.y;
+        rc.writeSharedArray(CHANNEL.ARCHON_POSITION.getValue() + archonNumber, data);
+    }
+
+    public MapLocation readArchonLocation(int archonNumber) throws GameActionException{
+        int data = rc.readSharedArray(CHANNEL.ARCHON_POSITION.getValue() + archonNumber);
+        if (data == 0){
+            System.out.println("this archon position has not been updated yet");
+        }
+        return new MapLocation(data/64, data%64);
     }
 
     public void postRank(RANK rank) throws GameActionException {
