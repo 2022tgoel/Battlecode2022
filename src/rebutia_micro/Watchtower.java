@@ -372,7 +372,7 @@ public class Watchtower extends Unit {
         int numThreatenedArchons = 0;
         for (int i = 0; i < 4; i++) {
             // rc.writeSharedArray(, value);
-            data = rc.readSharedArray(CHANNEL.FRIENDLY_ARCHON_STATUS1.getValue() + i);
+            data = rc.readSharedArray(CHANNEL.FRIENDLY_ARCHON_LOC1.getValue() + i);
             // go through channels until you find an empty one to communicate with.
             if (data != 0) {
                 int x = data / 64;

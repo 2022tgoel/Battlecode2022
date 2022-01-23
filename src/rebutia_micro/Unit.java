@@ -48,9 +48,9 @@ public class Unit {
     }
 
     public MapLocation getClosestNonMode() throws GameActionException {
-        MapLocation[] pots = getLocationsSortedByDistance(CHANNEL.ENEMY_ARCHON_LOCATION1.getValue(), 4, rc.getLocation());
+        MapLocation[] pots = getLocationsSortedByDistance(CHANNEL.FRIENDLY_ARCHON_LOC1.getValue(), 4, rc.getLocation());
         int mode = rc.readSharedArray(CHANNEL.ARCHON_MODE.getValue());
-        MapLocation mode_loc = radio.readLocation(CHANNEL.ENEMY_ARCHON_LOCATION1.getValue() + mode);
+        MapLocation mode_loc = radio.readLocation(CHANNEL.FRIENDLY_ARCHON_LOC1.getValue() + mode);
         if (mode_loc == null) {
             if (pots.length > 0) {
                 return pots[0];
@@ -74,6 +74,8 @@ public class Unit {
                 int x = data / 64;
                 int y = data % 64;
                 locs[chan - c_start] = new MapLocation(x, y);
+                System.out.println("Location: " + locs[chan - c_start]);
+                n++;
             }
         }
         MapLocation sorted[] = new MapLocation[n];
@@ -84,7 +86,6 @@ public class Unit {
         return sorted;
     }
 
-    
     // when you sense or detect, you get an archon_index
     /**
      * detectArchon() looks through the archon positions for a new one, then stores
@@ -94,7 +95,7 @@ public class Unit {
      **/
     public boolean detectArchon() throws GameActionException {
         if (archon_index != -1) {
-            int data = rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION1.getValue() + archon_index);
+            int data = rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOC1.getValue() + archon_index);
             if (data != 0) {
                 rc.setIndicatorString("archon found UWU1 " + archon_index);
                 assert (archon_index != -1);
@@ -105,7 +106,7 @@ public class Unit {
             }
         }
         for (int i = 0; i < 4; i++) {
-            int data = rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION1.getValue() + i);
+            int data = rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOC1.getValue() + i);
             if (data != 0) {
                 rc.setIndicatorString("archon found UWU2 " + archon_index);
                 archon_index = i;
@@ -146,7 +147,7 @@ public class Unit {
         // check that the loc is not already broadcasted
         int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
         for (int i = 0; i < 4; i++) {
-            int data = rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION1.getValue() + i);
+            int data = rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOC1.getValue() + i);
             int x = data / 64;
             int y = data % 64;
             if (loc.x == x && loc.y == y) {
@@ -272,63 +273,34 @@ public class Unit {
         return value;
     }
 
-    public int senseDepositValue() throws GameActionException {
-        int value = 0;
-        for (MapLocation loc : rc.senseNearbyLocationsWithGold()) {
-            int margin = rc.senseGold(loc) * goldToLeadConversionRate;
-            value += margin;
-        }
-        for (MapLocation loc : rc.senseNearbyLocationsWithLead()) {
-            int margin = rc.senseLead(loc) - 1;
-            value += margin;
-        }
-        return value;
-    }
-
     public void broadcastMiningArea(MapLocation loc, int demand) throws GameActionException {
-        int bestInd = -1;
-        int lowestDemand = 100000;
+        int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
         // fuzzy location
         int x_loc = Math.min((int) Math.round((double) loc.x / 4.0), 15);
         int y_loc = Math.min((int) Math.round((double) loc.y / 4.0), 15);
         for (int i = 0; i < 5; i++) {
             int data = rc.readSharedArray(CHANNEL.MINING1.getValue() + i);
-            int d = (data >> 8) & 255;
             int x = (data >> 4) & 15;
             int y = data & 15;
             if (x_loc == x && y_loc == y) {
-                // erase depleted deposits from targets
-                int val = senseDepositValue();
-                if (val < 25) {
-                    rc.writeSharedArray(CHANNEL.MINING1.getValue() + i, 0);
-                    return;
-                }
+                return;
             }
             if (data == 0) {
-                bestInd = i;
-                lowestDemand = 0;
-                break;
-            }
-            if (d < lowestDemand) {
-                lowestDemand = d;
-                bestInd = i;
+                indToPut = i;
             }
         }
-
-        if (demand > lowestDemand) {
-            int value = (demand << 8) + (x_loc << 4) + y_loc;
-            rc.setIndicatorDot(new MapLocation(x_loc * 4, y_loc * 4), 255, 0, 0);
-            // System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 +
-            // " " + demand + " " + rc.getRoundNum());
-            rc.writeSharedArray(CHANNEL.MINING1.getValue() + bestInd, value);
-        }
+        int value = (demand << 8) + (x_loc << 4) + y_loc;
+        rc.setIndicatorDot(new MapLocation(x_loc * 4, y_loc * 4), 255, 0, 0);
+        // System.out.println("Broadcasting miner request " + x_loc*4 + " " + y_loc*4 +
+        // " " + demand + " " + rc.getRoundNum());
+        rc.writeSharedArray(CHANNEL.MINING1.getValue() + indToPut, value);
     }
 
     public MapLocation findNearestArchon() throws GameActionException {
         int min_dist = Integer.MAX_VALUE;
         MapLocation closest = null;
         for (int i = 0; i < 4; i++) {
-            int data = rc.readSharedArray(CHANNEL.FRIENDLY_ARCHON_STATUS1.getValue() + i);
+            int data = rc.readSharedArray(CHANNEL.FRIENDLY_ARCHON_LOC1.getValue() + i);
             if (data != 0) {
                 int w = data / 4096;
                 int x = (data - w * 4096) / 64;
@@ -368,9 +340,16 @@ public class Unit {
         }
     }
 
-    public void moveInDirection(int[] dir) throws GameActionException {
-        MapLocation me = rc.getLocation();
-        moveToLocation(new MapLocation(me.x + dir[0], me.y + dir[1]));
+    public void moveInDirection(int[] toDest) throws GameActionException {
+        MapLocation loc = rc.getLocation();
+        MapLocation dest = new MapLocation(loc.x + toDest[0], loc.y + toDest[1]);
+        Direction d = mover.getBestDir(dest);
+        // System.out.println(d);
+        if (d != null) {
+            if (rc.canMove(d)) rc.move(d);
+        }
+        // fuzzyMove(dest);
+        // rc.setIndicatorString("I JUST MOVED TO " + toDest[0] + " " + toDest[1]);
     }
 
     public MapLocation scaleToEdge(int[] toDest) {
@@ -516,7 +495,6 @@ public class Unit {
         }
         return ret;
     }
-
 
     public MapLocation findHomeArchon() throws GameActionException {
         if (rc.getType() == RobotType.ARCHON) {

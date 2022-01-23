@@ -46,7 +46,6 @@ public class Archon extends Unit {
         dirs = sortedDirections();
         defaultBuildOrder = chooseBuildOrder();
         archonNumber = radio.getArchonNum();
-        radio.initalizeArchonLoc(archonNumber, rc.getLocation());
         addLeadEstimate();
     }
 
@@ -60,15 +59,21 @@ public class Archon extends Unit {
         updateAmountMined();
 
         archonNumber = radio.getArchonNum();
-        if (archonNumber == rc.getArchonCount() - 1) {
-            // Reset archon counter
-            rc.writeSharedArray(CHANNEL.ARCHON_NUMBER.getValue(), 0);
-            // Remove archon locations that died
+        int x = rc.getLocation().x;
+        int y = rc.getLocation().y;
+        int locationAsInteger = x * 64 + y;
+        // Store our location
+        rc.writeSharedArray(CHANNEL.FRIENDLY_ARCHON_LOC1.getValue() + archonNumber, locationAsInteger);
+        if (archonNumber + 1 == rc.getArchonCount()) {
+            // If this is the last archon,
+            // clear other archon locations
+            // clear other archon threats
             for (int i = archonNumber + 1; i < 4; i++) {
-                int chan = CHANNEL.FRIENDLY_ARCHON_LOCATION1.getValue() + i;
-                int data = rc.readSharedArray(chan);
-                if (data != 0) {
-                    rc.writeSharedArray(chan, 0);
+                rc.writeSharedArray(CHANNEL.FRIENDLY_ARCHON_LOC1.getValue() + i, 0);
+                int threatMask = (1 << (archonNumber + 1)) - 1;
+                int threats = rc.readSharedArray(CHANNEL.FRIENDLY_ARCHON_STATUS.getValue());
+                if (threats != (threats & threatMask)) {
+                    rc.writeSharedArray(CHANNEL.FRIENDLY_ARCHON_STATUS.getValue(), threats & threatMask);
                 }
             }
         }
@@ -86,17 +91,17 @@ public class Archon extends Unit {
             desiredNumMiners = determineMinerNum(leadEstimate);
         }
 
-        // System.out.println("Archon number: " + archonNumber + " Mode num: " +
-        // radio.getMode() + " " + " round: " + round_num);
+        //System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
         MODE mode = determineMode();
         double useful_miners = (double) radio.readCounter(BiCHANNEL.USEFUL_MINERS);
 
         switch (mode) {
             case THREATENED:
-                threatChannel = radio.sendThreatAlert();
+                radio.sendThreatAlert(archonNumber);
                 int tot = radio.totalUnderThreat();
 
-                if (tot != 0 && round_num % tot != threatChannel) { // alternate between those under threat
+                if (tot != 0 && (round_num % tot) != radio.getIndexOfThreat(archonNumber)) {
+                    // alternate between those under threat
                     break;
                 }
                 if (checkForResources(RobotType.SOLDIER.buildCostLead)) {
@@ -104,27 +109,27 @@ public class Archon extends Unit {
                     for (Direction dir : enemyDirs) {
                         buildSoldier(dir);
                     }
-                } else
+                } else {
                     attemptHeal();
+                }
                 break;
             case INITIAL:
                 if (round_num >= 60) {
                     initial = false;
                     break;
                 }
-                if (round_num % num_archons_alive != archonNumber)
-                    break;
-                if (num_miners > (double) troopCounter[0] / (double) num_archons_init)
-                    break;
+                if (round_num % num_archons_alive != archonNumber) break;
+                if (num_miners > (double) troopCounter[0] / (double) num_archons_init) break;
                 if (troopCounter[0] < desiredNumMiners) {
-                    build(new int[] { 1, 0, 0 });
-                } else if ((useful_miners / (double) troopCounter[0]) >= 0.80) {
-                    build(new int[] { 1, 0, 0 });
-                } else if ((useful_miners / (double) troopCounter[0]) <= 0.75) {
+                    build(new int[] {1, 0, 0});
+                }
+                else if ((useful_miners / (double) troopCounter[0]) >= 0.80) {
+                    build(new int[] {1, 0, 0});
+                }
+                else if ((useful_miners / (double) troopCounter[0]) <= 0.75) {
                     initial = false;
                 }
-                System.out.println("Desired miners: " + desiredNumMiners + " Useful miners: " + useful_miners
-                        + " Ratio: " + (useful_miners / (double) troopCounter[0]));
+                System.out.println("Desired miners: " + desiredNumMiners + " Useful miners: " + useful_miners + " Ratio: " + (useful_miners / (double) troopCounter[0]));
                 break;
             case SOLDIER_HUB:
                 if (checkForResources(RobotType.SOLDIER.buildCostLead)) {
@@ -147,15 +152,13 @@ public class Archon extends Unit {
                 }
             case DEFAULT:
                 attemptHeal();
-                if (round_num % num_archons_alive != archonNumber || round_num % 5 != 0)
-                    break;
+                if (round_num % num_archons_alive != archonNumber || round_num % 5 != 0) break;
                 else {
                     if ((useful_miners / (double) troopCounter[0]) >= 0.25) {
-                        build(new int[] { 1, 0, 0 });
+                        build(new int[] {1, 0, 0});
                     }
                 }
-                // if ((useful_miners / (double) troopCounter[0]) >= 0.60) build(new int[] {1,
-                // 0, 0});
+                // if ((useful_miners / (double) troopCounter[0]) >= 0.60) build(new int[] {1, 0, 0});
                 break;
         }
         num_archons_alive = rc.getArchonCount();
@@ -221,13 +224,17 @@ public class Archon extends Unit {
         int numMinersMap = sizeBracket * 2;
         if (leadEstimate > 2000) {
             return 12 + numMinersMap;
-        } else if (leadEstimate > 1000) {
+        }
+        else if (leadEstimate > 1000) {
             return 8 + numMinersMap;
-        } else if (leadEstimate > 500) {
+        }
+        else if (leadEstimate > 500) {
             return 4 + numMinersMap;
-        } else if (leadEstimate > 100) {
+        }
+        else if (leadEstimate > 100) {
             return 2 + numMinersMap;
-        } else {
+        }
+        else {
             return 2 + numMinersMap;
         }
     }
@@ -389,7 +396,7 @@ public class Archon extends Unit {
         return new int[] { 1, 0, 0 };
     }
 
-    public RobotInfo findWeakestRepairableRobot() {
+    public void attemptHeal() throws GameActionException {
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(rc.getType().actionRadiusSquared, rc.getTeam());
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
@@ -402,7 +409,10 @@ public class Archon extends Unit {
                     }
             }
             if (weakestBot != null) {
-                return weakestBot;
+                if (rc.canRepair(weakestBot.location)) {
+                    // rc.setIndicatorString("Succesful Heal!");
+                    rc.repair(weakestBot.location);
+                }
             } else {
                 for (RobotInfo bot : nearbyBots) {
                     if (bot.type == RobotType.MINER)
@@ -412,35 +422,9 @@ public class Archon extends Unit {
                         }
                 }
                 if (weakestBot != null) {
-                    return weakestBot;
-                }
-            }
-        }
-        return null;
-    }
-
-    int currentHealingBotID = -1;
-
-    public void attemptHeal() throws GameActionException {
-        if (currentHealingBotID != -1) {
-            if (!rc.canSenseRobot(currentHealingBotID)) {
-                currentHealingBotID = -1;
-            } else {
-                RobotInfo r = rc.senseRobot(currentHealingBotID);
-                if (rc.canRepair(r.location)) {
-                    rc.repair(r.location);
-                    return;
-                }
-            }
-        }
-
-        if (currentHealingBotID == -1) {
-            RobotInfo weakestBot = findWeakestRepairableRobot();
-            if (weakestBot != null) {
-                currentHealingBotID = weakestBot.ID;
-                if (rc.canRepair(weakestBot.location)) {
-                    rc.repair(weakestBot.location);
-                    return;
+                    if (rc.canRepair(weakestBot.location)) {
+                        rc.repair(weakestBot.location);
+                    }
                 }
             }
         }

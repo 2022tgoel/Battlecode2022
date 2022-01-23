@@ -24,7 +24,7 @@ public class Soldier extends Unit {
     private int[] fleeDirection = {Integer.MAX_VALUE, Integer.MAX_VALUE};
     private int stopFleeingRound = -1;
     private int DRUSH_RSQR = 400;
-    private boolean needsHealing = false;
+    private int ARUSH_RSQR = 900;
 
     MODE mode;
 
@@ -35,10 +35,11 @@ public class Soldier extends Unit {
     //for attacking and searching enemies modes
     private MapLocation target = null;
     private int[] lastAttackDir = null;
+    boolean needsHealing = false;
 
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
-        DRUSH_RSQR = mapArea / 9;
+        initialize();
         exploreLoc = getInitialExploratoryLocation();
     }
     @Override
@@ -84,7 +85,7 @@ public class Soldier extends Unit {
                 break;
             case DYING:
                 MapLocation[] closestArchons = getLocationsSortedByDistance(
-                    CHANNEL.FRIENDLY_ARCHON_LOCATION1.getValue(),
+                    CHANNEL.FRIENDLY_ARCHON_LOC1.getValue(),
                     4, rc.getLocation()
                 );
                 System.out.println("Locations sorted by distance:");
@@ -94,7 +95,6 @@ public class Soldier extends Unit {
                 if (closestArchons.length > 0) {
                     moveToLocation(closestArchons[0]);
                 }
-                break;
         }
 
         if (!attacked) attemptAttack(true);
@@ -149,7 +149,7 @@ public class Soldier extends Unit {
             }
             return MODE.FLEE;
         }
-        if (rc.getHealth() < 20 || needsHealing) {
+        if (needsHealing || rc.getHealth() < 20) {
             needsHealing = true;
             return MODE.DYING;
         }
@@ -396,14 +396,13 @@ public class Soldier extends Unit {
         int numThreatenedArchons = 0;
         for (int i = 0; i < 4; i++) {
             // rc.writeSharedArray(, value);
-            data = rc.readSharedArray(CHANNEL.FRIENDLY_ARCHON_STATUS1.getValue() + i);
+            data = rc.readSharedArray(CHANNEL.FRIENDLY_ARCHON_LOC1.getValue() + i);
             // go through channels until you find an empty one to communicate with.
             if (data != 0) {
                 int x = data / 64;
                 int y = data % 64;
                 if (validCoords(x, y)) {
-                    archons[numThreatenedArchons] = new MapLocation(x, y);
-                    numThreatenedArchons++;
+                    archons[numThreatenedArchons++] = new MapLocation(x, y);
                 }
             }
         }
@@ -418,6 +417,15 @@ public class Soldier extends Unit {
                 threatenedArchons[i] = archons[i];
             }
             return threatenedArchons;
+        }
+    }
+
+    public boolean isLowHealth() throws GameActionException {
+        if (rc.getHealth() < 20) {
+            return true;
+        }
+        else {
+            return false;
         }
     }
 
@@ -521,5 +529,10 @@ public class Soldier extends Unit {
             }
         }
         return false;
+    }
+
+    public void initialize() {
+        DRUSH_RSQR = (int) ((double) mapArea / 9.0);
+        ARUSH_RSQR = (int) ((double) mapArea / 4.0);
     }
 }
