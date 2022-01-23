@@ -42,14 +42,14 @@ public class Miner extends Unit {
             case DEFAULT:
                 switch (mode) {
                     case EXPLORING:
-                        moveInDirection(exploratoryDir);
-                        /* if (rc.getLocation().isAdjacentTo(exploratoryTarget)) {
+                        // moveInDirection(exploratoryDir);
+                        if (rc.getLocation().isAdjacentTo(exploratoryTarget)) {
                             // rc.setIndicatorString("moving away");
                             exploratoryTarget = getExploratoryTarget();
                         }
                         else {
                             moveToLocation(exploratoryTarget);
-                        } */
+                        }
                         break;
                     case MINE_DISCOVERED:
                         if (miningSpot != null) {
@@ -198,7 +198,7 @@ public class Miner extends Unit {
         if (numMiners > 0) {
             cxm /= numMiners;
             cym /= numMiners;
-            MapLocation enemy_center = new MapLocation((int)cxs, (int)cys);
+            MapLocation enemy_center = new MapLocation((int)cxm, (int)cym);
             broadcastTarget(enemy_center);
         }
         if (numSoldiers > 0) {

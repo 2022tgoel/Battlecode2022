@@ -257,8 +257,9 @@ public class Soldier extends Unit {
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
             data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             if (data != 0) {
-                int x = data/64;
-                int y = data%64;
+                int w = data / 4096;
+                int x = (data - w * 4096) / 64;
+                int y = data % 64;
                 // System.out.println("I received an enemy at " + x*4 + " " + y*4 + " on round " + round_num);
                 MapLocation potentialTarget = new MapLocation(x, y);
                 if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
