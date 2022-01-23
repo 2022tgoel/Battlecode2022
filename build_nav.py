@@ -12,8 +12,8 @@
 # 3. edge locations are diff as a consequence of having diff locs in general
 import math
 
-VISION = 20 # radius squared 
-GRID = 13
+VISION = 34 # radius squared 
+GRID = 15
 CENTER = GRID*(GRID//2) + (GRID//2)
 MAX = math.floor(math.sqrt(VISION))# max displacement in either x or y
 print(MAX)
@@ -50,7 +50,7 @@ deltaToDir= {1 : "Direction.EAST",
 			1-GRID : "Direction.SOUTHEAST" ,
 			-1-GRID : "Direction.SOUTHWEST" ,}
 
-with open("Navigation.java", "w") as f:
+with open("src/schlumbergera/NavigationRad34.java", "w") as f:
 	def writeInstantiations(indent=1):
 		s = "\t"*indent
 		for n in nodes:

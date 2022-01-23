@@ -77,7 +77,7 @@ public class Comms {
     }
 
     public void clearArchonMovementLocation() throws GameActionException {
-        if (round_num % 75 == 0){
+        if (round_num % 2001 == 0){ //currently doesn't clear
             rc.writeSharedArray(CHANNEL.ARCHON_MOVE.getValue(), 0);
         }
     }

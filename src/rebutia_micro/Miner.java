@@ -57,6 +57,7 @@ public class Miner extends Unit {
                             moveToLocation(miningSpot);
                         }
                         else {
+                            rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 255);
                             moveToLocation(target);
                         }
                         break;
@@ -139,14 +140,17 @@ public class Miner extends Unit {
         }
         //choose location to pursue
         if (target!=null){
-            if (miningSpot == null) {
+            if (miningSpot == null && rc.getLocation().distanceSquaredTo(target) <= 9) {
                 miningSpot = findMiningSpot(target);
+                return MODE.MINE_DISCOVERED;
             }
-            if (deposit != null) {
-                if (rc.canSenseLocation(deposit)) {
-                    if (getValue(deposit) <= 1) {
-                        deposit = null;
-                        miningSpot = findMiningSpot(target);
+            else {
+                if (deposit != null) {
+                    if (rc.canSenseLocation(deposit)) {
+                        if (getValue(deposit) <= 1) {
+                            deposit = null;
+                            miningSpot = findMiningSpot(target);
+                        }
                     }
                 }
             }
@@ -343,7 +347,7 @@ public class Miner extends Unit {
                 MapLocation dest = new MapLocation(Math.min(x*4, rc.getMapWidth() - 1), Math.min(y*4, rc.getMapHeight() - 1));
              //   System.out.println("Recieved miner request: " + x*4 + " " + y*4 + " " + demand);
                 int res = minerToLeadRate*demand;
-                if (my.distanceSquaredTo(dest) < 300 && res > maxRes && demand > 0) { //within range //TODO: add not fulfilled
+                if (my.distanceSquaredTo(dest) < 300 && res > maxRes && demand > 0) {
                     maxRes = res;
                     bestLocation = dest; 
                     channel = i;
