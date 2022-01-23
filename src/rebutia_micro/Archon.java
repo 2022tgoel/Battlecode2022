@@ -396,7 +396,7 @@ public class Archon extends Unit {
         return new int[] { 1, 0, 0 };
     }
 
-    public void attemptHeal() throws GameActionException {
+    public RobotInfo findWeakestRepairableRobot() {
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(rc.getType().actionRadiusSquared, rc.getTeam());
         // if there are any nearby enemy robots, attack the one with the least health
         if (nearbyBots.length > 0) {
@@ -409,10 +409,7 @@ public class Archon extends Unit {
                     }
             }
             if (weakestBot != null) {
-                if (rc.canRepair(weakestBot.location)) {
-                    // rc.setIndicatorString("Succesful Heal!");
-                    rc.repair(weakestBot.location);
-                }
+                return weakestBot;
             } else {
                 for (RobotInfo bot : nearbyBots) {
                     if (bot.type == RobotType.MINER)
@@ -422,9 +419,35 @@ public class Archon extends Unit {
                         }
                 }
                 if (weakestBot != null) {
-                    if (rc.canRepair(weakestBot.location)) {
-                        rc.repair(weakestBot.location);
-                    }
+                    return weakestBot;
+                }
+            }
+        }
+        return null;
+    }
+
+    int currentHealingBotID = -1;
+
+    public void attemptHeal() throws GameActionException {
+        if (currentHealingBotID != -1) {
+            if (!rc.canSenseRobot(currentHealingBotID)) {
+                currentHealingBotID = -1;
+            } else {
+                RobotInfo r = rc.senseRobot(currentHealingBotID);
+                if (rc.canRepair(r.location)) {
+                    rc.repair(r.location);
+                    return;
+                }
+            }
+        }
+
+        if (currentHealingBotID == -1) {
+            RobotInfo weakestBot = findWeakestRepairableRobot();
+            if (weakestBot != null) {
+                currentHealingBotID = weakestBot.ID;
+                if (rc.canRepair(weakestBot.location)) {
+                    rc.repair(weakestBot.location);
+                    return;
                 }
             }
         }
