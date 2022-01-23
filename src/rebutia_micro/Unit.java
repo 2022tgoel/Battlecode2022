@@ -74,7 +74,6 @@ public class Unit {
                 int x = data / 64;
                 int y = data % 64;
                 locs[chan - c_start] = new MapLocation(x, y);
-                System.out.println("Location: " + locs[chan - c_start]);
                 n++;
             }
         }
