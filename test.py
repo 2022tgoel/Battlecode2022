@@ -15,10 +15,13 @@ def main():
 
     init(a, b)
 
+    random.seed(42)
+
     maps = sys.argv[3:] if len(sys.argv) >= 4 else None
     if maps is None:
         store_maps()
         maps = random.sample(read_maps(), 15)
+        # maps = read_maps()
 
     play(a, b, maps)
 

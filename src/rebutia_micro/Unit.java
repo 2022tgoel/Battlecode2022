@@ -330,16 +330,9 @@ public class Unit {
         }
     }
 
-    public void moveInDirection(int[] toDest) throws GameActionException {
-        MapLocation loc = rc.getLocation();
-        MapLocation dest = new MapLocation(loc.x + toDest[0], loc.y + toDest[1]);
-        Direction d = mover.getBestDir(dest);
-        // System.out.println(d);
-        if (d != null) {
-            if (rc.canMove(d)) rc.move(d);
-        }
-        // fuzzyMove(dest);
-        // rc.setIndicatorString("I JUST MOVED TO " + toDest[0] + " " + toDest[1]);
+    public void moveInDirection(int[] dir) throws GameActionException {
+        MapLocation me = rc.getLocation();
+        moveToLocation(new MapLocation(me.x + dir[0], me.y + dir[1]));
     }
 
     public MapLocation scaleToEdge(int[] toDest) {
