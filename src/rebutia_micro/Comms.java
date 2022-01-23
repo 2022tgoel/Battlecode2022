@@ -29,6 +29,17 @@ public class Comms {
         return wasFirstConnection;
     }
 
+    public MapLocation readLocation(int chan) throws GameActionException {
+        int data = rc.readSharedArray(chan);
+        if (data == 0) {
+            return null;
+        }
+        data %= 4096;
+        int x = data / 64;
+        int y = data % 64;
+        return new MapLocation(x, y);
+    }
+
     public void update() {
         round_num = rc.getRoundNum();
     }
