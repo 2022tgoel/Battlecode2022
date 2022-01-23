@@ -48,9 +48,9 @@ public class Unit {
     }
 
     public MapLocation getClosestNonMode() throws GameActionException {
-        MapLocation[] pots = getLocationsSortedByDistance(CHANNEL.ARCHON_LOC_1.getValue(), 4, rc.getLocation());
+        MapLocation[] pots = getLocationsSortedByDistance(CHANNEL.ENEMY_ARCHON_LOCATION1.getValue(), 4, rc.getLocation());
         int mode = rc.readSharedArray(CHANNEL.ARCHON_MODE.getValue());
-        MapLocation mode_loc = radio.readLocation(CHANNEL.ARCHON_LOC_1.getValue() + mode);
+        MapLocation mode_loc = radio.readLocation(CHANNEL.ENEMY_ARCHON_LOCATION1.getValue() + mode);
         if (mode_loc == null) {
             if (pots.length > 0) {
                 return pots[0];
@@ -94,7 +94,7 @@ public class Unit {
      **/
     public boolean detectArchon() throws GameActionException {
         if (archon_index != -1) {
-            int data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + archon_index);
+            int data = rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION1.getValue() + archon_index);
             if (data != 0) {
                 rc.setIndicatorString("archon found UWU1 " + archon_index);
                 assert (archon_index != -1);
@@ -105,7 +105,7 @@ public class Unit {
             }
         }
         for (int i = 0; i < 4; i++) {
-            int data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + i);
+            int data = rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION1.getValue() + i);
             if (data != 0) {
                 rc.setIndicatorString("archon found UWU2 " + archon_index);
                 archon_index = i;
@@ -146,7 +146,7 @@ public class Unit {
         // check that the loc is not already broadcasted
         int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
         for (int i = 0; i < 4; i++) {
-            int data = rc.readSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + i);
+            int data = rc.readSharedArray(CHANNEL.ENEMY_ARCHON_LOCATION1.getValue() + i);
             int x = data / 64;
             int y = data % 64;
             if (loc.x == x && loc.y == y) {
@@ -328,7 +328,7 @@ public class Unit {
         int min_dist = Integer.MAX_VALUE;
         MapLocation closest = null;
         for (int i = 0; i < 4; i++) {
-            int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
+            int data = rc.readSharedArray(CHANNEL.FRIENDLY_ARCHON_STATUS1.getValue() + i);
             if (data != 0) {
                 int w = data / 4096;
                 int x = (data - w * 4096) / 64;
@@ -427,9 +427,21 @@ public class Unit {
 
     public int[] getExploratoryDir(int span, MapLocation loc) {
         // presumes span is odd.
+        int[] dir;
         MapLocation cur = rc.getLocation();
-        Direction dTemp = cur.directionTo(loc);
-        int[] dir = new int[] { dTemp.dx * 8, dTemp.dy * 8};
+        if (loc.x - cur.x > 0) {
+            if (loc.y - cur.y > 0) {
+                dir = new int[] { 8, 8 };
+            } else {
+                dir = new int[] { 8, -8 };
+            }
+        } else {
+            if (loc.y - cur.y > 0) {
+                dir = new int[] { -8, 8 };
+            } else {
+                dir = new int[] { -8, -8 };
+            }
+        }
         int[][] dirs = new int[span][2];
         int counter = 0;
 
@@ -504,6 +516,7 @@ public class Unit {
         }
         return ret;
     }
+
 
     public MapLocation findHomeArchon() throws GameActionException {
         if (rc.getType() == RobotType.ARCHON) {

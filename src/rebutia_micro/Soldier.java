@@ -83,7 +83,14 @@ public class Soldier extends Unit {
                 moveLowRubble(fleeDirection);
                 break;
             case DYING:
-                MapLocation[] closestArchons = getLocationsSortedByDistance(CHANNEL.ARCHON_LOC_1.getValue(), 4, rc.getLocation());
+                MapLocation[] closestArchons = getLocationsSortedByDistance(
+                    CHANNEL.FRIENDLY_ARCHON_LOCATION1.getValue(),
+                    4, rc.getLocation()
+                );
+                System.out.println("Locations sorted by distance:");
+                for (MapLocation loc : closestArchons) {
+                    System.out.println(loc);
+                }
                 if (closestArchons.length > 0) {
                     moveToLocation(closestArchons[0]);
                 }
@@ -389,7 +396,7 @@ public class Soldier extends Unit {
         int numThreatenedArchons = 0;
         for (int i = 0; i < 4; i++) {
             // rc.writeSharedArray(, value);
-            data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
+            data = rc.readSharedArray(CHANNEL.FRIENDLY_ARCHON_STATUS1.getValue() + i);
             // go through channels until you find an empty one to communicate with.
             if (data != 0) {
                 int x = data / 64;

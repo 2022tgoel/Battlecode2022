@@ -60,6 +60,18 @@ public class Archon extends Unit {
         updateAmountMined();
 
         archonNumber = radio.getArchonNum();
+        if (archonNumber == rc.getArchonCount() - 1) {
+            // Reset archon counter
+            rc.writeSharedArray(CHANNEL.ARCHON_NUMBER.getValue(), 0);
+            // Remove archon locations that died
+            for (int i = archonNumber + 1; i < 4; i++) {
+                int chan = CHANNEL.FRIENDLY_ARCHON_LOCATION1.getValue() + i;
+                int data = rc.readSharedArray(chan);
+                if (data != 0) {
+                    rc.writeSharedArray(chan, 0);
+                }
+            }
+        }
 
         troopCounter = new int[] {
                 radio.readCounter(RobotType.MINER),

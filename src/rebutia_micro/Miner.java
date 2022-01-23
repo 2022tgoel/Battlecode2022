@@ -14,22 +14,16 @@ public class Miner extends Unit {
     int[] exploratoryDir;
     int round_num;
     MODE mode;
-    private MapLocation exploratoryTarget;
-    private MapLocation miningSpot;
     private MapLocation target;
-    static MinerNav mNav;
     private boolean isBroadcast; //whether the target you are pursuing was taken off broadcast
     private int[] fleeDirection;
     RANK rank;
     private int stopFleeingRound = 10000;
-    private MapLocation deposit;
     
 	public Miner(RobotController rc) throws GameActionException {
         super(rc);
         exploratoryDir = getExploratoryDir(7);
-        exploratoryTarget = getExploratoryTarget();
         rank = findRankMiner();
-        mNav = new MinerNav(rc);
     }
     @Override
     public void run() throws GameActionException {
@@ -43,27 +37,13 @@ public class Miner extends Unit {
                 switch (mode) {
                     case EXPLORING:
                         moveInDirection(exploratoryDir);
-                        /* if (rc.getLocation().isAdjacentTo(exploratoryTarget)) {
-                            // rc.setIndicatorString("moving away");
-                            exploratoryTarget = getExploratoryTarget();
-                        }
-                        else {
-                            moveToLocation(exploratoryTarget);
-                        } */
                         break;
                     case MINE_DISCOVERED:
-                        if (miningSpot != null) {
-                            rc.setIndicatorLine(rc.getLocation(), miningSpot, 255, 0, 255);
-                            moveToLocation(miningSpot);
-                        }
-                        else {
-                            rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 255);
-                            moveToLocation(target);
-                        }
+                        rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 255);
+                        moveToLocation(target);
                         break;
                     case FLEEING:
                         moveInDirection(fleeDirection);
-                        exploratoryTarget = getExploratoryTarget();
                         break;
                 }
                 senseArchon();
@@ -83,31 +63,6 @@ public class Miner extends Unit {
             }
         }
         rc.setIndicatorString(" " + mode + " " + amountMined + " " + target);
-    }
-
-    public MapLocation findMiningSpot(MapLocation target) throws GameActionException {
-        int minRubble = 10000;
-        int rubble;
-        MapLocation[] leadLocs = rc.senseNearbyLocationsWithLead(target, 2, 2);
-        MapLocation bestSpot = null;
-        for (MapLocation leadLoc : leadLocs) {
-            MapLocation spot = mNav.findBestSquare(leadLoc, minRubble);
-            if (spot != null) {
-                rubble = rc.senseRubble(spot);
-                if (rubble < minRubble) {
-                    minRubble = rubble;
-                    bestSpot = spot;
-                    deposit = leadLoc;
-                }
-            }
-        }
-        return bestSpot;
-    }
-
-    private MapLocation getExploratoryTarget() {
-        int randx = rng.nextInt(rc.getMapWidth());
-        int randy = rng.nextInt(rc.getMapHeight());
-        return new MapLocation(randx, randy);
     }
 
     public RANK findRankMiner() throws GameActionException{
@@ -140,25 +95,9 @@ public class Miner extends Unit {
         }
         //choose location to pursue
         if (target!=null){
-            if (miningSpot == null && rc.getLocation().distanceSquaredTo(target) <= 9) {
-                miningSpot = findMiningSpot(target);
-                return MODE.MINE_DISCOVERED;
-            }
-            else {
-                if (deposit != null) {
-                    if (rc.canSenseLocation(deposit)) {
-                        if (getValue(deposit) <= 1) {
-                            deposit = null;
-                            miningSpot = findMiningSpot(target);
-                        }
-                    }
-                }
-            }
             return MODE.MINE_DISCOVERED;
         }
         else {
-            miningSpot = null;
-            deposit = null;
             MapLocation loc = findMiningAreaWithSensing();
             if (loc!=null){
                 target = loc;
@@ -347,7 +286,7 @@ public class Miner extends Unit {
                 MapLocation dest = new MapLocation(Math.min(x*4, rc.getMapWidth() - 1), Math.min(y*4, rc.getMapHeight() - 1));
              //   System.out.println("Recieved miner request: " + x*4 + " " + y*4 + " " + demand);
                 int res = minerToLeadRate*demand;
-                if (my.distanceSquaredTo(dest) < 300 && res > maxRes && demand > 0) {
+                if (my.distanceSquaredTo(dest) < 300 && res > maxRes && demand > 0) { //within range //TODO: add not fulfilled
                     maxRes = res;
                     bestLocation = dest; 
                     channel = i;
@@ -375,7 +314,7 @@ public class Miner extends Unit {
     public int mine() throws GameActionException{
         //prioritize gold
         int amountMined = 0;
-        for (MapLocation loc : rc.senseNearbyLocationsWithGold(RobotType.MINER.actionRadiusSquared)) {
+        for (MapLocation loc : rc.senseNearbyLocationsWithGold(1)) {
             // Notice that the Miner's action cooldown is very low.
             // You can mine multiple times per turn!
             while (rc.canMineGold(loc)) {
@@ -384,7 +323,7 @@ public class Miner extends Unit {
             }
         }
         //then go to lead
-        for (MapLocation loc : rc.senseNearbyLocationsWithLead(RobotType.MINER.actionRadiusSquared)) {
+        for (MapLocation loc : rc.senseNearbyLocationsWithLead(1)) {
             // Notice that the Miner's action cooldown is very low.
             // You can mine multiple times per turn;
             while (rc.canMineLead(loc) && rc.senseLead(loc) > 1) {
