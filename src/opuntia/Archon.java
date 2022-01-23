@@ -307,6 +307,37 @@ public class Archon extends Unit {
         }
         return false;
     }
+    
+    MapLocation move = null;
+    int turnsMoving = 0;
+    final int maxTurnsMoving = 200;
+    int turnsWaiting = 150;
+    final int minTurnsWaiting = 150;
+    public MODE robotModeSwitch() throws GameActionException{
+        if (rc.getMode() == RobotMode.PORTABLE){
+            if (rc.getLocation().distanceSquaredTo(move) < 20 || turnsMoving >= maxTurnsMoving){ 
+                //TODO: factor in rubble, don't settle on low rubble
+                if (rc.getMode() == RobotMode.PORTABLE){
+                    if (rc.canTransform()) rc.transform();
+                    turnsMoving = 0; // reset
+                }
+            }
+            else {
+                turnsMoving++;
+            }
+        }
+        else { //turret mode
+            if (rc.getLocation().distanceSquaredTo(move) > 20 && turnsWaiting >= minTurnsWaiting ){
+                if (rc.canTransform()) {
+                    rc.transform();
+                    turnsWaiting = 0;
+                }
+            }
+            else turnsWaiting++;
+        }
+        if (rc.getMode() == RobotMode.PORTABLE) return MODE.MOVING;
+        else return MODE.SOLDIER_HUB;
+    }
 
     /////////////////////////////////////////////////////////////////////
     public boolean buildMiner(Direction dir) throws GameActionException {
