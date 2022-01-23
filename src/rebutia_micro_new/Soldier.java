@@ -360,7 +360,7 @@ public class Soldier extends Unit {
             moveToLocation(closest);
         }
         else {
-            huntTarget();
+            if (target != null) huntTarget();
         }
     }
 
