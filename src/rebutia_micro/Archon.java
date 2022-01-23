@@ -161,11 +161,13 @@ public class Archon extends Unit {
                     break; // save for attacked archons
                 }
             case DEFAULT:
-                attemptHeal();
-                if (round_num % num_archons_alive != archonNumber || round_num % 5 != 0) break;
-                else {
+                if (round_num % num_archons_alive != archonNumber || round_num % 5 != 0) {
+                    break;
+                } else {
                     if ((useful_miners / (double) troopCounter[0]) >= 0.25) {
-                        build(new int[] {1, 0, 0});
+                        if (!build(new int[] {1, 0, 0})) {
+                            attemptHeal();
+                        }
                     }
                 }
                 // if ((useful_miners / (double) troopCounter[0]) >= 0.60) build(new int[] {1, 0, 0});
