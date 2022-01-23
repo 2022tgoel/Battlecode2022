@@ -89,7 +89,10 @@ public class Soldier extends Unit {
                     4, rc.getLocation()
                 );
                 if (closestArchons.length > 0) {
-                    moveToLocation(closestArchons[0]);
+                    // Keep a bubble around the archon
+                    if (!rc.getLocation().isWithinDistanceSquared(closestArchons[0], 13)) {
+                        moveToLocation(closestArchons[0]);
+                    }
                 }
                 break;
         }
@@ -146,7 +149,7 @@ public class Soldier extends Unit {
             }
             return MODE.FLEE;
         }
-        if (needsHealing || rc.getHealth() < 20) {
+        if (needsHealing || rc.getHealth() < 10) {
             needsHealing = true;
             return MODE.DYING;
         }
