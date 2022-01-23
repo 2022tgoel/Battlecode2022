@@ -394,8 +394,12 @@ public class Soldier extends Unit {
         int data;
         MapLocation[] archons = new MapLocation[4];
         int numThreatenedArchons = 0;
+        int threats = rc.readSharedArray(CHANNEL.FRIENDLY_ARCHON_STATUS.getValue());
         for (int i = 0; i < 4; i++) {
-            // rc.writeSharedArray(, value);
+            if ((threats & (1 << i)) == 0) {
+                // This one is not threatened
+                continue;
+            }
             data = rc.readSharedArray(CHANNEL.FRIENDLY_ARCHON_LOC1.getValue() + i);
             // go through channels until you find an empty one to communicate with.
             if (data != 0) {
@@ -409,8 +413,7 @@ public class Soldier extends Unit {
 
         if (numThreatenedArchons == 0) {
             return null;
-        }
-        else {
+        } else {
             // only return threatened archons.
             MapLocation[] threatenedArchons = new MapLocation[numThreatenedArchons];
             for (int i = 0; i < numThreatenedArchons; i++) {
