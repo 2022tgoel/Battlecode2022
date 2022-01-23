@@ -78,9 +78,13 @@ public class Archon extends Unit {
                     rc.writeSharedArray(CHANNEL.FRIENDLY_ARCHON_STATUS.getValue(), threats & threatMask);
                 }
             }
+
+            if (radio.getMode() > archonNumber) {
+                radio.broadcastMode(0);
+            }
         }
 
-        System.out.println("MODE: " + radio.getMode() + ", " + archonNumber + ", " + num_archons_alive + ", " + rc.getArchonCount());
+        // System.out.println("MODE: " + radio.getMode() + ", " + archonNumber + ", " + num_archons_alive + ", " + rc.getArchonCount());
 
         troopCounter = new int[] {
                 radio.readCounter(RobotType.MINER),

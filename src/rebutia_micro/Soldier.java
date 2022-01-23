@@ -151,7 +151,15 @@ public class Soldier extends Unit {
         }
         if (needsHealing || rc.getHealth() < 10) {
             needsHealing = true;
-            return MODE.DYING;
+            MapLocation[] closestArchons = getLocationsSortedByDistance(
+                CHANNEL.FRIENDLY_ARCHON_LOC1.getValue(),
+                4, rc.getLocation()
+            );
+            if (closestArchons.length > 0) {
+                if (closestArchons[0].isWithinDistanceSquared(rc.getLocation(), 100)) {
+                    return MODE.DYING;
+                }
+            }
         }
         
         // Priority 3 - Hunt enemies.
