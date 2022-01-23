@@ -82,7 +82,7 @@ public class Miner extends Unit {
                 radio.updateCounter(BiCHANNEL.USEFUL_MINERS);
             }
         }
-        rc.setIndicatorString(" " + mode + " " + amountMined + " " + target);
+        rc.setIndicatorString(" " + mode + " " + amountMined + " " + target + " exploratoryDir: " + exploratoryDir[0] + " " + exploratoryDir[1]);
     }
 
     public MapLocation findMiningSpot(MapLocation target) throws GameActionException {

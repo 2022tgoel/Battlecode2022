@@ -328,11 +328,19 @@ public class Unit {
         if (d != null && rc.canMove(d)) {
             rc.move(d);
         }
+        else {
+            System.out.println("loc: " + loc.toString() + " d: " + d);
+        }
     }
 
     public void moveInDirection(int[] dir) throws GameActionException {
         MapLocation me = rc.getLocation();
-        moveToLocation(new MapLocation(me.x + dir[0], me.y + dir[1]));
+        MapLocation loc = new MapLocation(me.x + dir[0], me.y + dir[1]);
+        if (!validCoords(loc.x, loc.y)) {
+            loc = scaleToEdge(dir);
+            System.out.println("loc: " + loc.toString());
+        }
+        moveToLocation(loc);
     }
 
     public MapLocation scaleToEdge(int[] toDest) {
@@ -389,9 +397,21 @@ public class Unit {
 
     public int[] getExploratoryDir(int span, MapLocation loc) {
         // presumes span is odd.
+        int[] dir;
         MapLocation cur = rc.getLocation();
-        Direction dTemp = cur.directionTo(loc);
-        int[] dir = new int[] { dTemp.dx * 8, dTemp.dy * 8};
+        if (loc.x - cur.x > 0) {
+            if (loc.y - cur.y > 0) {
+                dir = new int[] { 8, 8 };
+            } else {
+                dir = new int[] { 8, -8 };
+            }
+        } else {
+            if (loc.y - cur.y > 0) {
+                dir = new int[] { -8, 8 };
+            } else {
+                dir = new int[] { -8, -8 };
+            }
+        }
         int[][] dirs = new int[span][2];
         int counter = 0;
 
