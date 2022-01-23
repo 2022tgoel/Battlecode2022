@@ -573,8 +573,8 @@ public class Unit {
         int y_loc = enemy.y;
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
             int data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
-            int x = (data >> 4) & 15;
-            int y = data & 15;
+            int x = data / 64;
+            int y = data % 64;
             if (x_loc == x && y_loc == y) {
                 return;
             }
