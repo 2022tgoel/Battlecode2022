@@ -2,8 +2,6 @@ package rebutia_micro;
 
 import battlecode.common.*;
 
-import java.util.*;
-
 public class Soldier extends Unit {
 
     enum MODE {
@@ -26,7 +24,7 @@ public class Soldier extends Unit {
     private int[] fleeDirection = {Integer.MAX_VALUE, Integer.MAX_VALUE};
     private int stopFleeingRound = -1;
     private int DRUSH_RSQR = 400;
-    private int ARUSH_RSQR = 900;
+    private boolean needsHealing = false;
 
     MODE mode;
 
@@ -40,7 +38,7 @@ public class Soldier extends Unit {
 
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
-        initialize();
+        DRUSH_RSQR = mapArea / 9;
         exploreLoc = getInitialExploratoryLocation();
     }
     @Override
@@ -50,8 +48,11 @@ public class Soldier extends Unit {
         radio.updateCounter();
         attacked = attemptAttack(false);
         findTargets();
-        int amountSensed = senseMiningArea();
-        // System.out.println("S: " + amountSensed);
+        senseMiningArea();
+
+        if (needsHealing && rc.getHealth() >= 40) {
+            needsHealing = false;
+        }
 
         mode = determineMode();
         visualize();
@@ -81,7 +82,11 @@ public class Soldier extends Unit {
             case FLEE:
                 moveLowRubble(fleeDirection);
                 break;
-            default:
+            case DYING:
+                MapLocation[] closestArchons = getLocationsSortedByDistance(CHANNEL.ARCHON_LOC_1.getValue(), 4, rc.getLocation());
+                if (closestArchons.length > 0) {
+                    moveToLocation(closestArchons[0]);
+                }
                 break;
         }
 
@@ -136,6 +141,10 @@ public class Soldier extends Unit {
                 stopFleeingRound = round_num + 6;
             }
             return MODE.FLEE;
+        }
+        if (rc.getHealth() < 20 || needsHealing) {
+            needsHealing = true;
+            return MODE.DYING;
         }
         
         // Priority 3 - Hunt enemies.
@@ -405,15 +414,6 @@ public class Soldier extends Unit {
         }
     }
 
-    public boolean isLowHealth() throws GameActionException {
-        if (rc.getHealth() < 20) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-
     public boolean attemptAttack(boolean attackMiners) throws GameActionException {
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
         int weakestSoldierHealth = 100000;
@@ -514,10 +514,5 @@ public class Soldier extends Unit {
             }
         }
         return false;
-    }
-
-    public void initialize() {
-        DRUSH_RSQR = (int) ((double) mapArea / 9.0);
-        ARUSH_RSQR = (int) ((double) mapArea / 4.0);
     }
 }
