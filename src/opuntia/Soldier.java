@@ -51,7 +51,7 @@ public class Soldier extends Unit {
         attacked = attemptAttack(false);
         findTargets();
         senseMiningArea();
-
+        senseFriendlySoldiersArea();
         mode = determineMode();
         visualize();
         switch (mode) {

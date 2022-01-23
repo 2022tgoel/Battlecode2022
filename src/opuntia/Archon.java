@@ -209,9 +209,8 @@ public class Archon extends Unit {
 
         move = getArchonMovementLocation();
         if (move == null){
-            if (radio.getMode() == archonNumber) {
-                return MODE.SOLDIER_HUB;
-            }
+            if (radio.getMode() == archonNumber) return MODE.SOLDIER_HUB;
+            else return MODE.DEFAULT;
         }
         else {
             if (isClosestArchon(move)) { 
@@ -307,7 +306,6 @@ public class Archon extends Unit {
         }
         return false;
     }
-    
     MapLocation move = null;
     int turnsMoving = 0;
     final int maxTurnsMoving = 200;
@@ -338,7 +336,6 @@ public class Archon extends Unit {
         if (rc.getMode() == RobotMode.PORTABLE) return MODE.MOVING;
         else return MODE.SOLDIER_HUB;
     }
-
     /////////////////////////////////////////////////////////////////////
     public boolean buildMiner(Direction dir) throws GameActionException {
         if (rc.canBuildRobot(RobotType.MINER, dir)) {

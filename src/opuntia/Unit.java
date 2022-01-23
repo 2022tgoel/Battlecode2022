@@ -257,6 +257,25 @@ public class Unit {
         rc.writeSharedArray(CHANNEL.MINING1.getValue() + indToPut, value);
     }
 
+    public void senseFriendlySoldiersArea() throws GameActionException {
+        //archons will move to support friendly soldiers
+        RobotInfo[] friends = rc.senseNearbyRobots(-1, rc.getTeam());
+        int numFriendlySoldiers = 0;
+        for (RobotInfo r : friends){
+            if (r.type == RobotType.SOLDIER) numFriendlySoldiers++;
+        }
+        if (numFriendlySoldiers >= 5){
+            numFriendlySoldiers /= 5; //capping the amount at ~12, which would fit in 4 bits
+            int data = rc.readSharedArray(CHANNEL.ARCHON_MOVE.getValue());
+            int curFriends = (data >> 12) & 15; // how many friends are in this hub
+            if (numFriendlySoldiers > curFriends){ //this is better
+                MapLocation my = rc.getLocation();
+                int value = (numFriendlySoldiers << 12) + (my.x << 6) + my.y;
+                rc.writeSharedArray(CHANNEL.ARCHON_MOVE.getValue(), value);
+            }
+        }
+    }
+
     public MapLocation findNearestArchon() throws GameActionException {
         int min_dist = Integer.MAX_VALUE;
         MapLocation closest = null;
