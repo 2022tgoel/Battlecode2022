@@ -456,6 +456,45 @@ public class Unit {
         return dirs[rng.nextInt(dirs.length)];
     }
 
+    int[][] exploreLocs;
+    public void calcExploreDirs(int N){ //number of directions
+        int w = rc.getMapWidth(); int h = rc.getMapHeight();
+        double regionArea = ((double) mapArea / (double) N);
+        int[] numRegions = {(int) Math.ceil((0.5 * (double) w * (double) homeArchon.y) / regionArea), //bottom
+                            (int) Math.ceil((0.5 * (double) w * (double) (h - homeArchon.y)) / regionArea), //top
+                            (int) Math.ceil((0.5 * (double) h * (double) homeArchon.x) / regionArea), //left edge
+                            (int) Math.ceil((0.5 * (double) h * (double) (w - homeArchon.x)) / regionArea)}; //right
+        int[] regionSizes = {w/numRegions[0], w/numRegions[1], h/numRegions[2], h/numRegions[3]};
+        int tot = 0;
+        for (int i = 0; i < 4; i++){
+          //  System.out.println("yohoo " + numRegions[i] + " " + regionSizes[i]);
+            tot+=numRegions[i];
+        }
+        exploreLocs = new int[tot][2];
+        int cur = 0;
+        for (int i= 1; i <=numRegions[0]; i++){
+            exploreLocs[cur] = new int[]{regionSizes[0]*i - regionSizes[0]/2, 0};
+            cur++;
+            
+        }
+        for (int i= 1; i <= numRegions[1]; i++){
+            exploreLocs[cur] = new int[]{regionSizes[1]*i - regionSizes[1]/2, h-1};
+            cur++;
+        }
+        for (int i= 1; i <= numRegions[2]; i++){
+            exploreLocs[cur] = new int[]{0, regionSizes[2]*i - regionSizes[2]/2};
+            cur++;
+        }
+        for (int i= 1; i <= numRegions[3]; i++){
+            exploreLocs[cur] = new int[]{w-1, regionSizes[3]*i - regionSizes[3]/2};
+            cur++;
+        }
+        /*
+        for (int i= 0; i < tot; i++){
+            System.out.println(exploreDirs[i][0] + " " + exploreDirs[i][1]);
+        }*/
+    }
+
     public boolean adjacentToEdge() throws GameActionException {
         MapLocation cur = rc.getLocation();
         int mapheight = rc.getMapHeight();
