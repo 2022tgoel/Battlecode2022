@@ -141,7 +141,6 @@ public class Miner extends Unit {
         if (target!=null){
             if (miningSpot == null && rc.getLocation().distanceSquaredTo(target) <= 9) {
                 miningSpot = findMiningSpot(target);
-                return MODE.MINE_DISCOVERED;
             }
             else {
                 if (deposit != null) {
