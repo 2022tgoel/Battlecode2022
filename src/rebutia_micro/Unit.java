@@ -47,6 +47,44 @@ public class Unit {
         radio.init();
     }
 
+    public MapLocation getClosestNonMode() throws GameActionException {
+        MapLocation[] pots = getLocationsSortedByDistance(CHANNEL.ARCHON_LOC_1.getValue(), 4, rc.getLocation());
+        int mode = rc.readSharedArray(CHANNEL.ARCHON_MODE.getValue());
+        MapLocation mode_loc = radio.readLocation(CHANNEL.ARCHON_LOC_1.getValue() + mode);
+        if (mode_loc == null) {
+            if (pots.length > 0) {
+                return pots[0];
+            }
+        }
+        for (MapLocation pot : pots) {
+            if (!pot.equals(mode_loc)) {
+                return pot;
+            }
+        }
+        return null;
+    }
+
+    public MapLocation[] getLocationsSortedByDistance(int c_start, int count, MapLocation center) throws GameActionException {
+        MapLocation locs[] = new MapLocation[count];
+        int n = 0;
+        for (int chan = c_start; chan < c_start + count; chan++) {
+            int data = rc.readSharedArray(chan);
+            if (data != 0) {
+                data %= 4096;
+                int x = data / 64;
+                int y = data % 64;
+                locs[chan - c_start] = new MapLocation(x, y);
+            }
+        }
+        MapLocation sorted[] = new MapLocation[n];
+        for (int i = 0; i < n; i++) {
+            sorted[i] = locs[i];
+        }
+        Arrays.sort(sorted, (a, b) -> (center.distanceSquaredTo(a) - center.distanceSquaredTo(b)));
+        return sorted;
+    }
+
+    
     // when you sense or detect, you get an archon_index
     /**
      * detectArchon() looks through the archon positions for a new one, then stores
