@@ -208,12 +208,15 @@ public class Archon extends Unit {
             return MODE.INITIAL;
 
         move = getArchonMovementLocation();
+        // burn the surplus.
+        if (rc.getTeamLeadAmount(rc.getTeam()) >= 750) return MODE.SOLDIER_HUB;
         if (move == null){
             if (radio.getMode() == archonNumber) return MODE.SOLDIER_HUB;
             else return MODE.DEFAULT;
         }
         else {
             if (isClosestArchon(move)) { 
+
                 return robotModeSwitch();
             }
             else {
