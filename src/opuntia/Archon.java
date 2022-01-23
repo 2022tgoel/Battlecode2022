@@ -210,7 +210,7 @@ public class Archon extends Unit {
         move = getArchonMovementLocation();
         // burn the surplus.
         if (rc.getTeamLeadAmount(rc.getTeam()) >= 750) return MODE.SOLDIER_HUB;
-        if (move == null){
+        if (move == null || num_archons_alive == 1){
             if (radio.getMode() == archonNumber) return MODE.SOLDIER_HUB;
             else return MODE.DEFAULT;
         }
