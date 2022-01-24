@@ -273,7 +273,7 @@ public class Archon extends Unit {
         if (rc.getMode() == RobotMode.PORTABLE) return MODE.MOVING;
         else return MODE.SOLDIER_HUB;
     }
-    
+
     /////////////////////////////////////////////////////////////////////
     public boolean buildMiner(Direction dir) throws GameActionException{
         if (rc.canBuildRobot(RobotType.MINER, dir)) {
