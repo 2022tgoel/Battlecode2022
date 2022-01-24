@@ -381,20 +381,31 @@ public class Archon extends Unit {
     public void attemptHeal() throws GameActionException {
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(rc.getType().actionRadiusSquared, rc.getTeam());
         // if there are any nearby enemy robots, attack the one with the least health
+        //Watch Centaurworld strat
+        // if there's a bot with less than 20 health, repair the weakest
+        // otherwise repair the strongest
         RobotType[] repairOrder = new RobotType[]{RobotType.SOLDIER, RobotType.MINER};
         if (nearbyBots.length > 0) {
-            RobotInfo healthiestBot = null;
             for (RobotType curType : repairOrder){
+                RobotInfo botToHeal = null;
+                boolean repairingWeakest = false;
                 for (RobotInfo bot : nearbyBots) {
-                    if (bot.type == curType)
-                        if (bot.health < curType.health && (healthiestBot == null || bot.health > healthiestBot.health )) {
-                            healthiestBot = bot;
+                    if (bot.type == curType) {
+                        if (bot.health >= curType.health) continue;
+                        if (bot.health < 20){
+                            repairingWeakest = true;
                         }
+                        if (botToHeal == null) botToHeal = bot;
+                        else if (repairingWeakest && bot.health < botToHeal.health) {
+                            botToHeal = bot;
+                        }
+                        else if (!repairingWeakest && bot.health > botToHeal.health) botToHeal = bot;
+                    }
                 }
-                if (healthiestBot != null) {
-                    if (rc.canRepair(healthiestBot.location)) {
+                if (botToHeal != null) {
+                    if (rc.canRepair(botToHeal.location)) {
                         // rc.setIndicatorString("Succesful Heal!");
-                        rc.repair(healthiestBot.location);
+                        rc.repair(botToHeal.location);
                     }
                     return;
                 }

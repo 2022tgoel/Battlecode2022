@@ -160,13 +160,13 @@ public class Soldier extends Unit {
         if (closestArchon!=null && rc.getHealth() < rc.getType().health){
             return true;
         }
-        else if (rc.getHealth() <= 15){ // toggle to is healing
+        else if (rc.getHealth() <= 20){ // toggle to is healing
             MapLocation my = rc.getLocation();
             closestArchon = null;
             for (int i = 0; i < rc.getArchonCount(); i++) {
                 MapLocation archonLoc = comms.readArchonLocation(i);
                 System.out.println(archonLoc.toString());
-                if (my.distanceSquaredTo(archonLoc) <= 300 ){
+                if (my.distanceSquaredTo(archonLoc) <= 200 ){
                     if (closestArchon == null) 
                         closestArchon = archonLoc;
                     else if (my.distanceSquaredTo(archonLoc) < my.distanceSquaredTo(closestArchon)) 
