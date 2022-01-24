@@ -1,13 +1,37 @@
 package opuntia_sage;
 
-import battlecode.common.*;
-import java.util.*;
+import battlecode.common.GameActionException;
+import battlecode.common.RobotController;
 
 public class Laboratory extends Unit {
-	public Laboratory(RobotController rc) throws GameActionException {
-        super(rc);
-        System.out.println("made lab");
+    public enum MODE {
+        DEFAULT,
+        MOVING
     }
 
-    public void run() throws GameActionException {}
+    MODE mode;
+
+    public Laboratory(RobotController rc) throws GameActionException {
+        super(rc);
+    }
+
+    public void run() throws GameActionException {
+        radio.updateCounter();
+
+        mode = getMode();
+        switch (mode){
+            case DEFAULT:
+                if(rc.canTransmute()) {
+                    System.out.println("transmuted 1");
+                    rc.transmute();
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    public MODE getMode(){
+        return MODE.DEFAULT;
+    }
 }
