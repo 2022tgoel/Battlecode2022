@@ -112,10 +112,10 @@ public class Archon extends Unit {
                 if (round_num % num_archons_alive != archonNumber) break;
                 if (num_miners > (double) troopCounter[0] / (double) num_archons_init) break;
                 if (troopCounter[0] < desiredNumMiners) {
-                    build(new int[] {1, 0, 0});
+                    build(RobotType.MINER);
                 }
                 else if ((useful_miners / (double) troopCounter[0]) >= 0.80) {
-                    build(new int[] {1, 0, 0});
+                    build(RobotType.MINER);
                 }
                 else if ((useful_miners / (double) troopCounter[0]) <= 0.75) {
                     initial = false;
@@ -124,13 +124,7 @@ public class Archon extends Unit {
                 break;
             case MAKE_LAB: //acc making a builder
                 System.out.println(radio.readLabLoc());
-                for (Direction dir : dirs){
-                    boolean b = buildBuilder(dir);
-                    if (b){
-                        builderBuilt = true;
-                        break;
-                    }
-                }
+                builderBuilt = build(RobotType.BUILDER);
                 break;
             case SOLDIER_HUB:
                 int leadReq = radio.readLeadRequest();
@@ -140,7 +134,7 @@ public class Archon extends Unit {
                 }
 
                 if (checkForResources(RobotType.SOLDIER.buildCostLead)) {
-                    boolean soldier_built = build(new int[]{0, 1, 0});
+                    boolean soldier_built = build(RobotType.SOLDIER);
                     if (soldier_built) num_soldiers_hub++;
                 }
                 else {
@@ -164,13 +158,7 @@ public class Archon extends Unit {
             case DEFAULT:
                 attemptHeal();
                 if (rc.getTeamGoldAmount(rc.getTeam()) >= 20) {
-                    boolean builtSage = false;
-                    for (Direction dir : dirs) {
-                        if (!builtSage) {
-                            builtSage = buildSage(dir);
-                        }
-                        else break;
-                    }
+                    boolean builtSage = build(RobotType.SAGE);
                     if (builtSage) {
                         return;
                     }
@@ -184,7 +172,7 @@ public class Archon extends Unit {
                 }
 
                 if ((useful_miners / (double) troopCounter[0]) >= 0.25) {
-                    build(new int[] {1, 0, 0});
+                    build(RobotType.MINER);
                 }
 
                 // if ((useful_miners / (double) troopCounter[0]) >= 0.60) build(new int[] {1, 0, 0});
@@ -194,39 +182,21 @@ public class Archon extends Unit {
         rc.setIndicatorString("mode: " + mode.toString() + " " + getArchonMovementLocation());
     }
 
-    public boolean build(int[] build_order) throws GameActionException {
+    public boolean build(RobotType type) throws GameActionException {
         boolean unit_built = false;
         for (Direction dir : dirs) {
-            switch (counter % 3) {
-                case 0:
-                    if (built_units < build_order[counter % 3]) {
-                        // rc.setIndicatorString("Trying to build a miner" + " built_units: " +
-                        // built_units + " " + build_order[counter % 3]);
-                        unit_built = buildMiner(dir);
-                        // System.out.println("MINER BUILT: " + unit_built + " Roundnum: " +
-                        // rc.getRoundNum());
-                    }
+            switch (type) {
+                case MINER:
+                    unit_built = buildMiner(dir);                    
                     break;
-                case 1:
-                    if (built_units < build_order[counter % 3]) {
-                        // rc.setIndicatorString("Trying to build a soldier" + " built_units: " +
-                        // built_units + " " + build_order[counter % 3]);
-                        unit_built = buildSoldier(dir);
-                        // System.out.println("SOLDIER BUILT: " + unit_built);
-                    }
+                case SOLDIER:
+                    unit_built = buildSoldier(dir);
                     break;
-                case 2:
-                    if (built_units < build_order[counter % 3]) {
-                        // rc.setIndicatorString("Trying to build a builder" + " built_units: " +
-                        // built_units + " " + build_order[counter % 3]);
-                        unit_built = buildBuilder(dir);
-                        // System.out.println("BUILDER BUILT: " + unit_built);
-                    }
+                case BUILDER:
+                    unit_built = buildBuilder(dir);
                     break;
-            }
-            if (built_units >= build_order[counter % 3]) {
-                counter++;
-                built_units = 0;
+                case SAGE:
+                    unit_built = buildSage(dir);
             }
             if (unit_built)
                 return true;
