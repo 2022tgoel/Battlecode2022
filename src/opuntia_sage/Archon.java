@@ -26,6 +26,7 @@ public class Archon extends Unit {
     int num_soldiers = 0;
     int num_miners = 0;
     int num_builders = 0;
+    int num_sages = 0;
     int num_archons_init;
     int num_archons_alive;
 
@@ -132,6 +133,12 @@ public class Archon extends Unit {
                 }
                 break;
             case SOLDIER_HUB:
+                int leadReq = radio.readLeadRequest();
+                if(leadReq > Math.max(rc.getTeamLeadAmount(rc.getTeam())-RobotType.SOLDIER.buildCostLead, 0)) {
+                    System.out.println("holding for lr: " + leadReq);
+                    break;
+                }
+
                 if (checkForResources(RobotType.SOLDIER.buildCostLead)) {
                     boolean soldier_built = build(new int[]{0, 1, 0});
                     if (soldier_built) num_soldiers_hub++;
@@ -156,10 +163,23 @@ public class Archon extends Unit {
                 }
             case DEFAULT:
                 attemptHeal();
+                if (rc.getTeamGoldAmount(rc.getTeam()) >= 20) {
+                    boolean builtSage = false;
+                    for (Direction dir : dirs) {
+                        if (!builtSage) {
+                            builtSage = buildSage(dir);
+                        }
+                        else break;
+                    }
+                    if (builtSage) {
+                        return;
+                    }
+                }
                 if (round_num % num_archons_alive != archonNumber || round_num % 5 != 0) break;
 
-                int leadReq = radio.readLeadRequest();
-                if(leadReq > 0 && leadReq > rc.getTeamLeadAmount(rc.getTeam())-RobotType.MINER.buildCostLead) {
+                leadReq = radio.readLeadRequest();
+                if(leadReq > Math.max(rc.getTeamLeadAmount(rc.getTeam())-RobotType.MINER.buildCostLead, 0)) {
+                    System.out.println("holding for lr: " + leadReq);
                     break;
                 }
 
@@ -303,6 +323,7 @@ public class Archon extends Unit {
         }
 
         radio.broadcastLab(bestLocation);
+        System.out.println(bestLocation);
         return bestLocation;
     }
 
@@ -431,6 +452,18 @@ public class Archon extends Unit {
             built_units++;
             num_builders++;
             troopCounter[2]++;
+            return true;
+        }
+        return false;
+    }
+
+    public boolean buildSage(Direction dir) throws GameActionException {
+        if (rc.canBuildRobot(RobotType.SAGE, dir)) {
+            rc.buildRobot(RobotType.SAGE, dir);
+            radio.updateCounter(RobotType.SAGE);
+            built_units++;
+            num_sages++;
+            troopCounter[3]++;
             return true;
         }
         return false;

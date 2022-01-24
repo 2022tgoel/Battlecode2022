@@ -420,9 +420,11 @@ public class Soldier extends Unit {
         int weakestSageHealth = 100000;
         int weakestTowerHealth = 100000;
         int weakestBuilerHealth = 100000;
+        int weakestLabHealth = 100000;
         RobotInfo weakestSoldier = null;
         RobotInfo weakestTower = null;
         RobotInfo weakestSage = null;
+        RobotInfo weakestLab = null;
         RobotInfo weakestMiner = null;
         RobotInfo weakestBuilder = null;
         RobotInfo archon = null;
@@ -445,6 +447,12 @@ public class Soldier extends Unit {
                     if (bot.health < weakestTowerHealth) {
                         weakestTower = bot;
                         weakestTowerHealth = bot.health;
+                    }
+                }
+                if (bot.type == RobotType.LABORATORY) {
+                    if (bot.health < weakestLabHealth) {
+                        weakestLab = bot;
+                        weakestLabHealth = bot.health;
                     }
                 }
                 if (bot.type == RobotType.SAGE) {
@@ -477,6 +485,14 @@ public class Soldier extends Unit {
                     rc.attack(weakestSoldier.location);
                     target = weakestSoldier.location;
                     broadcastTarget(weakestSoldier.location);
+                    return true;
+                }
+            }
+            else if (weakestLab != null) {
+                if (rc.canAttack(weakestLab.location)) {
+                    rc.attack(weakestLab.location);
+                    target = weakestLab.location;
+                    broadcastTarget(weakestLab.location);
                     return true;
                 }
             }

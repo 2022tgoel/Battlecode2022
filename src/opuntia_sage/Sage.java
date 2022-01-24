@@ -1,92 +1,608 @@
 package opuntia_sage;
 
 import battlecode.common.*;
+
 import java.util.*;
 
 public class Sage extends Unit {
-    int counter = 0;
-    int archon_index = -1;
-    double s_attraction = 0.5;
-    double m_attraction = 10.0;
-    double s_repulsion = 1;
-    double m_repulsion = 1/10;
 
-    MapLocation target;
-    int[] exploratoryDir = getExploratoryDir();
+    enum MODE {
+        EXPLORATORY, //at the start of the game, before anyone has found anything
+        HUNTING,
+        SEARCHING_ENEMIES, //when u have already found enemies
+        FLEE,
+        DEFENSIVE_RUSH,
+        DYING
+        ;
+    }
+
+    enum ATTACK {
+        NONE,
+        DEFAULT, 
+        CHARGE,
+        FURY
+        ;
+    }
+
+    boolean attacked = false;
+    int round_num = 0;
+
+    RANK rank;
+
+    MapLocation[] threatenedArchons;
+
+    private int[] fleeDirection = {Integer.MAX_VALUE, Integer.MAX_VALUE};
+    private int stopFleeingRound = -1;
+    private int DRUSH_RSQR = 400;
+    private int ARUSH_RSQR = 900;
+
+    MODE mode;
+
+    //for explore mode only
+    private MapLocation exploreLoc;
+    private int[] exploratoryDir;
+
+    //for attacking and searching enemies modes
+    private MapLocation target = null;
+    private int[] lastAttackDir = null;
+    private MapLocation attackTarget;
 
 	public Sage(RobotController rc) throws GameActionException {
         super(rc);
+        initialize();
+        exploreLoc = getInitialExploratoryLocation();
     }
-
     @Override
     public void run() throws GameActionException {
-        /*
-        if (isLowHealth()) {
-            fuzzyMove(homeArchon);
+        super.run();
+        round_num = rc.getRoundNum();
+        radio.updateCounter();
+        attacked = attemptAttack();
+        findTargets();
+        senseMiningArea();
+        senseFriendlySoldiersArea();
+        mode = determineMode();
+        visualize();
+        switch (mode) {
+            case EXPLORATORY:
+                if (soldierBehindMe()) {
+                    if (adjacentToEdge()){
+                        exploratoryDir = flip(exploratoryDir);
+                        exploreLoc = scaleToEdge(exploratoryDir);
+                    }
+                    moveToLocation(exploreLoc);
+                }
+                break;
+            case HUNTING:
+                huntTarget();
+                target = null;
+                break;
+            case SEARCHING_ENEMIES:
+                if (adjacentToEdge()) { //TODO: bots occasionally get stuck somehow
+                    lastAttackDir = flip(lastAttackDir);
+                }
+                moveInDirection(lastAttackDir);
+                break;
+            case DEFENSIVE_RUSH:
+                defensiveMove();
+                break;
+            case FLEE:
+                moveLowRubble(fleeDirection);
+                break;
+            default:
+                break;
         }
-        else if (isExploring()){
-            moveInDirection(friendlyDir());
-            if (rc.getLocation().isAdjacentTo(homeArchon)) {
-                // rc.setIndicatorString("moving away");
-                moveInDirection(rc.getLocation().directionTo(homeArchon).opposite());
-            }
-            else {
-                moveInDirection(friendlyDir());
-            } 
-        }
-        else if (archon_found) {
-            huntArchon();
-        }
-        senseArchon();
-        attemptAttack();
-        detectArchon();
-        counter += 1;*/
+
+        if (!attacked) attemptAttack();
     }
-/*
-    public boolean isExploring() throws GameActionException{
-        if (archon_found) {
-            return false;
-        }
-        else {
+
+    public boolean attemptAttack() throws GameActionException {
+        ATTACK attack = determineAttack();
+        executeAttack(attack);
+        if (attack != ATTACK.NONE) {
             return true;
         }
+        return false;
     }
 
-    public void detectArchon() throws GameActionException {
-        // if archon still alive, don't do anything
-        int data = 0;
-        if (archon_found) {
-            // rc.setIndicatorString("archon already found");
-            data = rc.readSharedArray(archon_index);
-            // rc.setIndicatorString("archon read: " + data);
-            if (data != 0) {
-                return;
+    public void executeAttack(ATTACK attack) throws GameActionException {
+        switch (attack) {
+            case DEFAULT:
+                if (attackTarget != null) {
+                    if (rc.canAttack(attackTarget)) rc.attack(attackTarget);
+                }
+                break;
+            case CHARGE:
+                if (rc.canEnvision(AnomalyType.CHARGE)) rc.envision(AnomalyType.CHARGE);
+                break;
+            case FURY:
+                if (rc.canEnvision(AnomalyType.FURY)) rc.envision(AnomalyType.FURY);
+                break;
+            default:
+                break;
+        }
+    }
+
+    public ATTACK determineAttack() throws GameActionException {
+        if (rc.getActionCooldownTurns() > 0) return ATTACK.NONE;
+        if (rc.senseNearbyRobots(-1, rc.getTeam().opponent()) == null) return ATTACK.NONE;
+        
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1);
+
+        int numfSoldiers = 0;
+        int numfSages = 0;
+        int numeSoldiers = 0;
+        int numeSages = 0;
+
+        int enemyHealth = 0;
+        int numFriends = 0;
+        int friendHealth = rc.getHealth();
+
+        boolean canOneShot = false;
+
+        int highestSub45Health = -1;
+        RobotInfo highestSub45 = null;
+        int maxHealth = -1;
+        RobotInfo maxHealthBot = null;
+
+        int[] soldierHealths  = new int[nearbyBots.length];
+        int[] sageHealths  = new int[nearbyBots.length];
+        for (RobotInfo bot: nearbyBots) {
+            if (bot.team == rc.getTeam()) {
+                if (bot.type == RobotType.SOLDIER) {
+                    friendHealth += bot.health;
+                    numFriends++;
+                }
             }
-            else {
-                archon_found = false;
+            else if (bot.team == rc.getTeam().opponent()) {
+                if (bot.type == RobotType.SOLDIER) {
+                    enemyHealth += bot.health;
+                    soldierHealths[numeSoldiers] = bot.health;
+                    numeSoldiers++;
+
+                    if (enemyHealth <= 45) {
+                        if (highestSub45Health < bot.health) {
+                            highestSub45Health = bot.health;
+                            highestSub45 = bot;
+                        }
+                        canOneShot = true;
+                    }
+                    else {
+                        if (maxHealth < bot.health) {
+                            maxHealth = bot.health;
+                            maxHealthBot = bot;
+                        }
+                    }
+                }
+                else if (bot.type == RobotType.SAGE) {
+                    enemyHealth += bot.health;
+                    sageHealths[numeSages] = bot.health;
+                    numeSages++;
+
+                    if (enemyHealth <= 45) {
+                        if (highestSub45Health < bot.health) {
+                            highestSub45Health = bot.health;
+                            highestSub45 = bot;
+                        }
+                        canOneShot = true;
+                    }
+                    else {
+                        if (maxHealth < bot.health) {
+                            maxHealth = bot.health;
+                            maxHealthBot = bot;
+                        }
+                    }
+                }
             }
         }
 
-        // rc.setIndicatorString("finding new archon");
-        // if archon dead, find new archon
-        for (int i = 0; i < 4; i++) {
-            data = rc.readSharedArray(i);
-            if (data != 0) {
-                // rc.setIndicatorString("archon found UWU");
-                archon_index = i;
-                break;
-            }
-        }
-        data = rc.readSharedArray(archon_index);
-        if (data != 0) {
-            // rc.setIndicatorString("new archon found");
-            archon_found = true;
-            int x = data / 1000;
-            int y = data % 1000;
-            target = new MapLocation(x, y);
+        if (numeSoldiers == 0 && numeSages == 0) return ATTACK.NONE;
+
+        // remove zero values from enemyHealth array
+        soldierHealths = cleanup(soldierHealths, numeSoldiers);
+        sageHealths = cleanup(sageHealths, numeSages);
+
+        /* if (((numFriends + 1) / numEnemies) > 1) {
+            ratio = ((numFriends + 1) / numEnemies);
         }
         else {
-            archon_found = false;
+            ratio = numEnemies / (numFriends + 1);
+        } */
+
+        ATTACK bestAttack = ATTACK.NONE;
+        int maxAdvantage = -100000;
+        int advantage;
+        int unit_difference = numFriends - numeSages - numeSoldiers;
+        double a = 6.0; // = 6 * ratio;
+        // double ratio;
+        int unit_advantage;
+
+
+        ATTACK[] attacks = {ATTACK.DEFAULT, ATTACK.CHARGE};
+        for (ATTACK attack: attacks) {
+            switch (attack) {
+                case DEFAULT:
+                    if (canOneShot) {
+                        unit_advantage = (int) (a * Math.pow(unit_difference + 1., 2) * Math.signum(unit_difference + 1.));
+                        advantage = friendHealth + enemyHealth + unit_advantage + highestSub45Health;
+                    }
+                    else {
+                        unit_advantage = (int) (a * Math.pow(unit_difference, 2) * Math.signum(unit_difference));
+                        advantage = friendHealth - enemyHealth + unit_advantage + 45;
+                    }
+                    break;
+                case CHARGE:
+                    int numSoldiersKilled = 0;
+                    int numSagesKilled = 0;
+                    int health_reduced = 0;
+                    if (soldierHealths != null) {
+                        for (int i = 0; i < soldierHealths.length; i++) {
+                            if (soldierHealths[i] <= 11) {
+                                numSoldiersKilled++;
+                            }
+                            health_reduced += soldierHealths[i];
+                        }
+                    }
+                    if (sageHealths != null) {
+                        for (int i = 0; i < sageHealths.length; i++) {
+                            if (sageHealths[i] <= 22) {
+                                numSagesKilled++;
+                            }
+                            health_reduced += sageHealths[i];
+                        }
+                    }
+                    unit_difference = unit_difference + numSoldiersKilled + numSagesKilled;
+                    unit_advantage = (int) (a * Math.pow(unit_difference, 2) * Math.signum(unit_difference));
+                    advantage = friendHealth - enemyHealth + unit_advantage + health_reduced;
+                    break;
+                default:
+                    advantage = 0;
+            }
+            if (advantage > maxAdvantage) {
+                bestAttack = attack;
+                maxAdvantage = advantage;
+            }
+        }
+
+        if (bestAttack == ATTACK.DEFAULT) {
+            if (highestSub45 != null) {
+                attackTarget = highestSub45.location;
+            }
+            else {
+                attackTarget = maxHealthBot.location;
+            }
+        }
+
+        return bestAttack;
+    }
+
+    public int[] cleanup(int[] a, int length) {
+        int[] b = new int[length];
+        int j = 0;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != 0) {
+                b[j] = a[i];
+                j++;
+            }
+        }
+        Arrays.sort(b);
+        return b;
+    }
+
+    public void visualize() throws GameActionException {
+        rc.setIndicatorString("MODE: " + mode.toString());
+        if (mode == MODE.EXPLORATORY){
+            rc.setIndicatorDot(exploreLoc, 100, 100, 0);
+        }
+        else if (mode == MODE.HUNTING){
+            rc.setIndicatorLine(rc.getLocation(), target, 0, 100, 0);
+        }
+        else if (mode == MODE.SEARCHING_ENEMIES){
+            rc.setIndicatorString("MODE: " + mode.toString() + " DIR: " + lastAttackDir[0] + " " + lastAttackDir[1]);
+        }
+        else if (target != null) {
+            if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: " + target.toString() + " MODE: " + mode.toString());
+            else rc.setIndicatorString("TARGET: " + target.toString() + " MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
+            rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 100);
+        }
+        else {
+            if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: null MODE: " + mode.toString());
+            else rc.setIndicatorString("TARGET: null MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
+        }
+    }
+
+    public MODE determineMode() throws GameActionException {
+        
+        // Priority 1 - Defend.
+        threatenedArchons = findThreatenedArchons();
+        if (threatenedArchons != null) {
+            for (MapLocation archon: threatenedArchons) {
+                if (rc.getLocation().distanceSquaredTo(archon) <= DRUSH_RSQR) {
+                    return MODE.DEFENSIVE_RUSH;
+                }
+            }
+        }
+
+        // Priority 2 - Don't die.
+        int[] potFleeDir = fleeDirection();
+        boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
+        if (!validFlee && stopFleeingRound == round_num) {
+            exploreLoc = getInitialExploratoryLocation(); 
+            lastAttackDir = null;
+        }
+        if (validFlee || stopFleeingRound > round_num) {
+            if (validFlee) fleeDirection = potFleeDir;
+            // keep fleeing for two moves (2 rounds per move)
+            if (stopFleeingRound <= round_num) {
+                stopFleeingRound = round_num + 6;
+            }
+            return MODE.FLEE;
+        }
+        
+        // Priority 3 - Hunt enemies.
+        if (target != null) {
+            return MODE.HUNTING;
+        }
+        else if (lastAttackDir != null){
+            return MODE.SEARCHING_ENEMIES;
+        }
+        else return MODE.EXPLORATORY;
+    }
+
+    /**
+     * getInitialExploratoryLocation() gets the location when you extend the vector from your location 
+     * to the center to the edge
+     **/
+    public MapLocation getInitialExploratoryLocation(){
+        MapLocation my = rc.getLocation();
+        MapLocation center = new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2);
+        exploratoryDir = new int[]{center.x - my.x, center.y - my.y};
+        if (!my.equals(center)){
+            return scaleToEdge(exploratoryDir);
+        }
+        else {
+            System.out.println("YOU REACHED A CASE THAT SHOULD BE IMPLEMENTED");
+            return null; //TODO
+        }
+    }
+
+    public boolean isBehind(MapLocation loc){
+        MapLocation my = rc.getLocation();
+        int[] v = new int[]{loc.x - my.x, loc.y - my.y};
+        int dotProduct = v[0]*exploratoryDir[0] + v[1]*exploratoryDir[1];
+        return (dotProduct < 0); 
+    }
+
+    public boolean soldierBehindMe(){
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(15, rc.getTeam());
+        for (RobotInfo r : nearbyBots){
+            if (r.type == RobotType.SOLDIER){
+                if (isBehind(r.location)) return true;
+            }
+        }
+        return false;
+    }
+
+    public int[] fleeDirection() throws GameActionException{
+        MapLocation cur = rc.getLocation();
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1);
+        double cxse = 0;
+        double cyse = 0;
+        int numEnemies = 0;
+        int numEnemyHits = 0;
+        int numFriendHits = (rc.getHealth() + 2) / 3;
+        int numFriends = 0;
+        for (RobotInfo bot: nearbyBots) {
+            if (bot.team == rc.getTeam()) {
+                if (bot.type == RobotType.SOLDIER) {
+                    numFriendHits += ((bot.health + 2) / 3);
+                    numFriends++;
+                }
+            }
+            else if (bot.team == rc.getTeam().opponent())
+                if (bot.type == RobotType.SOLDIER) {
+                    cxse += bot.location.x;
+                    cyse += bot.location.y;
+                    numEnemyHits += ((bot.health + 2) / 3);
+                    numEnemies++;
+                }
+        }
+        if (numEnemies == 0) return new int[]{Integer.MAX_VALUE, Integer.MAX_VALUE};
+
+        if (numEnemies > 0) {
+            cxse /= numEnemies;
+            cyse /= numEnemies;
+        }
+
+        double unit_difference = (double) (numFriends + 1 - numEnemies);
+        double ratio;
+
+        if (((numFriends + 1) / numEnemies) > 1) {
+            ratio = ((numFriends + 1) / numEnemies);
+        }
+        else {
+            ratio = numEnemies / (numFriends + 1);
+        }
+
+        double a = 6 * ratio;
+        int unit_advantage = (int) (a * Math.pow(unit_difference,2) * Math.signum(unit_difference));
+
+        // System.out.println("Unit advantage: " + unit_advantage + " Ratio: " + ratio + " numFriendHits " + numFriendHits + " numEnemyHits " + numEnemyHits + "round_num " + round_num);
+
+        if (numFriendHits + unit_advantage < numEnemyHits) {
+            double dx = -(cxse - cur.x) * 3;
+            double dy = -(cyse - cur.y) * 3;
+            // more attracted
+            // dx = 0.7 * dx + 0.3 * (cxsf - cur.x);
+            // dy = 0.7 * dx + 0.3 * (cysf - cur.y);
+            return new int[]{(int) dx, (int) dy};
+        }
+        return new int[]{Integer.MAX_VALUE, Integer.MAX_VALUE}; 
+    }
+
+    public RANK findRankSoldier() throws GameActionException{
+        RANK new_rank = findRank();
+        if (new_rank != RANK.DEFENDER && new_rank != RANK.DEFAULT) {
+            return RANK.DEFAULT;
+        }
+        else {
+            return new_rank;
+        }
+    }
+
+    public void findTargets() throws GameActionException {
+        int data;
+        int closestDist = 100000;
+        MapLocation cur = rc.getLocation();
+        MapLocation closestTarget = null;
+        for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
+            data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
+            if (data != 0) {
+                int x = data/64;
+                int y = data%64;
+                // System.out.println("I received an enemy at " + x*4 + " " + y*4 + " on round " + round_num);
+                MapLocation potentialTarget = new MapLocation(x, y);
+                if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
+                    closestDist = cur.distanceSquaredTo(potentialTarget);
+                    closestTarget = potentialTarget;
+                }
+            }
+        }
+
+        // finds closest target, and advances towards it.
+        if (closestTarget != null) {
+            if (cur.distanceSquaredTo(closestTarget) <= mapArea / 8) {
+                target = closestTarget;
+            }
+            lastAttackDir = new int[]{closestTarget.x - cur.x, closestTarget.y - cur.y};
+            lastAttackDir = scaleToSize(lastAttackDir);
+            // wanders in direction of target
+        }
+    }
+
+    public void huntTarget() throws GameActionException {
+        MapLocation cur = rc.getLocation();
+        if (rc.getLocation().distanceSquaredTo(target) <= 13) {
+            // check for low rubble squares to move to
+            moveLowRubble(new int[] {-target.x + cur.x, -target.y + cur.y}, 20);
+        }
+        else if (rc.getLocation().distanceSquaredTo(target) <= 25) {
+            moveLowRubble(new int[] {target.x - cur.x, target.y - cur.y}, 15);
+        }
+        else {
+            moveToLocation(target);
+        }
+    }
+
+    public Direction findLowRubble() throws GameActionException {
+        MapLocation cur = rc.getLocation();
+        int lowest_rubble = 1 + rc.senseRubble(cur) / 10;
+        int rubble;
+        Direction bestDir = null;
+        for (int i = 0; i < 8; i++) {
+            if (!rc.canMove(directions[i])) continue;
+            rubble = 1 + rc.senseRubble(cur.add(directions[i])) / 10;
+            if (rubble < lowest_rubble && rc.canMove(directions[i])) {
+                lowest_rubble = rubble;
+                bestDir = directions[i];
+            }
+        }
+        return bestDir;
+    }
+
+    public void moveLowRubble(int[] dir) throws GameActionException {
+        moveLowRubble(dir, 20);
+    }
+
+    public void moveLowRubble(int[] dir, int threshold) throws GameActionException {
+        MapLocation cur = rc.getLocation();
+        Direction d = cur.directionTo(new MapLocation(cur.x + dir[0], cur.y + dir[1]));
+        Direction[] sorted_dirs = {d, d.rotateLeft(), d.rotateRight(), d.rotateLeft().rotateLeft(), d.rotateRight().rotateRight(), d.opposite().rotateRight(), d.opposite().rotateLeft(), d.opposite()};
+        int a = 6;
+        int lowestCost = a * (1 + (rc.senseRubble(rc.getLocation()) / 10)) + threshold;
+        Direction bestDir = null;
+        for (int i = 0; i < 8; i++) {
+            if (!rc.canMove(sorted_dirs[i])) continue;
+            MapLocation loc = cur.add(sorted_dirs[i]);
+
+            int cost = 0;
+            cost += (int) a * (1 + (rc.senseRubble(loc) / 10)) ;
+            // Preference tier for moving towards target
+            if (i >=1){
+                cost+=5;
+            }
+            if (i >= 3) {
+                cost += 15;
+            }
+            if (i >=5){
+                cost+=30;
+            }
+            if (cost < lowestCost) {
+                lowestCost = cost;
+                bestDir = sorted_dirs[i];
+            }
+        }
+        if (bestDir != null) rc.move(bestDir);
+    }
+
+    public void defensiveMove() throws GameActionException{
+        MapLocation closest = threatenedArchons[0];
+        int min_dist = Integer.MAX_VALUE;
+        // only find closest archon if there is more then one
+        if (threatenedArchons.length > 1) {
+            for (MapLocation loc: threatenedArchons) {
+                if (loc.distanceSquaredTo(rc.getLocation()) < min_dist) {
+                    min_dist = loc.distanceSquaredTo(rc.getLocation());
+                    closest = loc;
+                }
+            }
+        }
+        // if you don't see the enemy, and you're not close to the archon, move towards it
+        if (rc.getLocation().distanceSquaredTo(closest) > 36 || target == null) {
+            moveToLocation(closest);
+        }
+        else {
+            if (target != null) huntTarget();
+        }
+    }
+
+    public boolean archonDied() throws GameActionException{
+        RobotInfo home;
+        if (rc.canSenseLocation(homeArchon)) {
+            home = rc.senseRobotAtLocation(homeArchon);
+            return (home == null || home.type != RobotType.ARCHON);
+        }
+        return false;
+    }
+
+    public MapLocation[] findThreatenedArchons() throws GameActionException {
+        int data;
+        MapLocation[] archons = new MapLocation[4];
+        int numThreatenedArchons = 0;
+        for (int i = 0; i < 4; i++) {
+            // rc.writeSharedArray(, value);
+            data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
+            // go through channels until you find an empty one to communicate with.
+            if (data != 0) {
+                int x = data / 64;
+                int y = data % 64;
+                if (validCoords(x, y)) {
+                    archons[numThreatenedArchons] = new MapLocation(x, y);
+                    numThreatenedArchons++;
+                }
+            }
+        }
+
+        if (numThreatenedArchons == 0) {
+            return null;
+        }
+        else {
+            // only return threatened archons.
+            MapLocation[] threatenedArchons = new MapLocation[numThreatenedArchons];
+            for (int i = 0; i < numThreatenedArchons; i++) {
+                threatenedArchons[i] = archons[i];
+            }
+            return threatenedArchons;
         }
     }
 
@@ -99,175 +615,8 @@ public class Sage extends Unit {
         }
     }
 
-    public void huntArchon() throws GameActionException {
-        // if robot should be able to see archon but can't, inform everyone that archon is dead
-        if (rc.canSenseLocation(target)) {
-            if (!rc.canSenseRobotAtLocation(target)){
-                int data = rc.readSharedArray(archon_index);
-                if (data != 0) {
-                    rc.writeSharedArray(archon_index, 0);
-                }
-                archon_found = false;
-                return;
-            }
-        }
-        // if robot can't see archon, or sees archon, move towards it
-        fuzzyMove(target);
+    public void initialize() {
+        DRUSH_RSQR = (int) ((double) mapArea / 9.0);
+        ARUSH_RSQR = (int) ((double) mapArea / 4.0);
     }
-
-    public Direction friendlyDir() throws GameActionException {
-
-        Direction d = usefulDir(); // placeholder
-        RobotInfo[] friendlyRobos = rc.senseNearbyRobots(-1, rc.getTeam());
-        MapLocation loc = rc.getLocation();
-
-        // average position of soldiers and miners
-        double cxs = 0;
-        double cys = 0;
-        double cxm = 0;
-        double cym = 0;
-
-        // repulsion from friendly robots
-        double dx2 = 0;
-        double dy2 = 0;
-
-        double incrementx = 0;
-        double incrementy = 0;
-
-        int num_miners = 0;
-        int far_miners = 0;
-        int num_soldiers = 0;
-
-        for (RobotInfo robot: friendlyRobos) {
-            if (robot.type == RobotType.SOLDIER) {
-                incrementx = robot.location.x;
-                incrementy = robot.location.y;
-
-                // increment repulsion
-                if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) <= 4) {
-                    dx2 -= (loc.x - robot.location.x) * s_repulsion;
-                    dy2 -= (loc.y - robot.location.y) * s_repulsion;
-                }
-                cxs += incrementx;
-                cys += incrementy;
-                num_soldiers += 1;
-            }
-            else if (robot.type == RobotType.MINER) {
-                if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) > 3) {
-                    far_miners += 1;
-                }
-                incrementx = robot.location.x;
-                incrementy = robot.location.y;
-                // increment repulsion
-                if ((Math.abs(robot.location.x - loc.x) + Math.abs(robot.location.y - loc.y)) <= 2) {
-                    dx2 -= (loc.x - robot.location.x) * m_repulsion;
-                    dy2 -= (loc.y - robot.location.y) * m_repulsion;
-                }
-                cxm += incrementx;
-                cym += incrementy;
-                num_miners += 1;
-            }
-        }
-        // if there are no miners, explore.
-        if (num_miners == 0) {
-            return d;
-        }
-
-        double dx1 = ((cxm / num_miners) - (double) loc.x) * m_attraction;
-        dx1 += ((cxs / num_soldiers) - (double) loc.x) * s_attraction;
-        double dy1 = ((cym / num_miners) - (double) loc.y) * m_attraction;
-        dy1 += ((cys / num_soldiers) - (double) loc.y) * s_attraction;
-
-        double dx = dx1 + dx2;
-        double dy = dy1 + dy2;
-        // convert dx and dy to direction
-        // values are derived from tangent of 22.5 and 67.5
-        if (dy > 0) {
-            if (dy > 2.4 * Math.abs(dx)) {
-                d = Direction.NORTH;
-            }
-            else if (dy > 0.4 * Math.abs(dx)) {
-                if (dx > 0) {
-                    d = Direction.NORTHEAST;
-                }
-                else {
-                    d = Direction.NORTHWEST;
-                }
-            }
-            else {
-                if (dx > 0) {
-                    d = Direction.EAST;
-                }
-                else {
-                    d = Direction.WEST;
-                }
-            }
-        }
-        else {
-            if (dy < -2.4 * Math.abs(dx)) {
-                d = Direction.SOUTH;
-            }
-            else if (dy < -0.4 * Math.abs(dx)) {
-                if (dx > 0) {
-                    d = Direction.SOUTHEAST;
-                }
-                else {
-                    d = Direction.SOUTHWEST;
-                }
-            }
-        }
-        rc.setIndicatorString("dir: " + d + "| attraction: " + Math.round(dx1) + ", " + Math.round(dy1) + " | repulsion: " + Math.round(dx2) + ", " + Math.round(dy2));
-        // rc.setIndicatorString("vs: " + Math.round(cxs) + ", " + Math.round(cys) + " | vm: " + Math.round(cxm) + ", " + Math.round(cym));
-        return d;
-    }
-
-    public Direction usefulDir() throws GameActionException {
-        MapLocation cur = rc.getLocation();
-        Direction d = rc.getLocation().directionTo(homeArchon); // placeholder
-        MapLocation center = new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2);
-        if (center.x - cur.x > 0) {
-            if (center.y - cur.y > 0) {
-                d = Direction.NORTHEAST;
-            } else {
-                d = Direction.SOUTHEAST;
-            }
-        } else {
-            if (center.y - cur.y > 0) {
-                d = Direction.NORTHWEST;
-            } else {
-                d = Direction.SOUTHWEST;
-            }
-        }
-        rc.setIndicatorString(d.dx + " " + d.dy);
-        Direction[] dirs = {d, d.rotateLeft(), d.rotateRight()};
-        return dirs[rng.nextInt(dirs.length)];
-    }
-
-    public void attemptAttack() throws GameActionException {
-        boolean enemy_soldiers = false;
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SOLDIER.actionRadiusSquared, rc.getTeam().opponent());
-        // if there are any nearby enemy robots, attack the one with the least health
-        if (nearbyBots.length > 0) {
-            RobotInfo weakestBot = nearbyBots[0];
-            for (RobotInfo bot : nearbyBots) {
-                if (bot.type == RobotType.SOLDIER)
-                    if (bot.health < weakestBot.health) {
-                        weakestBot = bot;
-                    }
-                    enemy_soldiers = true;
-            }
-            if (enemy_soldiers) {
-                rc.attack(weakestBot.location);
-            }
-            else {
-                for (RobotInfo bot : nearbyBots) {
-                    if (bot.type == RobotType.MINER)
-                        if (bot.health < weakestBot.health) {
-                            weakestBot = bot;
-                        }
-                }
-                rc.attack(weakestBot.location);
-            }
-        }
-    }*/
 }
