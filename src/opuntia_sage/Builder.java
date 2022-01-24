@@ -89,7 +89,7 @@ public class Builder extends Unit {
     public boolean findUnrepaired() throws GameActionException {
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam());
         for (RobotInfo bot : nearbyBots) {
-            if (bot.type == RobotType.WATCHTOWER && bot.mode == RobotMode.PROTOTYPE) {
+            if (bot.type == RobotType.WATCHTOWER || bot.type == RobotType.LABORATORY && bot.mode == RobotMode.PROTOTYPE) {
                 target = bot.location;
                 return true;
             }

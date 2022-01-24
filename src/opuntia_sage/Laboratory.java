@@ -16,6 +16,8 @@ public class Laboratory extends Unit {
     }
 
     public void run() throws GameActionException {
+        radio.updateCounter();
+
         mode = getMode();
         switch (mode){
             case DEFAULT:
