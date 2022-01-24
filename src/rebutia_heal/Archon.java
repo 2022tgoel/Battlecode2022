@@ -305,9 +305,10 @@ public class Archon extends Unit {
 
     public boolean checkForResources(int buildCost) throws GameActionException { // CHANGE TO INCORPORATE GOLD ONCE WE
                                                                                  // USE SAGES
-        if (curLead >= buildCost || round_num < 20) {
+        if (curLead >= buildCost ) {//|| round_num < 20) {
             return true;
         } else {
+            /*
             int numTurnsToResources = (int) (((double) buildCost - (double) curLead) / Math.max(getAvgMined(), 2.0));
             int numTurnsToAct = rc.getActionCooldownTurns()
                     + (int) ((cooldownMultiplier(rc.getLocation()) * rc.getType().actionCooldown) / 10);
@@ -318,6 +319,8 @@ public class Archon extends Unit {
                 return false;
             } else
                 return true;
+                */
+            return false;
         }
     }
 
