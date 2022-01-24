@@ -304,7 +304,7 @@ public class Comms {
 
     public MapLocation readLabLoc() throws GameActionException {
         int data = rc.readSharedArray(CHANNEL.LAB_LOC.getValue());
-        return new MapLocation(data%64, data/64);
+        return new MapLocation(data/64, data%64);
     }
 
     public void postRank(RANK rank) throws GameActionException {

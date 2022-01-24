@@ -132,6 +132,12 @@ public class Archon extends Unit {
                 }
                 break;
             case SOLDIER_HUB:
+                int leadReq = radio.readLeadRequest();
+                if(leadReq > rc.getTeamLeadAmount(rc.getTeam())-RobotType.SOLDIER.buildCostLead) {
+                    System.out.println("holding for lr: " + leadReq);
+                    break;
+                }
+
                 if (checkForResources(RobotType.SOLDIER.buildCostLead)) {
                     boolean soldier_built = build(new int[]{0, 1, 0});
                     if (soldier_built) num_soldiers_hub++;
@@ -158,7 +164,7 @@ public class Archon extends Unit {
                 attemptHeal();
                 if (round_num % num_archons_alive != archonNumber || round_num % 5 != 0) break;
 
-                int leadReq = radio.readLeadRequest();
+                leadReq = radio.readLeadRequest();
                 if(leadReq > rc.getTeamLeadAmount(rc.getTeam())-RobotType.MINER.buildCostLead) {
                     System.out.println("holding for lr: " + leadReq);
                     break;
@@ -302,6 +308,7 @@ public class Archon extends Unit {
         }
         System.out.println("broadcast lab: " + bestLocation);
         radio.broadcastLab(bestLocation);
+        System.out.println(bestLocation);
         return bestLocation;
     }
 
