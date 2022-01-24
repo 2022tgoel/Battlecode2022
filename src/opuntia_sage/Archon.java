@@ -133,7 +133,7 @@ public class Archon extends Unit {
                 break;
             case SOLDIER_HUB:
                 int leadReq = radio.readLeadRequest();
-                if(leadReq > rc.getTeamLeadAmount(rc.getTeam())-RobotType.SOLDIER.buildCostLead) {
+                if(leadReq > Math.max(rc.getTeamLeadAmount(rc.getTeam())-RobotType.SOLDIER.buildCostLead, 0)) {
                     System.out.println("holding for lr: " + leadReq);
                     break;
                 }
@@ -165,7 +165,7 @@ public class Archon extends Unit {
                 if (round_num % num_archons_alive != archonNumber || round_num % 5 != 0) break;
 
                 leadReq = radio.readLeadRequest();
-                if(leadReq > rc.getTeamLeadAmount(rc.getTeam())-RobotType.MINER.buildCostLead) {
+                if(leadReq > Math.max(rc.getTeamLeadAmount(rc.getTeam())-RobotType.MINER.buildCostLead, 0)) {
                     System.out.println("holding for lr: " + leadReq);
                     break;
                 }
