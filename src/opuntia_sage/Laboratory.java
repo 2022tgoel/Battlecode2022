@@ -22,7 +22,7 @@ public class Laboratory extends Unit {
         switch (mode){
             case DEFAULT:
                 if(rc.canTransmute()) {
-                    System.out.println("transmuted 1");
+                    // System.out.println("transmuted 1");
                     rc.transmute();
                 }
                 break;

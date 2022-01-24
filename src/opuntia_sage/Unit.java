@@ -264,8 +264,8 @@ public class Unit {
         for (RobotInfo r : friends){
             if (r.type == RobotType.SOLDIER) numFriendlySoldiers++;
         }
-        if (numFriendlySoldiers >= 5){
-            numFriendlySoldiers /= 5; //capping the amount at ~12, which would fit in 4 bits
+        if (numFriendlySoldiers >= 6){
+            numFriendlySoldiers /= 6; //capping the amount at ~12, which would fit in 4 bits
             int data = rc.readSharedArray(CHANNEL.ARCHON_MOVE.getValue());
             int curFriends = (data >> 12) & 15; // how many friends are in this hub
             if (numFriendlySoldiers > curFriends){ //this is better

@@ -87,12 +87,12 @@ public class Builder extends Unit {
             return MODE.REPAIRING;
         }
 
-        System.out.println("builder get mode " + troopCounter[5] + " " + labLoc + " " + buildLabLoc);
+        // System.out.println("builder get mode " + troopCounter[5] + " " + labLoc + " " + buildLabLoc);
         if(troopCounter[5] == 0 && (buildLabLoc != null || labLoc != null)){
 
             if(labLoc != null && buildLabLoc == null){
                 buildLabLoc = labLoc;
-                System.out.println("Builder " + rc.getID() + " claimed lab loc " + buildLabLoc);
+                // System.out.println("Builder " + rc.getID() + " claimed lab loc " + buildLabLoc);
                 radio.clearLabLoc();
             }
             return MODE.BUILD_LAB;

@@ -100,6 +100,7 @@ public class Sage extends Unit {
         ATTACK attack = determineAttack();
         executeAttack(attack);
         if (attack != ATTACK.NONE) {
+            // System.out.println("ATTEMPTED " + attack.toString() + " " + rc.getRoundNum());
             return true;
         }
         return false;
@@ -127,7 +128,7 @@ public class Sage extends Unit {
         if (rc.getActionCooldownTurns() > 0) return ATTACK.NONE;
         if (rc.senseNearbyRobots(-1, rc.getTeam().opponent()) == null) return ATTACK.NONE;
         
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1);
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared);
 
         int numfSoldiers = 0;
         int numfSages = 0;
@@ -212,7 +213,7 @@ public class Sage extends Unit {
         ATTACK bestAttack = ATTACK.NONE;
         int maxAdvantage = -100000;
         int advantage;
-        int unit_difference = numFriends - numeSages - numeSoldiers;
+        int unit_difference = numFriends + 1 - numeSages - numeSoldiers;
         double a = 6.0; // = 6 * ratio;
         // double ratio;
         int unit_advantage;
@@ -224,12 +225,13 @@ public class Sage extends Unit {
                 case DEFAULT:
                     if (canOneShot) {
                         unit_advantage = (int) (a * Math.pow(unit_difference + 1., 2) * Math.signum(unit_difference + 1.));
-                        advantage = friendHealth + enemyHealth + unit_advantage + highestSub45Health;
+                        advantage = friendHealth - enemyHealth + unit_advantage + highestSub45Health;
                     }
                     else {
                         unit_advantage = (int) (a * Math.pow(unit_difference, 2) * Math.signum(unit_difference));
                         advantage = friendHealth - enemyHealth + unit_advantage + 45;
                     }
+                    System.out.print("Attack: " + attack + " Advantage: " + advantage + " | ");
                     break;
                 case CHARGE:
                     int numSoldiersKilled = 0;
@@ -239,21 +241,24 @@ public class Sage extends Unit {
                         for (int i = 0; i < soldierHealths.length; i++) {
                             if (soldierHealths[i] <= 11) {
                                 numSoldiersKilled++;
+                                health_reduced += soldierHealths[i];
                             }
-                            health_reduced += soldierHealths[i];
+                            health_reduced += 11;
                         }
                     }
                     if (sageHealths != null) {
                         for (int i = 0; i < sageHealths.length; i++) {
                             if (sageHealths[i] <= 22) {
                                 numSagesKilled++;
+                                health_reduced += sageHealths[i];
                             }
-                            health_reduced += sageHealths[i];
+                            health_reduced += 22;
                         }
                     }
                     unit_difference = unit_difference + numSoldiersKilled + numSagesKilled;
                     unit_advantage = (int) (a * Math.pow(unit_difference, 2) * Math.signum(unit_difference));
                     advantage = friendHealth - enemyHealth + unit_advantage + health_reduced;
+                    System.out.print("Attack: " + attack + " Advantage: " + advantage + " | ");
                     break;
                 default:
                     advantage = 0;
@@ -272,7 +277,7 @@ public class Sage extends Unit {
                 attackTarget = maxHealthBot.location;
             }
         }
-
+        System.out.println("");
         return bestAttack;
     }
 
