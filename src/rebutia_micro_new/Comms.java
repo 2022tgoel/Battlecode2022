@@ -184,7 +184,7 @@ public class Comms {
             int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
             // go through channels until you find an empty one to communicate with.
             int w = data / 4096;
-            int x = data / 64;
+            int x = (data - w * 4096) / 64;
             int y = data % 64;
             // already alerted.
             if (w == 1 && x == my.x && y == my.y) {
