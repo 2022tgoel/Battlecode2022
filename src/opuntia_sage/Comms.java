@@ -93,6 +93,8 @@ public class Comms {
                 return BiCHANNEL.TOWERS_ALIVE;
             case LABORATORY:
                 return BiCHANNEL.LABS_ALIVE;
+            case SAGE:
+                return BiCHANNEL.SAGES_ALIVE;
             default:
                 return null;
         }

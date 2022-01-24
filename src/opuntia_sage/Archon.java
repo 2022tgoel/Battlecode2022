@@ -458,7 +458,7 @@ public class Archon extends Unit {
     public boolean buildSage(Direction dir) throws GameActionException {
         if (rc.canBuildRobot(RobotType.SAGE, dir)) {
             rc.buildRobot(RobotType.SAGE, dir);
-            // radio.updateCounter(RobotType.SAGE);
+            radio.updateCounter(RobotType.SAGE);
             built_units++;
             num_sages++;
             troopCounter[3]++;

@@ -4,8 +4,6 @@ import battlecode.common.*;
 
 import java.util.*;
 
-import javax.swing.text.DefaultEditorKit.BeepAction;
-
 public class Sage extends Unit {
 
     enum MODE {
@@ -58,7 +56,7 @@ public class Sage extends Unit {
     public void run() throws GameActionException {
         super.run();
         round_num = rc.getRoundNum();
-        // radio.updateCounter();
+        radio.updateCounter();
         attacked = attemptAttack();
         findTargets();
         senseMiningArea();
