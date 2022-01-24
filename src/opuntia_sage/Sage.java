@@ -58,7 +58,7 @@ public class Sage extends Unit {
     public void run() throws GameActionException {
         super.run();
         round_num = rc.getRoundNum();
-        radio.updateCounter();
+        // radio.updateCounter();
         attacked = attemptAttack();
         findTargets();
         senseMiningArea();
@@ -127,8 +127,10 @@ public class Sage extends Unit {
 
     public ATTACK determineAttack() throws GameActionException {
         if (rc.getActionCooldownTurns() > 0) return ATTACK.NONE;
+        if (rc.senseNearbyRobots(-1, rc.getTeam().opponent()) == null) return ATTACK.NONE;
         
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1);
+
         int numfSoldiers = 0;
         int numfSages = 0;
         int numeSoldiers = 0;
@@ -196,6 +198,8 @@ public class Sage extends Unit {
             }
         }
 
+        if (numeSoldiers == 0 && numeSages == 0) return ATTACK.NONE;
+
         // remove zero values from enemyHealth array
         soldierHealths = cleanup(soldierHealths, numeSoldiers);
         sageHealths = cleanup(sageHealths, numeSages);
@@ -233,17 +237,21 @@ public class Sage extends Unit {
                     int numSoldiersKilled = 0;
                     int numSagesKilled = 0;
                     int health_reduced = 0;
-                    for (int i = 0; i < soldierHealths.length; i++) {
-                        if (soldierHealths[i] <= 11) {
-                            numSoldiersKilled++;
+                    if (soldierHealths != null) {
+                        for (int i = 0; i < soldierHealths.length; i++) {
+                            if (soldierHealths[i] <= 11) {
+                                numSoldiersKilled++;
+                            }
+                            health_reduced += soldierHealths[i];
                         }
-                        health_reduced += soldierHealths[i];
                     }
-                    for (int i = 0; i < sageHealths.length; i++) {
-                        if (soldierHealths[i] <= 22) {
-                            numSagesKilled++;
+                    if (sageHealths != null) {
+                        for (int i = 0; i < sageHealths.length; i++) {
+                            if (sageHealths[i] <= 22) {
+                                numSagesKilled++;
+                            }
+                            health_reduced += sageHealths[i];
                         }
-                        health_reduced += sageHealths[i];
                     }
                     unit_difference = unit_difference + numSoldiersKilled + numSagesKilled;
                     unit_advantage = (int) (a * Math.pow(unit_difference, 2) * Math.signum(unit_difference));
