@@ -33,6 +33,31 @@ public class Comms {
         round_num = rc.getRoundNum();
     }
 
+    public boolean requestLead(int val) throws GameActionException {
+        int req = readChannel(CHANNEL.REQUEST_LEAD);
+        if(req == 0){
+            writeChannel(CHANNEL.REQUEST_LEAD, val);
+            return true;
+        }
+        return false;
+    }
+
+    public int readLeadRequest() throws GameActionException {
+        return readChannel(CHANNEL.REQUEST_LEAD);
+    }
+
+    public void removeLeadRequest() throws GameActionException {
+        writeChannel(CHANNEL.REQUEST_LEAD, 0);
+    }
+
+    public int readChannel(CHANNEL ch) throws GameActionException {
+        return rc.readSharedArray(ch.getValue());
+    }
+
+    public void writeChannel(CHANNEL ch, int val) throws GameActionException {
+        rc.writeSharedArray(ch.getValue(), val);
+    }
+
     public void updateCounter() throws GameActionException {
         updateCounter(rc.getType());
     }
@@ -66,6 +91,8 @@ public class Comms {
                 return BiCHANNEL.BUILDERS_ALIVE;
             case WATCHTOWER:
                 return BiCHANNEL.TOWERS_ALIVE;
+            case LABORATORY:
+                return BiCHANNEL.LABS_ALIVE;
             default:
                 return null;
         }
@@ -267,6 +294,16 @@ public class Comms {
         if (data == 0){
             System.out.println("this archon position has not been updated yet");
         }
+        return new MapLocation(data/64, data%64);
+    }
+
+    public void broadcastLab(MapLocation loc) throws GameActionException {
+        int data = locationToInt(loc);
+        rc.writeSharedArray(CHANNEL.LAB_LOC.getValue(), data);
+    }
+
+    public MapLocation readLabLoc() throws GameActionException {
+        int data = rc.readSharedArray(CHANNEL.LAB_LOC.getValue());
         return new MapLocation(data/64, data%64);
     }
 

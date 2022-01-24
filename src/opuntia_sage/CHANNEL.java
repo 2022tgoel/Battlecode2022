@@ -2,16 +2,23 @@ package opuntia_sage;
 
 public enum CHANNEL {
     ROUND_NUM(0),
+
     MINERS_ALIVE(1),
-    SOLDIERS_ALIVE(2),
-    BUILDERS_ALIVE(3),
-    TOWERS_ALIVE(4),
-    MINERS_ALIVE_ALT(5),
-    SOLDIERS_ALIVE_ALT(6),
-    BUILDERS_ALIVE_ALT(7),
+    MINERS_ALIVE_ALT(2),
+    SOLDIERS_ALIVE(3),
+    SOLDIERS_ALIVE_ALT(4),
+    BUILDERS_ALIVE(5),
+    BUILDERS_ALIVE_ALT(6),
+
+    TOWERS_ALIVE(7),
     TOWERS_ALIVE_ALT(8),
-    USEFUL_MINERS(9),
-    USEFUL_MINERS_ALT(10),
+    LABS_ALIVE(9),
+    LABS_ALIVE_ALT(10),
+
+    USEFUL_MINERS(11),
+    USEFUL_MINERS_ALT(12),
+
+    REQUEST_LEAD(18),
 
     LEAD_ESTIMATE(19),
     ARCHON_LOC_1(20),
@@ -24,8 +31,10 @@ public enum CHANNEL {
     ARCHON_MODE(40),
     ARCHON_MOVE(41), //for where to move
     //channels 30 - 33
-    ARCHON_POSITION(44),
+    ARCHON_POSITION(44), //44-47
     ARCHON_MOVING(48), //for whether one is moving
+
+    LAB_LOC(50),
 
     ORDERS(61),
     SEND_RANKS1(62),
