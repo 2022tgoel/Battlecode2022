@@ -128,13 +128,13 @@ public class Archon extends Unit {
 //                System.out.println("Desired miners: " + desiredNumMiners + " Useful miners: " + useful_miners + " Ratio: " + (useful_miners / (double) troopCounter[0]));
                 break;
             case MAKE_LAB: //acc making a builder
-                System.out.println(radio.readLabLoc());
+                // System.out.println(radio.readLabLoc());
                 builderBuilt = build(RobotType.BUILDER);
                 break;
             case SOLDIER_HUB:
                 int leadReq = radio.readLeadRequest();
                 if(leadReq > Math.max(rc.getTeamLeadAmount(rc.getTeam())-RobotType.SOLDIER.buildCostLead, 0)) {
-                    System.out.println("holding for lr: " + leadReq);
+                    // System.out.println("holding for lr: " + leadReq);
                     break;
                 }
 

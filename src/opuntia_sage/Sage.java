@@ -161,7 +161,7 @@ public class Sage extends Unit {
                     soldierHealths[numeSoldiers] = bot.health;
                     numeSoldiers++;
 
-                    if (enemyHealth <= 45) {
+                    if (bot.health <= 45) {
                         if (highestSub45Health < bot.health) {
                             highestSub45Health = bot.health;
                             highestSub45 = bot;
@@ -180,7 +180,7 @@ public class Sage extends Unit {
                     sageHealths[numeSages] = bot.health;
                     numeSages++;
 
-                    if (enemyHealth <= 45) {
+                    if (bot.health <= 45) {
                         if (highestSub45Health < bot.health) {
                             highestSub45Health = bot.health;
                             highestSub45 = bot;
@@ -203,6 +203,10 @@ public class Sage extends Unit {
         soldierHealths = cleanup(soldierHealths, numeSoldiers);
         sageHealths = cleanup(sageHealths, numeSages);
 
+        /* for (int i = 0; i < numeSoldiers; i++) {
+            System.out.println("Soldier " + i + " health: " + soldierHealths[i]);
+        } */
+
         /* if (((numFriends + 1) / numEnemies) > 1) {
             ratio = ((numFriends + 1) / numEnemies);
         }
@@ -224,14 +228,14 @@ public class Sage extends Unit {
             switch (attack) {
                 case DEFAULT:
                     if (canOneShot) {
-                        unit_advantage = (int) (a * Math.pow(unit_difference + 1., 2) * Math.signum(unit_difference + 1.));
+                        unit_advantage = (int) (a * Math.pow(unit_difference + 1, 2) * Math.signum(unit_difference + 1));
                         advantage = friendHealth - enemyHealth + unit_advantage + highestSub45Health;
                     }
                     else {
                         unit_advantage = (int) (a * Math.pow(unit_difference, 2) * Math.signum(unit_difference));
                         advantage = friendHealth - enemyHealth + unit_advantage + 45;
                     }
-                    System.out.print("Attack: " + attack + " Advantage: " + advantage + " | ");
+                    /* System.out.println("ATTACK: " + attack + " friendHealth: " + friendHealth + " enemyHealth: " + enemyHealth + " unit_difference: " + unit_difference + " unit_advantage: " + unit_advantage + " advantage: " + advantage); */
                     break;
                 case CHARGE:
                     int numSoldiersKilled = 0;
@@ -243,7 +247,7 @@ public class Sage extends Unit {
                                 numSoldiersKilled++;
                                 health_reduced += soldierHealths[i];
                             }
-                            health_reduced += 11;
+                            else health_reduced += 11;
                         }
                     }
                     if (sageHealths != null) {
@@ -252,13 +256,13 @@ public class Sage extends Unit {
                                 numSagesKilled++;
                                 health_reduced += sageHealths[i];
                             }
-                            health_reduced += 22;
+                            else health_reduced += 22;
                         }
                     }
                     unit_difference = unit_difference + numSoldiersKilled + numSagesKilled;
                     unit_advantage = (int) (a * Math.pow(unit_difference, 2) * Math.signum(unit_difference));
                     advantage = friendHealth - enemyHealth + unit_advantage + health_reduced;
-                    System.out.print("Attack: " + attack + " Advantage: " + advantage + " | ");
+                    /* System.out.println("ATTACK: " + attack + " friendHealth: " + friendHealth + " enemyHealth: " + enemyHealth + " unit_difference: " + unit_difference + " unit_advantage: " + unit_advantage + " health_reduced " + health_reduced + " num_soldiers killed " + numSoldiersKilled + " num_sages killed " + numSagesKilled +  " advantage: " + advantage); */
                     break;
                 default:
                     advantage = 0;
