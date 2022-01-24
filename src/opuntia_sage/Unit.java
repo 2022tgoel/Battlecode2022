@@ -276,26 +276,6 @@ public class Unit {
         }
     }
 
-    public MapLocation findNearestArchon() throws GameActionException {
-        int min_dist = Integer.MAX_VALUE;
-        MapLocation closest = null;
-        for (int i = 0; i < 4; i++) {
-            int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
-            if (data != 0) {
-                int w = data / 4096;
-                int x = (data - w * 4096) / 64;
-                int y = data % 64;
-                MapLocation loc = new MapLocation(x, y);
-                int dist = loc.distanceSquaredTo(rc.getLocation());
-                if (dist < min_dist) {
-                    min_dist = dist;
-                    closest = loc;
-                }
-            }
-        }
-        return closest;
-    }
-
     /**
      * validCoords() check if the x and y are on the map
      * 

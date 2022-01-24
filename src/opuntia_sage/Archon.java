@@ -47,7 +47,6 @@ public class Archon extends Unit {
         defaultBuildOrder = chooseBuildOrder();
         archonNumber = radio.getArchonNum();
         radio.postArchonLocation(archonNumber);
-        radio.initalizeArchonLoc(archonNumber, rc.getLocation());
         addLeadEstimate();
     }
 
@@ -95,6 +94,12 @@ public class Archon extends Unit {
 
                 if (tot != 0 && round_num % tot != threatChannel) { // alternate between those under threat
                     break;
+                }
+                if (rc.getTeamGoldAmount(rc.getTeam()) >= 20) {
+                    boolean builtSage = build(RobotType.SAGE);
+                    if (builtSage) {
+                        return;
+                    }
                 }
                 if (checkForResources(RobotType.SOLDIER.buildCostLead)) {
                     Direction[] enemyDirs = getEnemyDirs();
@@ -179,7 +184,7 @@ public class Archon extends Unit {
                 break;
         }
         num_archons_alive = rc.getArchonCount();
-        rc.setIndicatorString("mode: " + mode.toString() + " " + getArchonMovementLocation());
+        rc.setIndicatorString("mode: " + mode.toString() + " " + getArchonMovementLocation() + " " + archonNumber);
     }
 
     public boolean build(RobotType type) throws GameActionException {
@@ -584,7 +589,7 @@ public class Archon extends Unit {
 
     public void addLeadEstimate() throws GameActionException {
         MapLocation[] leadLocs = rc.senseNearbyLocationsWithLead();
-        MapLocation[] friendlyArchonLocs = radio.getFriendlyArchons(num_archons_alive);
+        MapLocation[] friendlyArchonLocs = radio.getPreviousArchons(archonNumber);
         int total_value = 0;
         if (archonNumber != 0) {
             MapLocation[] prevArchons = firstN(friendlyArchonLocs, archonNumber - 1);
