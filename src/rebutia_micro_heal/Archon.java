@@ -60,6 +60,7 @@ public class Archon extends Unit {
         updateAmountMined();
 
         archonNumber = radio.getArchonNum();
+        radio.postArchonLocation(archonNumber);
 
         troopCounter = new int[] {
                 radio.readCounter(RobotType.MINER),

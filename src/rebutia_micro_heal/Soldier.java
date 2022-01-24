@@ -12,7 +12,7 @@ public class Soldier extends Unit {
         SEARCHING_ENEMIES, //when u have already found enemies
         FLEE,
         DEFENSIVE_RUSH,
-        DYING
+        HEALING
         ;
     }
 
@@ -38,10 +38,12 @@ public class Soldier extends Unit {
     private MapLocation target = null;
     private int[] lastAttackDir = null;
 
+    Comms comms;
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
         initialize();
         exploreLoc = getInitialExploratoryLocation();
+        comms = new Comms(rc);
     }
     @Override
     public void run() throws GameActionException {
@@ -55,6 +57,8 @@ public class Soldier extends Unit {
         mode = determineMode();
         visualize();
         switch (mode) {
+            case HEALING: 
+                moveToArchon();
             case EXPLORATORY:
                 if (soldierBehindMe()) {
                     if (adjacentToEdge()){
@@ -98,6 +102,9 @@ public class Soldier extends Unit {
         else if (mode == MODE.SEARCHING_ENEMIES){
             rc.setIndicatorString("MODE: " + mode.toString() + " DIR: " + lastAttackDir[0] + " " + lastAttackDir[1]);
         }
+        else if (mode == MODE.HEALING){
+            rc.setIndicatorLine(rc.getLocation(), closestArchon, 0, 0, 255);
+        }
         else if (target != null) {
             if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: " + target.toString() + " MODE: " + mode.toString());
             else rc.setIndicatorString("TARGET: " + target.toString() + " MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
@@ -110,7 +117,9 @@ public class Soldier extends Unit {
     }
 
     public MODE determineMode() throws GameActionException {
-        
+        //Priority 0 - Heal
+        if (shouldHeal()) return MODE.HEALING;
+
         // Priority 1 - Defend.
         threatenedArchons = findThreatenedArchons();
         if (threatenedArchons != null) {
@@ -145,6 +154,39 @@ public class Soldier extends Unit {
             return MODE.SEARCHING_ENEMIES;
         }
         else return MODE.EXPLORATORY;
+    }
+
+    MapLocation closestArchon = null;
+    public boolean shouldHeal() throws GameActionException{
+        if (closestArchon!=null && rc.getHealth() < rc.getType().health){
+            return true;
+        }
+        else if (rc.getHealth() <= 15){ // toggle to is healing
+            MapLocation my = rc.getLocation();
+            closestArchon = null;
+            for (int i = 0; i < rc.getArchonCount(); i++) {
+                MapLocation archonLoc = comms.readArchonLocation(i);
+                System.out.println(archonLoc.toString());
+                if (my.distanceSquaredTo(archonLoc) <= 300 ){
+                    if (closestArchon == null) 
+                        closestArchon = archonLoc;
+                    else if (my.distanceSquaredTo(archonLoc) < my.distanceSquaredTo(closestArchon)) 
+                        closestArchon = archonLoc;
+                }
+            }
+            if (closestArchon!=null) {
+                return true;
+            }
+        }
+        //toggle off
+        closestArchon = null;
+        return false;
+    }
+
+    public void moveToArchon() throws GameActionException{
+        if (!rc.canSenseLocation(closestArchon)){
+            moveToLocation(closestArchon);
+        }
     }
 
     /**

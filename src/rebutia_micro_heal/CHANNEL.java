@@ -22,7 +22,7 @@ public enum CHANNEL {
     MINING1(30),
     TARGET(35),
     ARCHON_MODE(40),
-
+    ARCHON_POSITION(44), //44-47
     ORDERS(61),
     SEND_RANKS1(62),
     SEND_RANKS2(63), 
