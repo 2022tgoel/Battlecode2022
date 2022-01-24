@@ -33,6 +33,27 @@ public class Comms {
         round_num = rc.getRoundNum();
     }
 
+    public boolean requestLead(int val) throws GameActionException {
+        int req = readChannel(CHANNEL.REQUEST_LEAD);
+        if(req == 0){
+            writeChannel(CHANNEL.REQUEST_LEAD, val);
+            return true;
+        }
+        return false;
+    }
+
+    public int readLeadRequest() throws GameActionException {
+        return readChannel(CHANNEL.REQUEST_LEAD);
+    }
+
+    public int readChannel(CHANNEL ch) throws GameActionException {
+        return rc.readSharedArray(ch.getValue());
+    }
+
+    public void writeChannel(CHANNEL ch, int val) throws GameActionException {
+        rc.writeSharedArray(ch.getValue(), val);
+    }
+
     public void updateCounter() throws GameActionException {
         updateCounter(rc.getType());
     }
@@ -66,6 +87,8 @@ public class Comms {
                 return BiCHANNEL.BUILDERS_ALIVE;
             case WATCHTOWER:
                 return BiCHANNEL.TOWERS_ALIVE;
+            case LABORATORY:
+                return BiCHANNEL.LABS_ALIVE;
             default:
                 return null;
         }

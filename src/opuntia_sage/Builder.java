@@ -6,7 +6,8 @@ import java.util.*;
 public class Builder extends Unit {
     public enum MODE {
         HEALING,
-        BUILDING,
+        BUILD_TOWER,
+        BUILD_LAB,
         REPAIRING
     }
 
@@ -19,11 +20,11 @@ public class Builder extends Unit {
 
     private int num_watchtowers = 0;
     private int num_labs = 0;
+    private int desiredLabs = 0;
     private int[] troopCounter = { 0, 0, 0, 0, 0 }; // miner, soldier, builder, sage, watchtower
     MapLocation target = null;
 
     private int built_units = 0;
-    private int[] build_order;
 
     public Builder(RobotController rc) throws GameActionException {
         super(rc);
@@ -35,9 +36,9 @@ public class Builder extends Unit {
     public void run() throws GameActionException {
         super.run();
         radio.updateCounter();
+
         troopCounter = new int[] { radio.readCounter(RobotType.MINER), radio.readCounter(RobotType.SOLDIER),
-                radio.readCounter(RobotType.BUILDER), 0, radio.readCounter(RobotType.WATCHTOWER) };
-        build_order = getBuildOrder();
+                radio.readCounter(RobotType.BUILDER), 0, radio.readCounter(RobotType.WATCHTOWER), radio.readCounter(RobotType.LABORATORY) };
         switch (rank) {
             case MARTYR:
                 forTheGreaterGood();
@@ -48,8 +49,17 @@ public class Builder extends Unit {
                     case HEALING:
                         heal();
                         break;
-                    case BUILDING:
-                        build(build_order);
+                    case BUILD_TOWER:
+                        build(new int[]{0, 1});
+                        break;
+                    case BUILD_LAB:
+                        int curLead = rc.getTeamLeadAmount(rc.getTeam());
+                        if(curLead < RobotType.LABORATORY.buildCostLead) {
+                            boolean suc = radio.requestLead(RobotType.LABORATORY.buildCostLead);
+                            break;
+                        }
+//                        System.out.println(radio.readLabLoc());
+                        build(new int[]{1, 0});
                         break;
                     case REPAIRING:
                         if (rc.canRepair(target))
@@ -63,25 +73,30 @@ public class Builder extends Unit {
             default:
                 break;
         }
-    }
 
-    private int[] getBuildOrder() {
-        return new int[] { 0, 1 }; // laboratories, watchtowers
+        rc.setIndicatorString("RANK: " + rank + " MODE: " + mode);
     }
 
     public MODE getMode() throws GameActionException {
         if (findUnrepaired()) {
             return MODE.REPAIRING;
-        } else if (troopCounter[4] <= (CONSTANTS.SOLDIERS_TO_TOWERS * (double) troopCounter[2])) {
-            return MODE.BUILDING;
-        } else
-            return MODE.HEALING;
+        }
+
+        if(troopCounter[5] == 0){
+            return MODE.BUILD_LAB;
+        }
+
+//        if (troopCounter[4] <= (CONSTANTS.SOLDIERS_TO_TOWERS * (double) troopCounter[2])) {
+//            return MODE.BUILD_TOWER;
+//        }
+
+        return MODE.HEALING;
     }
 
     public boolean findUnrepaired() throws GameActionException {
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam());
         for (RobotInfo bot : nearbyBots) {
-            if (bot.type == RobotType.WATCHTOWER && bot.mode == RobotMode.PROTOTYPE) {
+            if ((bot.type == RobotType.WATCHTOWER || bot.type == RobotType.LABORATORY) && bot.mode == RobotMode.PROTOTYPE) {
                 target = bot.location;
                 return true;
             }

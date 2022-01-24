@@ -157,11 +157,17 @@ public class Archon extends Unit {
             case DEFAULT:
                 attemptHeal();
                 if (round_num % num_archons_alive != archonNumber || round_num % 5 != 0) break;
-                else {
-                    if ((useful_miners / (double) troopCounter[0]) >= 0.25) {
-                        build(new int[] {1, 0, 0});
-                    }
+
+                int leadReq = radio.readLeadRequest();
+                if(leadReq > rc.getTeamLeadAmount(rc.getTeam())-RobotType.MINER.buildCostLead) {
+                    System.out.println("holding for lr: " + leadReq);
+                    break;
                 }
+
+                if ((useful_miners / (double) troopCounter[0]) >= 0.25) {
+                    build(new int[] {1, 0, 0});
+                }
+
                 // if ((useful_miners / (double) troopCounter[0]) >= 0.60) build(new int[] {1, 0, 0});
                 break;
         }
