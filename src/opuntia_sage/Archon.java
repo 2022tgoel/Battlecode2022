@@ -40,7 +40,6 @@ public class Archon extends Unit {
 
     public Archon(RobotController rc) throws GameActionException {
         super(rc);
-        System.out.println("here");
         num_archons_alive = rc.getArchonCount();
         num_archons_init = num_archons_alive;
         dirs = sortedDirections();
@@ -53,6 +52,7 @@ public class Archon extends Unit {
 
     @Override
     public void run() throws GameActionException {
+        super.run();
         round_num = rc.getRoundNum();
         radio.update();
         radio.clearThreat();
@@ -119,7 +119,7 @@ public class Archon extends Unit {
                 else if ((useful_miners / (double) troopCounter[0]) <= 0.75) {
                     initial = false;
                 }
-                System.out.println("Desired miners: " + desiredNumMiners + " Useful miners: " + useful_miners + " Ratio: " + (useful_miners / (double) troopCounter[0]));
+//                System.out.println("Desired miners: " + desiredNumMiners + " Useful miners: " + useful_miners + " Ratio: " + (useful_miners / (double) troopCounter[0]));
                 break;
             case MAKE_LAB: //acc making a builder
                 System.out.println(radio.readLabLoc());
@@ -159,8 +159,7 @@ public class Archon extends Unit {
                 if (round_num % num_archons_alive != archonNumber || round_num % 5 != 0) break;
 
                 int leadReq = radio.readLeadRequest();
-                if(leadReq > rc.getTeamLeadAmount(rc.getTeam())-RobotType.MINER.buildCostLead) {
-                    System.out.println("holding for lr: " + leadReq);
+                if(leadReq > 0 && leadReq > rc.getTeamLeadAmount(rc.getTeam())-RobotType.MINER.buildCostLead) {
                     break;
                 }
 
@@ -223,7 +222,7 @@ public class Archon extends Unit {
         //
         if (isEdgeArchon() && !builderBuilt){
             if (labLoc == null) labLoc = findLabLocation();
-            return MODE.MAKE_LAB;
+            if(labLoc != null) return MODE.MAKE_LAB;
         }
 
         //
@@ -290,6 +289,8 @@ public class Archon extends Unit {
     }
 
     public MapLocation findLabLocation() throws GameActionException {
+        if(radio.readLabLoc() != null) return null;
+
         MapLocation[] nearbyLocs = rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), rc.getType().visionRadiusSquared);
         MapLocation bestLocation = null;
         int value = 100000;
@@ -300,7 +301,7 @@ public class Archon extends Unit {
                 value = v;
             }
         }
-        System.out.println("broadcast lab: " + bestLocation);
+
         radio.broadcastLab(bestLocation);
         return bestLocation;
     }

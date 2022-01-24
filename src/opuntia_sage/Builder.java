@@ -23,7 +23,7 @@ public class Builder extends Unit {
     private int desiredLabs = 0;
     private int[] troopCounter = { 0, 0, 0, 0, 0 }; // miner, soldier, builder, sage, watchtower
     MapLocation target = null;
-
+    MapLocation buildLabLoc = null;
     private int built_units = 0;
 
     public Builder(RobotController rc) throws GameActionException {
@@ -53,17 +53,16 @@ public class Builder extends Unit {
                         build(new int[]{0, 1});
                         break;
                     case BUILD_LAB:
-                        MapLocation buildLoc = radio.readLabLoc();
-                        if(rc.getLocation().isWithinDistanceSquared(buildLoc, RobotType.BUILDER.actionRadiusSquared)){
+                        if(rc.getLocation().isWithinDistanceSquared(buildLabLoc, RobotType.BUILDER.actionRadiusSquared)){
                             int curLead = rc.getTeamLeadAmount(rc.getTeam());
                             if(curLead < RobotType.LABORATORY.buildCostLead) {
                                 boolean suc = radio.requestLead(RobotType.LABORATORY.buildCostLead);
                                 break;
                             }
-                            boolean suc = buildLaboratory(rc.getLocation().directionTo(buildLoc));
+                            boolean suc = buildLaboratory(rc.getLocation().directionTo(buildLabLoc));
                             if(suc) radio.removeLeadRequest();
                         } else {
-                            moveToLocation(buildLoc);
+                            moveToLocation(buildLabLoc);
                         }
                         break;
                     case REPAIRING:
@@ -83,11 +82,19 @@ public class Builder extends Unit {
     }
 
     public MODE getMode() throws GameActionException {
+        MapLocation labLoc = radio.readLabLoc();
         if (findUnrepaired()) {
             return MODE.REPAIRING;
         }
 
-        if(troopCounter[5] == 0){
+        System.out.println("builder get mode " + troopCounter[5] + " " + labLoc + " " + buildLabLoc);
+        if(troopCounter[5] == 0 && (buildLabLoc != null || labLoc != null)){
+
+            if(labLoc != null && buildLabLoc == null){
+                buildLabLoc = labLoc;
+                System.out.println("Builder " + rc.getID() + " claimed lab loc " + buildLabLoc);
+                radio.clearLabLoc();
+            }
             return MODE.BUILD_LAB;
         }
 

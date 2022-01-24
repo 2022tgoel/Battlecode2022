@@ -14,14 +14,19 @@ public class Comms {
     public boolean init() throws GameActionException {
         wasFirstConnection = false;
         // TODO: distribute init comms clearing?
-        if (rc.readSharedArray(CHANNEL.ROUND_NUM.getValue()) != rc.getRoundNum()) {
-            rc.writeSharedArray(CHANNEL.ROUND_NUM.getValue(), rc.getRoundNum());
+        round_num = rc.getRoundNum();
+        if (rc.readSharedArray(CHANNEL.ROUND_NUM.getValue()) != round_num) {
+            rc.writeSharedArray(CHANNEL.ROUND_NUM.getValue(), round_num);
 
             // clear robot counter update channels
             for (BiCHANNEL bich : BiCHANNEL.values()) {
                 CHANNEL ch = getCounterChannel(bich, false);
                 if (ch != null)
                     rc.writeSharedArray(ch.getValue(), 0);
+            }
+
+            if(round_num == 1){
+                clearLabLoc();
             }
 
             wasFirstConnection = true;
@@ -298,13 +303,20 @@ public class Comms {
     }
 
     public void broadcastLab(MapLocation loc) throws GameActionException {
+        System.out.println("broadcasted lab: " + loc);
         int data = locationToInt(loc);
         rc.writeSharedArray(CHANNEL.LAB_LOC.getValue(), data);
     }
 
     public MapLocation readLabLoc() throws GameActionException {
         int data = rc.readSharedArray(CHANNEL.LAB_LOC.getValue());
+        if(data == 65535) return null;
         return new MapLocation(data%64, data/64);
+    }
+
+    public void clearLabLoc() throws GameActionException {
+        System.out.println("Cleared lab");
+        writeChannel(CHANNEL.LAB_LOC, 65535);
     }
 
     public void postRank(RANK rank) throws GameActionException {
