@@ -381,32 +381,22 @@ public class Archon extends Unit {
     public void attemptHeal() throws GameActionException {
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(rc.getType().actionRadiusSquared, rc.getTeam());
         // if there are any nearby enemy robots, attack the one with the least health
+        RobotType[] repairOrder = new RobotType[]{RobotType.SOLDIER, RobotType.MINER};
         if (nearbyBots.length > 0) {
-            RobotInfo weakestBot = null;
-            for (RobotInfo bot : nearbyBots) {
-                if (bot.type == RobotType.SOLDIER)
-                    if ((weakestBot == null && bot.health < RobotType.SOLDIER.health) ||
-                            (weakestBot != null && bot.health < weakestBot.health)) {
-                        weakestBot = bot;
-                    }
-            }
-            if (weakestBot != null) {
-                if (rc.canRepair(weakestBot.location)) {
-                    // rc.setIndicatorString("Succesful Heal!");
-                    rc.repair(weakestBot.location);
-                }
-            } else {
+            RobotInfo healthiestBot = null;
+            for (RobotType curType : repairOrder){
                 for (RobotInfo bot : nearbyBots) {
-                    if (bot.type == RobotType.MINER)
-                        if ((weakestBot == null && bot.health < RobotType.MINER.health) ||
-                                (weakestBot != null && bot.health < weakestBot.health)) {
-                            weakestBot = bot;
+                    if (bot.type == curType)
+                        if (bot.health < curType.health && (healthiestBot == null || bot.health > healthiestBot.health )) {
+                            healthiestBot = bot;
                         }
                 }
-                if (weakestBot != null) {
-                    if (rc.canRepair(weakestBot.location)) {
-                        rc.repair(weakestBot.location);
+                if (healthiestBot != null) {
+                    if (rc.canRepair(healthiestBot.location)) {
+                        // rc.setIndicatorString("Succesful Heal!");
+                        rc.repair(healthiestBot.location);
                     }
+                    return;
                 }
             }
         }
