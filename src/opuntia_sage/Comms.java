@@ -270,6 +270,16 @@ public class Comms {
         return new MapLocation(data/64, data%64);
     }
 
+    public void broadcastLab(MapLocation loc) throws GameActionException {
+        int data = locationToInt(loc);
+        rc.writeSharedArray(CHANNEL.LAB_LOC.getValue(), data);
+    }
+
+    public MapLocation readLabLoc() throws GameActionException {
+        int data = rc.readSharedArray(CHANNEL.LAB_LOC.getValue());
+        return new MapLocation(data%64, data/64);
+    }
+
     public void postRank(RANK rank) throws GameActionException {
         MapLocation loc = rc.getLocation();
         int loc_int;

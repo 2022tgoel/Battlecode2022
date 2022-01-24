@@ -24,8 +24,10 @@ public enum CHANNEL {
     ARCHON_MODE(40),
     ARCHON_MOVE(41), //for where to move
     //channels 30 - 33
-    ARCHON_POSITION(44),
+    ARCHON_POSITION(44), //44-47
     ARCHON_MOVING(48), //for whether one is moving
+
+    LAB_LOC(50),
 
     ORDERS(61),
     SEND_RANKS1(62),

@@ -9,11 +9,10 @@ public class Archon extends Unit {
         INITIAL,
         DEFAULT,
         SOLDIER_HUB,
-        MAKE_BUILDER,
         THREATENED,
         OTHER_THREATENED,
         MOVING,
-        REINFORCE_WATCHTOWER;
+        MAKE_LAB;
     }
 
     int round_num;
@@ -47,6 +46,7 @@ public class Archon extends Unit {
         dirs = sortedDirections();
         defaultBuildOrder = chooseBuildOrder();
         archonNumber = radio.getArchonNum();
+        radio.postArchonLocation(archonNumber);
         radio.initalizeArchonLoc(archonNumber, rc.getLocation());
         addLeadEstimate();
     }
@@ -120,6 +120,16 @@ public class Archon extends Unit {
                     initial = false;
                 }
                 System.out.println("Desired miners: " + desiredNumMiners + " Useful miners: " + useful_miners + " Ratio: " + (useful_miners / (double) troopCounter[0]));
+                break;
+            case MAKE_LAB: //acc making a builder
+                System.out.println(radio.readLabLoc());
+                for (Direction dir : dirs){
+                    boolean b = buildBuilder(dir);
+                    if (b){
+                        builderBuilt = true;
+                        break;
+                    }
+                }
                 break;
             case SOLDIER_HUB:
                 if (checkForResources(RobotType.SOLDIER.buildCostLead)) {
@@ -199,7 +209,18 @@ public class Archon extends Unit {
         return false;
     }
 
+    //for lab building
+    static boolean builderBuilt = false; 
+    static MapLocation labLoc = null;
+    //
     public MODE determineMode() throws GameActionException {
+        //
+        if (isEdgeArchon() && !builderBuilt){
+            if (labLoc == null) labLoc = findLabLocation();
+            return MODE.MAKE_LAB;
+        }
+
+        //
         if (underThreat())
             return MODE.THREATENED;
         else if (radio.totalUnderThreat() > 0)
@@ -247,6 +268,37 @@ public class Archon extends Unit {
             return 2 + numMinersMap;
         }
     }
+
+    ///
+    public boolean isEdgeArchon() throws GameActionException{
+        MapLocation closest = null;
+        for (int i = 0; i < num_archons_alive; i++){
+            MapLocation cur = radio.readArchonLocation(i);
+            if (closest == null || 
+                (closest!=null && distToWall(cur) < distToWall(closest))){
+                closest = cur;
+            }
+        }
+        if (closest.equals(rc.getLocation())) return true;
+        return false;
+    }
+
+    public MapLocation findLabLocation() throws GameActionException {
+        MapLocation[] nearbyLocs = rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), rc.getType().visionRadiusSquared);
+        MapLocation bestLocation = null;
+        int value = 100000;
+        for (MapLocation loc : nearbyLocs){
+            int v = distToWall(loc)*10 + rc.senseRubble(loc);
+            if (v < value){
+                bestLocation = loc;
+                value = v;
+            }
+        }
+        radio.broadcastLab(bestLocation);
+        return bestLocation;
+    }
+
+    ///
 
     public MapLocation getArchonMovementLocation() throws GameActionException{
         // read channel to see where soldiers suggest an archon moves
@@ -458,9 +510,7 @@ public class Archon extends Unit {
         return d_arr;
     }
 
-    public int distToWall(Direction d) {
-        MapLocation my = rc.getLocation();
-        MapLocation n = my.add(d);
+    public int distToWall(MapLocation n) {
         int min = Math.min(rc.getMapWidth() - 1 - n.x, n.x) + Math.min(n.y, rc.getMapHeight() - 1 - n.y);
         assert (min <= 60);
         return min;
@@ -469,7 +519,7 @@ public class Archon extends Unit {
     public Direction[] sortedDirections() {
         Direction[] dirs = { Direction.NORTH, Direction.NORTHEAST, Direction.EAST, Direction.SOUTHEAST, Direction.SOUTH,
                 Direction.SOUTHWEST, Direction.WEST, Direction.NORTHWEST };
-        Arrays.sort(dirs, (a, b) -> distToWall(b) - distToWall(a));
+        Arrays.sort(dirs, (a, b) -> distToWall(rc.getLocation().add(b)) - distToWall(rc.getLocation().add(a)));
         return dirs;
     }
 
