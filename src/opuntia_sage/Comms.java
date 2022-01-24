@@ -46,6 +46,10 @@ public class Comms {
         return readChannel(CHANNEL.REQUEST_LEAD);
     }
 
+    public void removeLeadRequest() throws GameActionException {
+        writeChannel(CHANNEL.REQUEST_LEAD, 0);
+    }
+
     public int readChannel(CHANNEL ch) throws GameActionException {
         return rc.readSharedArray(ch.getValue());
     }

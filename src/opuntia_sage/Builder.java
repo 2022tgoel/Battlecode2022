@@ -54,14 +54,14 @@ public class Builder extends Unit {
                         break;
                     case BUILD_LAB:
                         MapLocation buildLoc = radio.readLabLoc();
-                        System.out.println(buildLoc);
                         if(rc.getLocation().isWithinDistanceSquared(buildLoc, RobotType.BUILDER.actionRadiusSquared)){
                             int curLead = rc.getTeamLeadAmount(rc.getTeam());
                             if(curLead < RobotType.LABORATORY.buildCostLead) {
                                 boolean suc = radio.requestLead(RobotType.LABORATORY.buildCostLead);
                                 break;
                             }
-                            buildLaboratory(rc.getLocation().directionTo(buildLoc));
+                            boolean suc = buildLaboratory(rc.getLocation().directionTo(buildLoc));
+                            if(suc) radio.removeLeadRequest();
                         } else {
                             moveToLocation(buildLoc);
                         }
@@ -148,12 +148,14 @@ public class Builder extends Unit {
         }
     }
 
-    public void buildLaboratory(Direction dir) throws GameActionException {
+    public boolean buildLaboratory(Direction dir) throws GameActionException {
         if (rc.canBuildRobot(RobotType.LABORATORY, dir)) {
             rc.buildRobot(RobotType.LABORATORY, dir);
             built_units++;
             num_labs++;
+            return true;
         }
+        return false;
     }
 
     public void buildWatchtower(Direction dir) throws GameActionException {

@@ -300,6 +300,7 @@ public class Archon extends Unit {
                 value = v;
             }
         }
+        System.out.println("broadcast lab: " + bestLocation);
         radio.broadcastLab(bestLocation);
         return bestLocation;
     }
