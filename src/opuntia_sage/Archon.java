@@ -202,7 +202,7 @@ public class Archon extends Unit {
                     unit_built = buildBuilder(dir);
                     break;
                 case SAGE:
-                    unit_built = buildSoldier(dir);
+                    unit_built = buildSage(dir);
             }
             if (unit_built)
                 return true;
