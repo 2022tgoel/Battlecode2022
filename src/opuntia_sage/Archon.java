@@ -99,6 +99,12 @@ public class Archon extends Unit {
                 if (tot != 0 && round_num % tot != threatChannel) { // alternate between those under threat
                     break;
                 }
+                int leadReq = radio.readLeadRequest();
+                if(leadReq > Math.max(rc.getTeamLeadAmount(rc.getTeam())-RobotType.SOLDIER.buildCostLead, 0)) {
+                    System.out.println("holding for lr: " + leadReq);
+                    break;
+                }
+
                 if (rc.getTeamGoldAmount(rc.getTeam()) >= 20) {
                     boolean builtSage = build(RobotType.SAGE);
                     if (builtSage) {
@@ -134,12 +140,11 @@ public class Archon extends Unit {
             case MAKE_LAB: //acc making a builder
                 // System.out.println(radio.readLabLoc());
                 builderBuilt = build(RobotType.BUILDER);
-
                 break;
             case SOLDIER_HUB:
-                int leadReq = radio.readLeadRequest();
+                leadReq = radio.readLeadRequest();
                 if(leadReq > Math.max(rc.getTeamLeadAmount(rc.getTeam())-RobotType.SOLDIER.buildCostLead, 0)) {
-                    // System.out.println("holding for lr: " + leadReq);
+                    System.out.println("holding for lr: " + leadReq);
                     break;
                 }
 

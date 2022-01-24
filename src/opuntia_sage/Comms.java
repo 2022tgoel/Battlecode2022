@@ -291,7 +291,6 @@ public class Comms {
     }
 
     public void broadcastLab(MapLocation loc) throws GameActionException {
-        System.out.println("broadcasted lab: " + loc);
         int data = locationToInt(loc);
         rc.writeSharedArray(CHANNEL.LAB_LOC.getValue(), data);
     }
@@ -303,7 +302,6 @@ public class Comms {
     }
 
     public void clearLabLoc() throws GameActionException {
-        System.out.println("Cleared lab");
         writeChannel(CHANNEL.LAB_LOC, 0);
     }
 

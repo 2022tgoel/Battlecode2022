@@ -57,7 +57,7 @@ public class Builder extends Unit {
                     case BUILD_LAB:
                         if(rc.getLocation().isWithinDistanceSquared(buildLabLoc, RobotType.BUILDER.actionRadiusSquared)){
                             int curLead = rc.getTeamLeadAmount(rc.getTeam());
-                            if(curLead < RobotType.LABORATORY.buildCostLead) {
+                            if(curLead < RobotType.LABORATORY.buildCostLead && unitsOnMap()) {
                                 boolean suc = radio.requestLead(RobotType.LABORATORY.buildCostLead);
                                 break;
                             }
@@ -83,7 +83,7 @@ public class Builder extends Unit {
                 break;
         }
 
-        rc.setIndicatorString("RANK: " + rank + " MODE: " + mode + " " + buildLabLoc);
+        rc.setIndicatorString("RANK: " + rank + " MODE: " + mode + " " + buildLabLoc + " " + troopCounter[0] + " " + troopCounter[1] + " " + troopCounter[3] + " " + radio.readLeadRequest());
     }
 
     public MODE getMode() throws GameActionException {
@@ -230,6 +230,11 @@ public class Builder extends Unit {
             rc.setIndicatorString("target: " + target.x + " " + target.y);
         } else
             moveInDirection(exploratoryDir);
+    }
+
+    public boolean unitsOnMap(){
+        //checks if the counters for the various units are sufficient
+        return (troopCounter[1] > 3) && (troopCounter[1] < 1000) && (troopCounter[0] > 1) && (troopCounter[0] < 1000); //5 soliders, 1 miner
     }
 
     public RANK getBuilderRank() throws GameActionException {
