@@ -158,13 +158,7 @@ public class Archon extends Unit {
             case DEFAULT:
                 attemptHeal();
                 if (rc.getTeamGoldAmount(rc.getTeam()) >= 20) {
-                    boolean builtSage = false;
-                    for (Direction dir : dirs) {
-                        if (!builtSage) {
-                            builtSage = buildSage(dir);
-                        }
-                        else break;
-                    }
+                    boolean builtSage = build(RobotType.SAGE);
                     if (builtSage) {
                         return;
                     }
