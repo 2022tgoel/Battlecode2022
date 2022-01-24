@@ -53,13 +53,18 @@ public class Builder extends Unit {
                         build(new int[]{0, 1});
                         break;
                     case BUILD_LAB:
-                        int curLead = rc.getTeamLeadAmount(rc.getTeam());
-                        if(curLead < RobotType.LABORATORY.buildCostLead) {
-                            boolean suc = radio.requestLead(RobotType.LABORATORY.buildCostLead);
-                            break;
+                        MapLocation buildLoc = radio.readLabLoc();
+                        System.out.println(buildLoc);
+                        if(rc.getLocation().isWithinDistanceSquared(buildLoc, RobotType.BUILDER.actionRadiusSquared)){
+                            int curLead = rc.getTeamLeadAmount(rc.getTeam());
+                            if(curLead < RobotType.LABORATORY.buildCostLead) {
+                                boolean suc = radio.requestLead(RobotType.LABORATORY.buildCostLead);
+                                break;
+                            }
+                            buildLaboratory(rc.getLocation().directionTo(buildLoc));
+                        } else {
+                            moveToLocation(buildLoc);
                         }
-//                        System.out.println(radio.readLabLoc());
-                        build(new int[]{1, 0});
                         break;
                     case REPAIRING:
                         if (rc.canRepair(target))
