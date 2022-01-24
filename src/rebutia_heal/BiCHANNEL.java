@@ -1,4 +1,4 @@
-package rebutia_micro_heal;
+package rebutia_heal;
 
 /**
  * For BiCHANNEL communications using one-round lagging updates.

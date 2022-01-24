@@ -1,4 +1,4 @@
-package rebutia_micro_heal;
+package rebutia_heal;
 
 import java.util.Comparator;
 import java.util.PriorityQueue;

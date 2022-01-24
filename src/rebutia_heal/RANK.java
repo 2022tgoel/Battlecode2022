@@ -1,4 +1,4 @@
-package rebutia_micro_heal;
+package rebutia_heal;
 
 public enum RANK { 
     DEFAULT(0),

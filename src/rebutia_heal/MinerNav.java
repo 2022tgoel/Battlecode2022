@@ -1,4 +1,4 @@
-package rebutia_micro_heal;
+package rebutia_heal;
 
 import battlecode.common.*;
 public class MinerNav {

@@ -1,4 +1,4 @@
-package rebutia_micro_heal;
+package rebutia_heal;
 
 import battlecode.common.*;
 
@@ -45,6 +45,7 @@ public class Soldier extends Unit {
         exploreLoc = getInitialExploratoryLocation();
         comms = new Comms(rc);
     }
+
     @Override
     public void run() throws GameActionException {
         super.run();
@@ -59,6 +60,7 @@ public class Soldier extends Unit {
         switch (mode) {
             case HEALING: 
                 moveToArchon();
+                break;
             case EXPLORATORY:
                 if (soldierBehindMe()) {
                     if (adjacentToEdge()){
@@ -102,9 +104,6 @@ public class Soldier extends Unit {
         else if (mode == MODE.SEARCHING_ENEMIES){
             rc.setIndicatorString("MODE: " + mode.toString() + " DIR: " + lastAttackDir[0] + " " + lastAttackDir[1]);
         }
-        else if (mode == MODE.HEALING){
-            rc.setIndicatorLine(rc.getLocation(), closestArchon, 0, 0, 255);
-        }
         else if (target != null) {
             if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: " + target.toString() + " MODE: " + mode.toString());
             else rc.setIndicatorString("TARGET: " + target.toString() + " MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
@@ -119,7 +118,7 @@ public class Soldier extends Unit {
     public MODE determineMode() throws GameActionException {
         //Priority 0 - Heal
         if (shouldHeal()) return MODE.HEALING;
-
+        
         // Priority 1 - Defend.
         threatenedArchons = findThreatenedArchons();
         if (threatenedArchons != null) {
@@ -188,6 +187,7 @@ public class Soldier extends Unit {
             moveToLocation(closestArchon);
         }
     }
+
 
     /**
      * getInitialExploratoryLocation() gets the location when you extend the vector from your location 
@@ -402,7 +402,7 @@ public class Soldier extends Unit {
             moveToLocation(closest);
         }
         else {
-            huntTarget();
+            if (target != null) huntTarget();
         }
     }
 

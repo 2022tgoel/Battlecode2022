@@ -1,4 +1,4 @@
-package rebutia_micro_heal;
+package rebutia_heal;
 
 public enum CHANNEL {
     ROUND_NUM(0),

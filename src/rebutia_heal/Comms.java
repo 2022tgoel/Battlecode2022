@@ -1,4 +1,4 @@
-package rebutia_micro_heal;
+package rebutia_heal;
 
 import battlecode.common.*;
 
@@ -120,8 +120,7 @@ public class Comms {
     public void clearThreat() throws GameActionException {
         if (round_num % 15 == 0) {
             for (int i = 0; i < 4; i++) {
-                int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
-                rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i, data%4096);
+                rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i, 0);
             }
         }
     }
@@ -147,8 +146,7 @@ public class Comms {
         rc.writeSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + archonIndex, locInt);
     }
 
-    public MapLocation[] getFriendlyArchons(int num_archons) throws GameActionException { 
-        //THIS DOES NOT WORK, fARCHON does not contain the correct values
+    public MapLocation[] getFriendlyArchons(int num_archons) throws GameActionException {
         MapLocation[] locs = new MapLocation[num_archons];
         for (int i = 0; i < num_archons; i++) {
             int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
@@ -186,7 +184,7 @@ public class Comms {
             int data = rc.readSharedArray(CHANNEL.fARCHON_STATUS1.getValue() + i);
             // go through channels until you find an empty one to communicate with.
             int w = data / 4096;
-            int x = data / 64;
+            int x = (data - w * 4096) / 64;
             int y = data % 64;
             // already alerted.
             if (w == 1 && x == my.x && y == my.y) {
@@ -255,7 +253,7 @@ public class Comms {
         }
         return new MapLocation(data/64, data%64);
     }
-
+    
     public void postRank(RANK rank) throws GameActionException {
         MapLocation loc = rc.getLocation();
         int loc_int;
