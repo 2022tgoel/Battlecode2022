@@ -298,13 +298,13 @@ public class Comms {
 
     public MapLocation readLabLoc() throws GameActionException {
         int data = rc.readSharedArray(CHANNEL.LAB_LOC.getValue());
-        if(data == 65535) return null;
+        if(data == 0) return null;
         return new MapLocation(data/64, data%64);
     }
 
     public void clearLabLoc() throws GameActionException {
         System.out.println("Cleared lab");
-        writeChannel(CHANNEL.LAB_LOC, 65535);
+        writeChannel(CHANNEL.LAB_LOC, 0);
     }
 
     public void postRank(RANK rank) throws GameActionException {

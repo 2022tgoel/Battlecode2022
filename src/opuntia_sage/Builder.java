@@ -23,6 +23,8 @@ public class Builder extends Unit {
     private int desiredLabs = 0;
     private int[] troopCounter = { 0, 0, 0, 0, 0 }; // miner, soldier, builder, sage, watchtower
     MapLocation target = null;
+    boolean recievedLab = false;
+    boolean buildingLab = false;
     MapLocation buildLabLoc = null;
     private int built_units = 0;
 
@@ -60,7 +62,10 @@ public class Builder extends Unit {
                                 break;
                             }
                             boolean suc = buildLaboratory(rc.getLocation().directionTo(buildLabLoc));
-                            if(suc) radio.removeLeadRequest();
+                            if(suc) {
+                                radio.removeLeadRequest();
+                                buildingLab = false;
+                            }
                         } else {
                             moveToLocation(buildLabLoc);
                         }
@@ -78,23 +83,25 @@ public class Builder extends Unit {
                 break;
         }
 
-        rc.setIndicatorString("RANK: " + rank + " MODE: " + mode);
+        rc.setIndicatorString("RANK: " + rank + " MODE: " + mode + " " + buildLabLoc);
     }
 
     public MODE getMode() throws GameActionException {
-        MapLocation labLoc = radio.readLabLoc();
+
+
         if (findUnrepaired()) {
             return MODE.REPAIRING;
         }
 
-        // System.out.println("builder get mode " + troopCounter[5] + " " + labLoc + " " + buildLabLoc);
-        if(troopCounter[5] == 0 && (buildLabLoc != null || labLoc != null)){
+        if (!recievedLab){
+            buildLabLoc = radio.readLabLoc();
+            assert(buildLabLoc!=null);
+            radio.clearLabLoc();
+            recievedLab = true;
+            buildingLab= true;
+        }
 
-            if(labLoc != null && buildLabLoc == null){
-                buildLabLoc = labLoc;
-                // System.out.println("Builder " + rc.getID() + " claimed lab loc " + buildLabLoc);
-                radio.clearLabLoc();
-            }
+        if (buildingLab){
             return MODE.BUILD_LAB;
         }
 

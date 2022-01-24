@@ -53,6 +53,11 @@ public class Archon extends Unit {
     @Override
     public void run() throws GameActionException {
         super.run();
+        /*
+        if (round_num == 100){
+            rc.resign();
+        }
+        */
         round_num = rc.getRoundNum();
         radio.update();
         radio.clearThreat();
@@ -85,7 +90,6 @@ public class Archon extends Unit {
         if (mode != MODE.MOVING){
             if (rc.getMode()== RobotMode.PORTABLE && rc.canTransform()) rc.transform();
         }
-
 
         switch (mode) {
             case THREATENED:
@@ -130,6 +134,7 @@ public class Archon extends Unit {
             case MAKE_LAB: //acc making a builder
                 // System.out.println(radio.readLabLoc());
                 builderBuilt = build(RobotType.BUILDER);
+
                 break;
             case SOLDIER_HUB:
                 int leadReq = radio.readLeadRequest();
@@ -213,13 +218,19 @@ public class Archon extends Unit {
     //for lab building
     static boolean builderBuilt = false; 
     static MapLocation labLoc = null;
+    boolean shouldBuildLab;
     //
     public MODE determineMode() throws GameActionException {
         //
-        if (isEdgeArchon() && !builderBuilt){
+        if (round_num == 2){
+            shouldBuildLab = isEdgeArchon();
+        }
+        if (shouldBuildLab && !builderBuilt){
+          //  System.out.println();
             if (labLoc == null) labLoc = findLabLocation();
             if(labLoc != null) return MODE.MAKE_LAB;
         }
+        
 
         //
         if (underThreat())
@@ -272,6 +283,7 @@ public class Archon extends Unit {
 
     ///
     public boolean isEdgeArchon() throws GameActionException{
+        
         MapLocation closest = null;
         for (int i = 0; i < num_archons_alive; i++){
             MapLocation cur = radio.readArchonLocation(i);
@@ -282,10 +294,11 @@ public class Archon extends Unit {
         }
         if (closest.equals(rc.getLocation())) return true;
         return false;
+        
     }
 
     public MapLocation findLabLocation() throws GameActionException {
-        if(radio.readLabLoc() != null) return null;
+        if(radio.readLabLoc() != null) return null; //wait to broadcast
 
         MapLocation[] nearbyLocs = rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), rc.getType().visionRadiusSquared);
         MapLocation bestLocation = null;
