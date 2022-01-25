@@ -23,8 +23,6 @@ public class Builder extends Unit {
     private int desiredLabs = 0;
     private int[] troopCounter = { 0, 0, 0, 0, 0 }; // miner, soldier, builder, sage, watchtower
     MapLocation target = null;
-    boolean recievedLab = false;
-    boolean buildingLab = false;
     MapLocation buildLabLoc = null;
     private int built_units = 0;
 
@@ -41,6 +39,7 @@ public class Builder extends Unit {
 
         troopCounter = new int[] { radio.readCounter(RobotType.MINER), radio.readCounter(RobotType.SOLDIER),
                 radio.readCounter(RobotType.BUILDER), 0, radio.readCounter(RobotType.WATCHTOWER), radio.readCounter(RobotType.LABORATORY) };
+        System.out.println(troopCounter[0] + " " + troopCounter[1] + " " + troopCounter[2] + " " + troopCounter[3]);
         switch (rank) {
             case MARTYR:
                 forTheGreaterGood();
@@ -63,13 +62,14 @@ public class Builder extends Unit {
                         else if (dist >=1 && dist <=2){
                             int curLead = rc.getTeamLeadAmount(rc.getTeam());
                             if(curLead < RobotType.LABORATORY.buildCostLead && unitsOnMap()) {
+                                System.out.println("sucess: " + troopCounter[1] + " " + troopCounter[3]);
                                 boolean suc = radio.requestLead(RobotType.LABORATORY.buildCostLead);
                                 break;
                             }
                             boolean suc = buildLaboratory(rc.getLocation().directionTo(buildLabLoc));
                             if(suc) {
                                 radio.removeLeadRequest();
-                                buildingLab = false;
+                                radio.clearLabLoc();
                             }
                         }
                         else{
@@ -93,27 +93,15 @@ public class Builder extends Unit {
     }
 
     public MODE getMode() throws GameActionException {
-
-
         if (findUnrepaired()) {
             return MODE.REPAIRING;
         }
 
-        if (!recievedLab){
-            buildLabLoc = radio.readLabLoc();
-            assert(buildLabLoc!=null);
-            radio.clearLabLoc();
-            recievedLab = true;
-            buildingLab= true;
-        }
+        buildLabLoc = radio.readLabLoc();
 
-        if (buildingLab){
+        if (buildLabLoc!=null){
             return MODE.BUILD_LAB;
         }
-
-//        if (troopCounter[4] <= (CONSTANTS.SOLDIERS_TO_TOWERS * (double) troopCounter[2])) {
-//            return MODE.BUILD_TOWER;
-//        }
 
         return MODE.HEALING;
     }
@@ -256,9 +244,28 @@ public class Builder extends Unit {
             moveInDirection(exploratoryDir);
     }
 
-    public boolean unitsOnMap(){
+    public boolean unitsOnMap() throws GameActionException{
         //checks if the counters for the various units are sufficient
-        return (troopCounter[1] > 3) && (troopCounter[1] < 1000) && (troopCounter[0] > 1) && (troopCounter[0] < 1000); //5 soliders, 1 miner
+        //varies based on which lab you're building (1st, 2nd, 3rd)
+        troopCounter = new int[] { radio.readCounter(RobotType.MINER), radio.readCounter(RobotType.SOLDIER),
+                radio.readCounter(RobotType.BUILDER), radio.readCounter(RobotType.SAGE), 
+                radio.readCounter(RobotType.WATCHTOWER), radio.readCounter(RobotType.LABORATORY) };
+        System.out.println("hi there: " + radio.readCounter(RobotType.LABORATORY) + " " + troopCounter[5]);
+        switch(troopCounter[5]){
+            case 0:
+                return true;
+            case 1:
+                return (troopCounter[3] + troopCounter[1] > 30);
+            case 2:
+                return (troopCounter[3] + troopCounter[1] > 70);
+            case 3:
+                return (troopCounter[3] + troopCounter[1] > 100);
+            case 4:
+                return (troopCounter[3] + troopCounter[1]> 150);
+            default:
+                return false;
+
+        }
     }
 
     public RANK getBuilderRank() throws GameActionException {

@@ -21,6 +21,7 @@ public class Laboratory extends Unit {
         mode = getMode();
         switch (mode){
             case DEFAULT:
+                if (rc.getTeamGoldAmount(rc.getTeam()) > 20) return;
                 if(rc.canTransmute()) {
                     // System.out.println("transmuted 1");
                     rc.transmute();

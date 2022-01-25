@@ -12,6 +12,7 @@ public class Comms {
     }
 
     public boolean init() throws GameActionException {
+   //     System.out.println("i am here");
         wasFirstConnection = false;
         // TODO: distribute init comms clearing?
         round_num = rc.getRoundNum();

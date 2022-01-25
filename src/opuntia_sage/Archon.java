@@ -47,14 +47,12 @@ public class Archon extends Unit {
         defaultBuildOrder = chooseBuildOrder();
         archonNumber = radio.getArchonNum();
         radio.postArchonLocation(archonNumber);
-        radio.clearLabLoc();
         addLeadEstimate();
     }
 
     @Override
     public void run() throws GameActionException {
         super.run();
-        
         round_num = rc.getRoundNum();
         radio.update();
         radio.clearThreat();
@@ -74,7 +72,11 @@ public class Archon extends Unit {
                 radio.readCounter(RobotType.SAGE),
                 radio.readCounter(RobotType.WATCHTOWER)
         };
-
+        /*
+        if (round_num == 500){
+            rc.resign();
+        }
+        */
         if (round_num == 2) {
             int leadEstimate = radio.getLeadEstimate();
             desiredNumMiners = determineMinerNum(leadEstimate);
@@ -220,6 +222,7 @@ public class Archon extends Unit {
     //for lab building
     static boolean builderBuilt = false; 
     static MapLocation labLoc = null;
+    static int numLabs = 0;
     boolean shouldBuildLab;
     //
     public MODE determineMode() throws GameActionException {
@@ -228,12 +231,15 @@ public class Archon extends Unit {
             for (int i= 0; i < num_archons_alive; i++){
                 System.out.println(radio.readArchonLocation(i)+"  is a archon");
             }
-            shouldBuildLab = isLabArchon();
+            shouldBuildLab = isLabArchon(); //whether this archon should produce a builder - currently only one archon is supported
+            if (shouldBuildLab) numLabs = Math.min(mapArea/600, 5); //how many labs will be built overall
         }
-        if (shouldBuildLab && !builderBuilt){
-          //  System.out.println();
-            if (labLoc == null) labLoc = findLabLocation();
-            if(labLoc != null) return MODE.MAKE_LAB;
+
+        if (shouldBuildLab) {
+            if (radio.readCounter(RobotType.LABORATORY) < numLabs) {
+                labLoc = findLabLocation();
+            }
+            if(!builderBuilt) return MODE.MAKE_LAB;
         }
         
 
@@ -245,9 +251,14 @@ public class Archon extends Unit {
         else if (initial)
             return MODE.INITIAL;
 
-        move = getArchonMovementLocation();
+     //   move = getArchonMovementLocation();
         // burn the surplus.
         if (rc.getTeamLeadAmount(rc.getTeam()) >= 750) return MODE.SOLDIER_HUB;
+        if (rc.getTeamLeadAmount(rc.getTeam()) >= 150) return MODE.SOLDIER_HUB; //produce sages too
+        if (radio.getMode() == archonNumber) return MODE.SOLDIER_HUB;
+        else return MODE.DEFAULT;
+
+        /*
         if (move == null || num_archons_alive == 1){
             if (radio.getMode() == archonNumber) return MODE.SOLDIER_HUB;
             else return MODE.DEFAULT;
@@ -264,6 +275,7 @@ public class Archon extends Unit {
             }
         }
         return MODE.DEFAULT;
+        */
     }
 
     public int determineMinerNum(int leadEstimate) throws GameActionException {
@@ -310,13 +322,17 @@ public class Archon extends Unit {
         int value = 100000;
         for (MapLocation loc : nearbyLocs){
             int v = distToWall(loc)*4 + rc.senseRubble(loc);
-            if (v < value){
+            RobotInfo r = rc.senseRobotAtLocation(loc);
+            boolean isBuilding = false;
+            if (r!=null && (r.type == RobotType.WATCHTOWER || r.type == RobotType.ARCHON || r.type == RobotType.LABORATORY))
+                isBuilding = true;
+            if (v < value && !isBuilding){
                 bestLocation = loc;
                 value = v;
             }
         }
 
-        radio.broadcastLab(bestLocation);
+        if (bestLocation!=null) radio.broadcastLab(bestLocation);
         System.out.println(bestLocation);
         return bestLocation;
     }
