@@ -26,10 +26,6 @@ public class Comms {
                     rc.writeSharedArray(ch.getValue(), 0);
             }
 
-            if(round_num == 1){
-                clearLabLoc();
-            }
-
             wasFirstConnection = true;
         }
         return wasFirstConnection;
@@ -75,6 +71,7 @@ public class Comms {
     public void updateCounter(BiCHANNEL bich) throws GameActionException {
         CHANNEL channel = getCounterChannel(bich, false);
         int num = wasFirstConnection ? 0 : rc.readSharedArray(channel.getValue());
+        System.out.println(rc.getType() + " " + num);
         rc.writeSharedArray(channel.getValue(), num + 1);
     }
 

@@ -119,7 +119,7 @@ public class Unit {
             }
         }
         int loc_int = locationToInt(loc);
-        rc.writeSharedArray(indToPut, loc_int);
+        rc.writeSharedArray(CHANNEL.ARCHON_LOC_1.getValue() + indToPut, loc_int);
         // rc.setIndicatorString("broadcasting succesful, archon_index " +
         // available_index);
         return indToPut;
@@ -514,25 +514,6 @@ public class Unit {
 
     public int getMapArea() {
         return rc.getMapHeight() * rc.getMapWidth();
-    }
-
-    // should add channels for each unit...
-    public void updateCount() throws GameActionException {
-        RobotType r = rc.getType();
-        switch (r) {
-            case MINER:
-                int num = rc.readSharedArray(CHANNEL.MINERS_ALIVE.getValue());
-                rc.writeSharedArray(CHANNEL.MINERS_ALIVE.getValue(), num + 1);
-            case SOLDIER:
-                num = rc.readSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue());
-                rc.writeSharedArray(CHANNEL.SOLDIERS_ALIVE.getValue(), num + 1);
-            case BUILDER:
-                num = rc.readSharedArray(CHANNEL.BUILDERS_ALIVE.getValue());
-                rc.writeSharedArray(CHANNEL.BUILDERS_ALIVE.getValue(), num + 1);
-            default:
-                break;
-
-        }
     }
 
     public void broadcastTarget(MapLocation enemy) throws GameActionException {

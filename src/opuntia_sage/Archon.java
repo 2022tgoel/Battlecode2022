@@ -48,6 +48,7 @@ public class Archon extends Unit {
         archonNumber = radio.getArchonNum();
         radio.postArchonLocation(archonNumber);
         addLeadEstimate();
+        radio.clearLabLoc();
     }
 
     @Override
