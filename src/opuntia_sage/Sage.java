@@ -299,7 +299,6 @@ public class Sage extends Unit {
     }
 
     public void visualize() throws GameActionException {
-        rc.setIndicatorString("MODE: " + mode.toString());
         if (mode == MODE.EXPLORATORY){
             rc.setIndicatorDot(exploreLoc, 100, 100, 0);
         }
@@ -318,6 +317,7 @@ public class Sage extends Unit {
             if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: null MODE: " + mode.toString());
             else rc.setIndicatorString("TARGET: null MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
         }
+        rc.setIndicatorString("Cooldown Turns: " + rc.getActionCooldownTurns());
     }
 
     public MODE determineMode() throws GameActionException {
@@ -491,16 +491,16 @@ public class Sage extends Unit {
 
     public void huntTarget() throws GameActionException {
         MapLocation cur = rc.getLocation();
-        if (rc.getLocation().distanceSquaredTo(target) <= 13) {
-            // check for low rubble squares to move to
-            moveLowRubble(new int[] {-target.x + cur.x, -target.y + cur.y}, 20);
+        if (rc.getLocation().distanceSquaredTo(target) > RobotType.SAGE.actionRadiusSquared) {
+            moveToLocation(target);
         }
-        else if (rc.getLocation().distanceSquaredTo(target) <= 25) {
+        else if (rc.getActionCooldownTurns() <= 30) {
             moveLowRubble(new int[] {target.x - cur.x, target.y - cur.y}, 15);
         }
         else {
-            moveToLocation(target);
+            moveLowRubble(new int[] {-target.x + cur.x, -target.y + cur.y}, 15);
         }
+        
     }
 
     public Direction findLowRubble() throws GameActionException {

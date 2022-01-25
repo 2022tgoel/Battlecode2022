@@ -35,7 +35,7 @@ public class Archon extends Unit {
     int[] defaultBuildOrder;
     int threatChannel = -1;
 
-    private int[] troopCounter = { 0, 0, 0, 0, 0 }; // miner, soldier, builder, sage, watchtower
+    private int[] troopCounter = { 0, 0, 0, 0, 0, 0 }; // miner, soldier, builder, sage, watchtower
     private int desiredNumMiners = 1000;
     private boolean initial = true;
 
@@ -55,10 +55,6 @@ public class Archon extends Unit {
     public void run() throws GameActionException {
         super.run();
         
-        if (round_num == 100){
-            rc.resign();
-        }
-        
         round_num = rc.getRoundNum();
         radio.update();
         radio.clearThreat();
@@ -75,7 +71,7 @@ public class Archon extends Unit {
                 radio.readCounter(RobotType.MINER),
                 radio.readCounter(RobotType.SOLDIER),
                 radio.readCounter(RobotType.BUILDER),
-                0,
+                radio.readCounter(RobotType.SAGE),
                 radio.readCounter(RobotType.WATCHTOWER)
         };
 
@@ -301,7 +297,6 @@ public class Archon extends Unit {
             archonLocs[i]= radio.readArchonLocation(i);
         }
         Arrays.sort(archonLocs, (a, b) -> distToWall(a) - distToWall(b));
-        MapLocation my = rc.getLocation();
         if (archonLocs[0].equals(rc.getLocation())) return true;
         return false;
         
