@@ -6,6 +6,7 @@ import java.util.*;
 public class Archon extends Unit {
 
     enum MODE {
+        MINER,
         INITIAL,
         DEFAULT,
         SOLDIER_HUB,
@@ -137,6 +138,9 @@ public class Archon extends Unit {
                 }
 //                System.out.println("Desired miners: " + desiredNumMiners + " Useful miners: " + useful_miners + " Ratio: " + (useful_miners / (double) troopCounter[0]));
                 break;
+            case MINER:
+                build(RobotType.MINER);
+                break;
             case MAKE_LAB: //acc making a builder
                 // System.out.println(radio.readLabLoc());
                 builderBuilt = build(RobotType.BUILDER);
@@ -251,6 +255,8 @@ public class Archon extends Unit {
             return MODE.OTHER_THREATENED;
         else if (initial)
             return MODE.INITIAL;
+
+        if (radio.readCounter(RobotType.MINER) <=1) return MODE.MINER;
 
      //   move = getArchonMovementLocation();
         // burn the surplus.

@@ -1,7 +1,6 @@
 package opuntia_sage;
 
-import battlecode.common.GameActionException;
-import battlecode.common.RobotController;
+import battlecode.common.*;
 
 public class Laboratory extends Unit {
     public enum MODE {
@@ -22,6 +21,9 @@ public class Laboratory extends Unit {
         switch (mode){
             case DEFAULT:
                 if (rc.getTeamGoldAmount(rc.getTeam()) > 20) return;
+                if (radio.readCounter(RobotType.MINER) <= 1){
+                    return;
+                }
                 if(rc.canTransmute()) {
                     // System.out.println("transmuted 1");
                     rc.transmute();
