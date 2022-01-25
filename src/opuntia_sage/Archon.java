@@ -54,11 +54,11 @@ public class Archon extends Unit {
     @Override
     public void run() throws GameActionException {
         super.run();
-        /*
+        
         if (round_num == 100){
             rc.resign();
         }
-        */
+        
         round_num = rc.getRoundNum();
         radio.update();
         radio.clearThreat();
@@ -228,8 +228,11 @@ public class Archon extends Unit {
     //
     public MODE determineMode() throws GameActionException {
         //
-        if (round_num == 2){
-            shouldBuildLab = isEdgeArchon();
+        if (round_num == 5){
+            for (int i= 0; i < num_archons_alive; i++){
+                System.out.println(radio.readArchonLocation(i)+"  is a archon");
+            }
+            shouldBuildLab = isLabArchon();
         }
         if (shouldBuildLab && !builderBuilt){
           //  System.out.println();
@@ -288,17 +291,18 @@ public class Archon extends Unit {
     }
 
     ///
-    public boolean isEdgeArchon() throws GameActionException{
-        
-        MapLocation closest = null;
+    public boolean isLabArchon() throws GameActionException{
+        // criteria that could come into play: map area, rubble, dist to a corner
+        MapLocation my = rc.getLocation();
+
+        //otherwise at least do the nearest location
+        MapLocation[] archonLocs = new MapLocation[num_archons_alive];
         for (int i = 0; i < num_archons_alive; i++){
-            MapLocation cur = radio.readArchonLocation(i);
-            if (closest == null || 
-                (closest!=null && distToWall(cur) < distToWall(closest))){
-                closest = cur;
-            }
+            archonLocs[i]= radio.readArchonLocation(i);
         }
-        if (closest.equals(rc.getLocation())) return true;
+        Arrays.sort(archonLocs, (a, b) -> distToWall(a) - distToWall(b));
+        MapLocation my = rc.getLocation();
+        if (archonLocs[0].equals(rc.getLocation())) return true;
         return false;
         
     }
