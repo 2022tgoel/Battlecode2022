@@ -55,7 +55,12 @@ public class Builder extends Unit {
                         build(new int[]{0, 1});
                         break;
                     case BUILD_LAB:
-                        if(rc.getLocation().isWithinDistanceSquared(buildLabLoc, RobotType.BUILDER.actionRadiusSquared)){
+                        MapLocation my = rc.getLocation();
+                        int dist= rc.getLocation().distanceSquaredTo(buildLabLoc);
+                        if (dist == 0){
+                            moveOff();
+                        }
+                        else if (dist >=1 && dist <=2){
                             int curLead = rc.getTeamLeadAmount(rc.getTeam());
                             if(curLead < RobotType.LABORATORY.buildCostLead && unitsOnMap()) {
                                 boolean suc = radio.requestLead(RobotType.LABORATORY.buildCostLead);
@@ -66,7 +71,8 @@ public class Builder extends Unit {
                                 radio.removeLeadRequest();
                                 buildingLab = false;
                             }
-                        } else {
+                        }
+                        else{
                             moveToLocation(buildLabLoc);
                         }
                         break;
@@ -170,6 +176,24 @@ public class Builder extends Unit {
             return true;
         }
         return false;
+    }
+
+    public void moveOff() throws GameActionException{
+        MapLocation my = rc.getLocation();
+        Direction bestDirection = null;
+        int minRubble = 100000;
+        for (Direction d : dirs){
+            if (rc.canMove(d)){
+                MapLocation n = my.add(d);
+                if (rc.senseRubble(n) < minRubble){
+                    bestDirection = d;
+                    minRubble = rc.senseRubble(n);
+                }
+            }
+        }
+
+        if (rc.canMove(bestDirection))
+            rc.move(bestDirection);
     }
 
     public void buildWatchtower(Direction dir) throws GameActionException {

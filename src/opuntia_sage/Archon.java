@@ -47,6 +47,7 @@ public class Archon extends Unit {
         defaultBuildOrder = chooseBuildOrder();
         archonNumber = radio.getArchonNum();
         radio.postArchonLocation(archonNumber);
+        radio.clearLabLoc();
         addLeadEstimate();
     }
 
@@ -309,7 +310,7 @@ public class Archon extends Unit {
         MapLocation bestLocation = null;
         int value = 100000;
         for (MapLocation loc : nearbyLocs){
-            int v = distToWall(loc)*10 + rc.senseRubble(loc);
+            int v = distToWall(loc)*4 + rc.senseRubble(loc);
             if (v < value){
                 bestLocation = loc;
                 value = v;
