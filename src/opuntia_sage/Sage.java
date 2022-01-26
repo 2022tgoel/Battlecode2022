@@ -98,12 +98,16 @@ public class Sage extends Unit {
 
     public boolean attemptAttack() throws GameActionException {
         if (target == null && chargeTarget == null) return false;
+
+        ATTACK attack;
         /* if (rc.getLocation().distanceSquaredTo(target) <= 16 || rc.getHealth() < 30) */
         if (chargeTarget != null) {
-            if (rc.getLocation().distanceSquaredTo(chargeTarget) <= 12 || rc.getHealth() < 30) {}
+            if (rc.getLocation().distanceSquaredTo(chargeTarget) <= 12 || rc.getHealth() < 50) { attack = ATTACK.CHARGE; }
             else return false;
         }
-        ATTACK attack = determineSageAttack();
+        else {
+            attack = determineSageAttack();
+        }
         executeAttack(attack);
         if (attack == ATTACK.CHARGE) {
             MapLocation avgEnemyLoc = getAvgEnemyPos();
@@ -195,7 +199,7 @@ public class Sage extends Unit {
         }
 
         // Priority 2 - Don't die.
-        int[] potFleeDir = fleeDirection();
+        /* int[] potFleeDir = fleeDirection();
         boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
         if (!validFlee && stopFleeingRound == round_num) {
             exploreLoc = getInitialExploratoryLocation(); 
@@ -208,7 +212,7 @@ public class Sage extends Unit {
                 stopFleeingRound = round_num + 6;
             }
             return MODE.FLEE;
-        }
+        } */
 
         if (chargeTarget != null) {
             return MODE.CHARGING;

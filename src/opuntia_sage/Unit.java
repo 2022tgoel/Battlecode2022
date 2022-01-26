@@ -633,7 +633,7 @@ public class Unit {
         int maxAdvantage = -100000;
         int advantage;
         int unit_difference = numFriends + 1 - numeSages - numeSoldiers;
-        double a = 6.0; // = 6 * ratio;
+        double a = 3.0; // = 6 * ratio;
         // double ratio;
         int unit_advantage;
 
