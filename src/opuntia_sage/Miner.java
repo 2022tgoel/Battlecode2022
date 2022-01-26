@@ -164,13 +164,13 @@ public class Miner extends Unit {
         double cys = 0;
         double cxm = 0;
         double cym = 0;
-        double numSoldiers = 0;
+        double numAttackers = 0;
         double numMiners = 0;
         for (RobotInfo enemy: enemies) {
-            if (enemy.type == RobotType.SOLDIER) {
+            if (enemy.type == RobotType.SOLDIER || enemy.type == RobotType.SAGE) {
                 cxs += enemy.location.x;
                 cys += enemy.location.y;
-                numSoldiers++;
+                numAttackers++;
             }
             if (enemy.type == RobotType.MINER) {
                 cxm += enemy.location.x;
@@ -184,11 +184,11 @@ public class Miner extends Unit {
             MapLocation enemy_center = new MapLocation((int)cxm, (int)cym);
             // broadcastTarget(enemy_center);
         }
-        if (numSoldiers > 0) {
-            cxs /= numSoldiers;
-            cys /= numSoldiers;
+        if (numAttackers > 0) {
+            cxs /= numAttackers;
+            cys /= numAttackers;
             MapLocation enemy_center = new MapLocation((int)cxs, (int)cys);
-            broadcastTarget(enemy_center);
+            broadcastTarget(enemy_center, false);
             Direction d = rc.getLocation().directionTo(enemy_center).opposite();
             return new int[] {d.getDeltaX() * 5, d.getDeltaY() * 5};
         }

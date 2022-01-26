@@ -402,7 +402,7 @@ public class Archon extends Unit {
     public boolean underThreat() throws GameActionException {
         RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         if (enemies.length > 0) {
-            broadcastTarget(enemies[0].location);
+            broadcastTarget(enemies[0].location, false);
             return true;
         }
         return false;

@@ -308,7 +308,7 @@ public class Unit {
             dest = scaleToEdge(toDest);
         }
         assert(validCoords(dest.x, dest.y));
-        System.out.println(dest);
+     //   System.out.println(dest);
         Direction d = mover.getBestDir(dest);
         // System.out.println(d);
         if (d != null) {
@@ -522,13 +522,13 @@ public class Unit {
         return rc.getMapHeight() * rc.getMapWidth();
     }
 
-    public void broadcastTarget(MapLocation enemy) throws GameActionException {
+    public void broadcastTarget(MapLocation enemy, boolean isMiner) throws GameActionException {
         int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
         // fuzzy location
         int x_loc = enemy.x;
         int y_loc = enemy.y;
         RobotInfo r = rc.senseRobotAtLocation(enemy);
-        boolean isMiner = (r.type == RobotType.MINER);
+        //boolean isMiner = (r.type == RobotType.MINER);
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
             int data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             // int w = (data >> 12) ;
