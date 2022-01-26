@@ -54,9 +54,9 @@ public class Soldier extends Unit {
         findTargets();
         findSageTargets();
         senseMiningArea();
-        senseFriendlySoldiersArea();
+     //   senseFriendlySoldiersArea();
         mode = determineMode();
-        // visualize();
+        visualize();
         switch (mode) {
             case EXPLORATORY:
                 if (soldierBehindMe()) {

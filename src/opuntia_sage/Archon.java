@@ -261,7 +261,7 @@ public class Archon extends Unit {
      //   move = getArchonMovementLocation();
         // burn the surplus.
         if (rc.getTeamLeadAmount(rc.getTeam()) >= 750) return MODE.SOLDIER_HUB;
-        if (rc.getTeamLeadAmount(rc.getTeam()) >= 150) return MODE.SOLDIER_HUB; //produce sages too
+        if (rc.getTeamGoldAmount(rc.getTeam()) >= 150) return MODE.SOLDIER_HUB; //produce sages too
         if (radio.getMode() == archonNumber) return MODE.SOLDIER_HUB;
         else return MODE.DEFAULT;
 
