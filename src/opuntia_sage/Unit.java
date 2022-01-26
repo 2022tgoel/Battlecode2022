@@ -303,6 +303,11 @@ public class Unit {
     public void moveInDirection(int[] toDest) throws GameActionException {
         MapLocation loc = rc.getLocation();
         MapLocation dest = new MapLocation(loc.x + toDest[0], loc.y + toDest[1]);
+        if (!validCoords(dest.x, dest.y)){
+            dest = scaleToEdge(toDest);
+        }
+        assert(validCoords(dest.x, dest.y));
+        System.out.println(dest);
         Direction d = mover.getBestDir(dest);
         // System.out.println(d);
         if (d != null) {

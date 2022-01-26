@@ -254,6 +254,7 @@ public class Builder extends Unit {
         switch(troopCounter[5]){
             case 0:
                 return true;
+             //   return (troopCounter[3] + troopCounter[1] > 5);
             case 1:
                 return (troopCounter[3] + troopCounter[1] > 30);
             case 2:

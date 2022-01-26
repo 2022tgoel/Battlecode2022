@@ -84,6 +84,14 @@ public class Archon extends Unit {
             desiredNumMiners = determineMinerNum(leadEstimate);
         }
 
+        if (round_num == 5){
+            for (int i= 0; i < num_archons_alive; i++){
+                System.out.println(radio.readArchonLocation(i)+"  is a archon");
+            }
+            shouldBuildLab = isLabArchon(); //whether this archon should produce a builder - currently only one archon is supported
+            if (shouldBuildLab) numLabs = Math.min(mapArea/600, 5); //how many labs will be built overall
+        }
+
         //System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
         MODE mode = determineMode();
         double useful_miners = (double) radio.readCounter(BiCHANNEL.USEFUL_MINERS);
@@ -232,13 +240,13 @@ public class Archon extends Unit {
     //
     public MODE determineMode() throws GameActionException {
         //
-        if (round_num == 5){
-            for (int i= 0; i < num_archons_alive; i++){
-                System.out.println(radio.readArchonLocation(i)+"  is a archon");
-            }
-            shouldBuildLab = isLabArchon(); //whether this archon should produce a builder - currently only one archon is supported
-            if (shouldBuildLab) numLabs = Math.min(mapArea/600, 5); //how many labs will be built overall
-        }
+        if (underThreat())
+            return MODE.THREATENED;
+        else if (radio.totalUnderThreat() > 0)
+            return MODE.OTHER_THREATENED;
+        else if (initial)
+            return MODE.INITIAL;
+        //
 
         if (shouldBuildLab) {
             if (radio.readCounter(RobotType.LABORATORY) < numLabs) {
@@ -246,15 +254,6 @@ public class Archon extends Unit {
             }
             if(!builderBuilt) return MODE.MAKE_LAB;
         }
-        
-
-        //
-        if (underThreat())
-            return MODE.THREATENED;
-        else if (radio.totalUnderThreat() > 0)
-            return MODE.OTHER_THREATENED;
-        else if (initial)
-            return MODE.INITIAL;
 
         if (radio.readCounter(RobotType.MINER) <=1) return MODE.MINER;
 
@@ -328,7 +327,7 @@ public class Archon extends Unit {
         MapLocation bestLocation = null;
         int value = 100000;
         for (MapLocation loc : nearbyLocs){
-            int v = distToWall(loc)*4 + rc.senseRubble(loc);
+            int v = distToWall(loc) + rc.senseRubble(loc);
             RobotInfo r = rc.senseRobotAtLocation(loc);
             boolean isBuilding = false;
             if (r!=null && (r.type == RobotType.WATCHTOWER || r.type == RobotType.ARCHON || r.type == RobotType.LABORATORY))
