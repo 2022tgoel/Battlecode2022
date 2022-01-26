@@ -172,7 +172,7 @@ public class Soldier extends Unit {
     }
 
     public boolean soldierBehindMe(){
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(15, rc.getTeam());
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(10, rc.getTeam());
         for (RobotInfo r : nearbyBots){
             if (r.type == RobotType.SOLDIER  || r.type == RobotType.SAGE){
                 if (isBehind(r.location)) return true;

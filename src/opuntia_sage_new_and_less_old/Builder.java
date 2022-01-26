@@ -263,6 +263,10 @@ public class Builder extends Unit {
                 return (troopCounter[3] + troopCounter[1] > 100);
             case 4:
                 return (troopCounter[3] + troopCounter[1]> 150);
+            case 5:
+                return (troopCounter[3] + troopCounter[1]> 225);
+            case 6:
+                return (troopCounter[3] + troopCounter[1]> 350);
             default:
                 return false;
 

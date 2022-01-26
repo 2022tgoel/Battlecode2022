@@ -120,6 +120,7 @@ public class Sage extends Unit {
     }
 
     public int turnsTillDeath() throws GameActionException {
+        if (rc.getHealth()  <= 3) return 1; 
         return (int)(rc.getHealth() / (healthDepletionRate + 0.01));
     }
 
