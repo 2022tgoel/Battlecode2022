@@ -39,7 +39,7 @@ public class Builder extends Unit {
 
         troopCounter = new int[] { radio.readCounter(RobotType.MINER), radio.readCounter(RobotType.SOLDIER),
                 radio.readCounter(RobotType.BUILDER), 0, radio.readCounter(RobotType.WATCHTOWER), radio.readCounter(RobotType.LABORATORY) };
-        System.out.println(troopCounter[0] + " " + troopCounter[1] + " " + troopCounter[2] + " " + troopCounter[3]);
+      //  System.out.println(troopCounter[0] + " " + troopCounter[1] + " " + troopCounter[2] + " " + troopCounter[3]);
         switch (rank) {
             case MARTYR:
                 forTheGreaterGood();
@@ -250,7 +250,7 @@ public class Builder extends Unit {
         troopCounter = new int[] { radio.readCounter(RobotType.MINER), radio.readCounter(RobotType.SOLDIER),
                 radio.readCounter(RobotType.BUILDER), radio.readCounter(RobotType.SAGE), 
                 radio.readCounter(RobotType.WATCHTOWER), radio.readCounter(RobotType.LABORATORY) };
-        System.out.println("hi there: " + radio.readCounter(RobotType.LABORATORY) + " " + troopCounter[5]);
+      //  System.out.println("hi there: " + radio.readCounter(RobotType.LABORATORY) + " " + troopCounter[5]);
         switch(troopCounter[5]){
             case 0:
                 return true;

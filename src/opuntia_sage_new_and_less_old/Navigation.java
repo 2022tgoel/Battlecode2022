@@ -5,7 +5,10 @@ public class Navigation{
 	static BFS bfs;
 	Navigation(RobotController rc) {
 		this.rc = rc;
-		if (rc.getType().visionRadiusSquared >=34){
+		if (rc.getType() == RobotType.SAGE){
+			bfs = new BFSRad20(rc);
+		}
+		else if (rc.getType().visionRadiusSquared >=34){
 			bfs = new BFSRad34(rc);
 		}
 		else {

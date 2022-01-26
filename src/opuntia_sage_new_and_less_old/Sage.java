@@ -63,6 +63,7 @@ public class Sage extends Unit {
         senseFriendlySoldiersArea();
         mode = determineMode();
         visualize();
+        rc.setIndicatorString("got here");
         switch (mode) {
             case EXPLORATORY:
                 if (soldierBehindMe()) {
@@ -85,7 +86,10 @@ public class Sage extends Unit {
                     }
                 }*/
             case HUNTING:
+                rc.setIndicatorString("got here1");
+                Clock.yield();
                 huntTarget();
+                rc.setIndicatorString("got here2");
                 target = null;
                 break;
             case SEARCHING_ENEMIES:
@@ -137,7 +141,7 @@ public class Sage extends Unit {
 
     public ATTACK determineAttack() throws GameActionException {
         if (rc.getActionCooldownTurns() > 0) return ATTACK.NONE;
-        if (rc.senseNearbyRobots(-1, rc.getTeam().opponent()) == null) return ATTACK.NONE;
+        if (rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared, rc.getTeam().opponent()) == null) return ATTACK.NONE;
         
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared);
 
@@ -160,6 +164,7 @@ public class Sage extends Unit {
         int[] soldierHealths  = new int[nearbyBots.length];
         int[] sageHealths  = new int[nearbyBots.length];
         for (RobotInfo bot: nearbyBots) {
+           // System.out.println("bot: " + bot.team + " " + bot.location + " " + bot.type);
             if (bot.team == rc.getTeam()) {
                 if (bot.type == RobotType.SOLDIER) {
                     friendHealth += bot.health;
@@ -210,9 +215,10 @@ public class Sage extends Unit {
 
         if (numeSoldiers == 0 && numeSages == 0) return ATTACK.NONE;
 
+        System.out.println("units: " + numeSoldiers + " " + numeSages);
         // remove zero values from enemyHealth array
-        soldierHealths = cleanup(soldierHealths, numeSoldiers);
-        sageHealths = cleanup(sageHealths, numeSages);
+      //  soldierHealths = cleanup(soldierHealths, numeSoldiers);
+      //  sageHealths = cleanup(sageHealths, numeSages);
 
         /* for (int i = 0; i < numeSoldiers; i++) {
             System.out.println("Soldier " + i + " health: " + soldierHealths[i]);
@@ -254,26 +260,37 @@ public class Sage extends Unit {
                     int health_reduced = 0;
                     if (soldierHealths != null) {
                         for (int i = 0; i < soldierHealths.length; i++) {
-                            if (soldierHealths[i] <= 11) {
-                                numSoldiersKilled++;
-                                health_reduced += soldierHealths[i];
+                            if (soldierHealths[i] > 0){
+                                assert(soldierHealths[i] != 0);
+                                if (soldierHealths[i] <= 11) {
+                                    numSoldiersKilled++;
+                                    health_reduced += soldierHealths[i];
+                                }
+                                else health_reduced += 11;                                
                             }
-                            else health_reduced += 11;
+                            else break;
+
                         }
                     }
                     if (sageHealths != null) {
                         for (int i = 0; i < sageHealths.length; i++) {
-                            if (sageHealths[i] <= 22) {
-                                numSagesKilled++;
-                                health_reduced += sageHealths[i];
+                            if (sageHealths[i] > 0){
+                                assert(sageHealths[i] != 0);
+                                if (sageHealths[i] <= 22) {
+                                    numSagesKilled++;
+                                    health_reduced += sageHealths[i];
+                                }
+                                else health_reduced += 22;                               
                             }
-                            else health_reduced += 22;
+                            else break;
                         }
                     }
                     unit_difference = unit_difference + numSoldiersKilled + numSagesKilled;
                     unit_advantage = (int) (a * Math.pow(unit_difference, 2) * Math.signum(unit_difference));
                     advantage = friendHealth - enemyHealth + unit_advantage + health_reduced;
-                    /* System.out.println("ATTACK: " + attack + " friendHealth: " + friendHealth + " enemyHealth: " + enemyHealth + " unit_difference: " + unit_difference + " unit_advantage: " + unit_advantage + " health_reduced " + health_reduced + " num_soldiers killed " + numSoldiersKilled + " num_sages killed " + numSagesKilled +  " advantage: " + advantage); */
+                    //System.out.println("ATTACK: " + attack + " friendHealth: " + friendHealth + " enemyHealth: " + enemyHealth + " unit_difference: " + unit_difference + " unit_advantage: " + unit_advantage + " health_reduced " + health_reduced + " num_soldiers killed " + numSoldiersKilled + " num_sages killed " + numSagesKilled +  " advantage: " + advantage); 
+                    
+                 //   advantage = 0;
                     break;
                 default:
                     advantage = 0;
@@ -553,7 +570,7 @@ public class Sage extends Unit {
         int numBots = 0;
         for (RobotInfo r : nearbyBots){
             if (r.type == RobotType.SOLDIER || r.type == RobotType.SAGE){
-                // if (numBots > 10) return; can restrict for bytecode is necessary
+                if (numBots > 5) return; //restrict for bytecode 
                 for (int i = 0; i < 9; i++){
                     if (r.location.distanceSquaredTo(locs[i]) <= 30){
                         costs[i] +=40;
