@@ -133,7 +133,7 @@ public class Sage extends Unit {
         ATTACK attack = determineAttack();
         executeAttack(attack);
         if (attack != ATTACK.NONE) {
-            // System.out.println("ATTEMPTED " + attack.toString() + " " + rc.getRoundNum());
+            System.out.println("ATTEMPTED " + attack.toString() + " " + rc.getRoundNum());
             return true;
         }
         return false;
@@ -230,7 +230,7 @@ public class Sage extends Unit {
             }
         }
 
-        if (numBuildings >= (numeSages + numeSoldiers)) return ATTACK.FURY; 
+        if (numBuildings > (numeSages + numeSoldiers)) return ATTACK.FURY; 
 
         // rc.setIndicatorString("numOtherBots " + numOtherBots + " numeSages " + numeSages + " numeSoldiers " + numeSoldiers + " boutaDie " + boutaDie);
         if (((numOtherBots >= 2 || my.distanceSquaredTo(target) > 4) && (numeSages + numeSoldiers) < 7) && !boutaDie) {

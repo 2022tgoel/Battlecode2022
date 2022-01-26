@@ -89,7 +89,7 @@ public class Archon extends Unit {
                 System.out.println(radio.readArchonLocation(i)+"  is a archon");
             }
             shouldBuildLab = isLabArchon(); //whether this archon should produce a builder - currently only one archon is supported
-            if (shouldBuildLab) numLabs = Math.min(mapArea/600, 5); //how many labs will be built overall
+            if (shouldBuildLab) numLabs = Math.min(mapArea/400, 5); //how many labs will be built overall
         }
 
         //System.out.println("Archon number: " + archonNumber + " Mode num: " + radio.getMode() + " " + " round: " + round_num);
@@ -600,28 +600,44 @@ public class Archon extends Unit {
         if (nearbyBots.length > 0) {
             RobotInfo weakestBot = null;
             for (RobotInfo bot : nearbyBots) {
-                if (bot.type == RobotType.SOLDIER)
-                    if ((weakestBot == null && bot.health < RobotType.SOLDIER.health) ||
+                if (bot.type == RobotType.SAGE)
+                    if ((weakestBot == null && bot.health < RobotType.SAGE.health) ||
                             (weakestBot != null && bot.health < weakestBot.health)) {
                         weakestBot = bot;
                     }
-            }
+            } 
             if (weakestBot != null) {
                 if (rc.canRepair(weakestBot.location)) {
                     // rc.setIndicatorString("Succesful Heal!");
                     rc.repair(weakestBot.location);
                 }
-            } else {
+            }
+            else {
                 for (RobotInfo bot : nearbyBots) {
-                    if (bot.type == RobotType.MINER)
-                        if ((weakestBot == null && bot.health < RobotType.MINER.health) ||
+                    if (bot.type == RobotType.SOLDIER)
+                        if ((weakestBot == null && bot.health < RobotType.SOLDIER.health) ||
                                 (weakestBot != null && bot.health < weakestBot.health)) {
                             weakestBot = bot;
                         }
                 }
                 if (weakestBot != null) {
                     if (rc.canRepair(weakestBot.location)) {
+                        // rc.setIndicatorString("Succesful Heal!");
                         rc.repair(weakestBot.location);
+                    }
+                } 
+                else {
+                    for (RobotInfo bot : nearbyBots) {
+                        if (bot.type == RobotType.MINER)
+                            if ((weakestBot == null && bot.health < RobotType.MINER.health) ||
+                                    (weakestBot != null && bot.health < weakestBot.health)) {
+                                weakestBot = bot;
+                            }
+                    }
+                    if (weakestBot != null) {
+                        if (rc.canRepair(weakestBot.location)) {
+                            rc.repair(weakestBot.location);
+                        }
                     }
                 }
             }
