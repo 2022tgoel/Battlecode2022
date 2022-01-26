@@ -75,9 +75,9 @@ public class Archon extends Unit {
                 radio.readCounter(RobotType.WATCHTOWER)
         };
         
-        if (round_num == 500){
+        /* if (round_num == 500){
             rc.resign();
-        }
+        } */
         
         if (round_num == 2) {
             int leadEstimate = radio.getLeadEstimate();

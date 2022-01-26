@@ -526,7 +526,7 @@ public class Unit {
         // fuzzy location
         int x_loc = enemy.x;
         int y_loc = enemy.y;
-        RobotInfo r = rc.senseRobotAtLocation(enemy);
+        // RobotInfo r = rc.senseRobotAtLocation(enemy);
         //boolean isMiner = (r.type == RobotType.MINER);
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
             int data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);

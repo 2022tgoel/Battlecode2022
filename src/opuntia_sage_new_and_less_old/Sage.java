@@ -85,6 +85,7 @@ public class Sage extends Unit {
                         moveToLocation(target);
                     }
                 }*/
+                break;
             case HUNTING:
                 rc.setIndicatorString("got here1");
                 huntTarget();
