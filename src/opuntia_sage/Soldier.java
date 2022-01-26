@@ -12,6 +12,7 @@ public class Soldier extends Unit {
         SEARCHING_ENEMIES, //when u have already found enemies
         FLEE,
         DEFENSIVE_RUSH,
+        CHARGING,
         DYING
         ;
     }
@@ -37,6 +38,7 @@ public class Soldier extends Unit {
     //for attacking and searching enemies modes
     private MapLocation target = null;
     private int[] lastAttackDir = null;
+    private MapLocation chargeTarget;
 
 	public Soldier(RobotController rc) throws GameActionException {
         super(rc);
@@ -50,6 +52,7 @@ public class Soldier extends Unit {
         radio.updateCounter();
         attacked = attemptAttack(false);
         findTargets();
+        findSageTargets();
         senseMiningArea();
         senseFriendlySoldiersArea();
         mode = determineMode();
@@ -65,7 +68,7 @@ public class Soldier extends Unit {
                 }
                 break;
             case HUNTING:
-                huntTarget();
+                huntTarget(target);
                 target = null;
                 break;
             case SEARCHING_ENEMIES:
@@ -73,6 +76,10 @@ public class Soldier extends Unit {
                     lastAttackDir = flip(lastAttackDir);
                 }
                 moveInDirection(lastAttackDir);
+                break;
+            case CHARGING:
+                huntTarget(chargeTarget);
+                chargeTarget = null;
                 break;
             case DEFENSIVE_RUSH:
                 defensiveMove();
@@ -141,6 +148,10 @@ public class Soldier extends Unit {
                 stopFleeingRound = round_num + 6;
             }
             return MODE.FLEE;
+        }
+
+        if (chargeTarget != null) {
+            return MODE.CHARGING;
         }
         
         // Priority 3 - Hunt enemies.
@@ -292,17 +303,17 @@ public class Soldier extends Unit {
         }
     }
 
-    public void huntTarget() throws GameActionException {
+    public void huntTarget(MapLocation t) throws GameActionException {
         MapLocation cur = rc.getLocation();
-        if (rc.getLocation().distanceSquaredTo(target) <= 13) {
+        if (rc.getLocation().distanceSquaredTo(t) <= 13) {
             // check for low rubble squares to move to
-            moveLowRubble(new int[] {-target.x + cur.x, -target.y + cur.y}, 20);
+            moveLowRubble(new int[] {-t.x + cur.x, -t.y + cur.y}, 20);
         }
         else if (rc.getLocation().distanceSquaredTo(target) <= 25) {
-            moveLowRubble(new int[] {target.x - cur.x, target.y - cur.y}, 15);
+            moveLowRubble(new int[] {t.x - cur.x, t.y - cur.y}, 15);
         }
         else {
-            moveToLocation(target);
+            moveToLocation(t);
         }
     }
 
@@ -374,7 +385,7 @@ public class Soldier extends Unit {
             moveToLocation(closest);
         }
         else {
-            if (target != null) huntTarget();
+            if (target != null) huntTarget(target);
         }
     }
 
@@ -543,6 +554,37 @@ public class Soldier extends Unit {
             }
         }
         return false;
+    }
+
+    public void findSageTargets() throws GameActionException {
+        if (rc.getActionCooldownTurns() > 50) return;
+        int data;
+        int closestDist = 100000;
+        MapLocation cur = rc.getLocation();
+        MapLocation closestTarget = null;
+        for (int i = 0; i < 5; i++) {
+            data = rc.readSharedArray(CHANNEL.SAGE_TARGET.getValue() + i);
+            if (data != 0) {
+                int x = data/64;
+                int y = data%64;
+                // System.out.println("I received an enemy at " + x*4 + " " + y*4 + " on round " + round_num);
+                MapLocation potentialTarget = new MapLocation(x, y);
+                if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
+                    closestDist = cur.distanceSquaredTo(potentialTarget);
+                    closestTarget = potentialTarget;
+                }
+            }
+        }
+
+        // finds closest target, and advances towards it.
+        if (closestTarget != null) {
+            if (cur.distanceSquaredTo(closestTarget) <= mapArea / 8) {
+                chargeTarget = closestTarget;
+            }
+            lastAttackDir = new int[]{closestTarget.x - cur.x, closestTarget.y - cur.y};
+            lastAttackDir = scaleToSize(lastAttackDir);
+            // wanders in direction of target
+        }
     }
 
     public void initialize() {

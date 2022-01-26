@@ -102,7 +102,7 @@ public class Sage extends Unit {
         ATTACK attack;
         /* if (rc.getLocation().distanceSquaredTo(target) <= 16 || rc.getHealth() < 30) */
         if (chargeTarget != null) {
-            if (rc.getLocation().distanceSquaredTo(chargeTarget) <= 12 || rc.getHealth() < 50) { attack = ATTACK.CHARGE; }
+            if (rc.getLocation().distanceSquaredTo(chargeTarget) <= 6 || rc.getHealth() < 50) { attack = ATTACK.CHARGE; }
             else return false;
         }
         else {
@@ -138,33 +138,6 @@ public class Sage extends Unit {
                 break;
         }
     }
-
-    /* public void findSageTargets() throws GameActionException {
-        int data;
-        int closestDist = 100000;
-        MapLocation cur = rc.getLocation();
-        MapLocation closestTarget = null;
-        for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
-            data = rc.readSharedArray(CHANNEL.SAGE_TARGET.getValue() + i);
-            if (data != 0) {
-                int x = data/64;
-                int y = data%64;
-                // System.out.println("I received an enemy at " + x*4 + " " + y*4 + " on round " + round_num);
-                MapLocation potentialTarget = new MapLocation(x, y);
-                if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
-                    closestDist = cur.distanceSquaredTo(potentialTarget);
-                    closestTarget = potentialTarget;
-                }
-            }
-        }
-
-        // finds closest target, and advances towards it.
-        if (closestTarget != null) {
-            if (cur.distanceSquaredTo(closestTarget) <= mapArea / 8) {
-                target = closestTarget;
-            }
-        }
-    } */
 
     public void visualize() throws GameActionException {
         if (mode == MODE.EXPLORATORY){
@@ -419,6 +392,9 @@ public class Sage extends Unit {
         }
         else if (rc.getActionCooldownTurns() <= 30) {
             moveLowRubble(new int[] {chargeTarget.x - cur.x, chargeTarget.y - cur.y}, 15);
+        }
+        else {
+            moveLowRubble(new int[] {-chargeTarget.x + cur.x, -chargeTarget.y + cur.y}, 15);
         }
     }
 
