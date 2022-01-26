@@ -527,6 +527,8 @@ public class Unit {
         // fuzzy location
         int x_loc = enemy.x;
         int y_loc = enemy.y;
+        RobotInfo r = rc.senseRobotAtLocation(enemy);
+        boolean isMiner = (r.type == RobotType.MINER);
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
             int data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             // int w = (data >> 12) ;
@@ -542,7 +544,7 @@ public class Unit {
                 indToPut = i;
             }
         }
-        int value = x_loc * 64 + y_loc;
+        int value = ((isMiner ? 1 : 0)<< 12) + (x_loc << 6) + y_loc;
         rc.setIndicatorDot(new MapLocation(x_loc, y_loc), 0, 100, 0);
         rc.writeSharedArray(CHANNEL.TARGET.getValue() + indToPut, value);
         // System.out.println("I broadcasted an enemy at " + enemy.toString());

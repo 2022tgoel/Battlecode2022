@@ -180,7 +180,7 @@ public class Soldier extends Unit {
     public boolean soldierBehindMe(){
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(15, rc.getTeam());
         for (RobotInfo r : nearbyBots){
-            if (r.type == RobotType.SOLDIER){
+            if (r.type == RobotType.SOLDIER || r.type == RobotType.SAGE){
                 if (isBehind(r.location)) return true;
             }
         }
@@ -262,8 +262,9 @@ public class Soldier extends Unit {
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
             data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             if (data != 0) {
-                int x = data/64;
-                int y = data%64;
+                boolean isMiner = ((data >> 12) > 0);
+                int x = (data >> 6) & 63;
+                int y = data & 63;
                 // System.out.println("I received an enemy at " + x*4 + " " + y*4 + " on round " + round_num);
                 MapLocation potentialTarget = new MapLocation(x, y);
                 if (cur.distanceSquaredTo(potentialTarget) < closestDist) {

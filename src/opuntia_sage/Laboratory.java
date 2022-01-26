@@ -20,7 +20,7 @@ public class Laboratory extends Unit {
         mode = getMode();
         switch (mode){
             case DEFAULT:
-                if (rc.getTeamGoldAmount(rc.getTeam()) > 20) return;
+                if (rc.getTeamGoldAmount(rc.getTeam()) > 40) return;
                 if (radio.readCounter(RobotType.MINER) <= 1){
                     return;
                 }
