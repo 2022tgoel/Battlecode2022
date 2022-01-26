@@ -307,7 +307,7 @@ public class Unit {
             dest = scaleToEdge(toDest);
         }
         assert(validCoords(dest.x, dest.y));
-        System.out.println(dest);
+ //       System.out.println(dest);
         Direction d = mover.getBestDir(dest);
         // System.out.println(d);
         if (d != null) {

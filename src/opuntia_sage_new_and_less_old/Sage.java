@@ -74,6 +74,8 @@ public class Sage extends Unit {
                 }
                 break;
             case HIGH_COOLDOWN:
+                fleeFromAttackers();
+                /*
                 if (target != null) {
                     if (rc.getLocation().distanceSquaredTo(target) <= RobotType.SAGE.visionRadiusSquared + 4) {
                         moveLowRubble(new int[]{-target.x + rc.getLocation().x, -target.y + rc.getLocation().y});
@@ -81,7 +83,7 @@ public class Sage extends Unit {
                     else if ( rc.getLocation().distanceSquaredTo(target) > RobotType.SAGE.visionRadiusSquared + 16) {
                         moveToLocation(target);
                     }
-                }
+                }*/
             case HUNTING:
                 huntTarget();
                 target = null;
@@ -101,7 +103,7 @@ public class Sage extends Unit {
             default:
                 break;
         }
-
+        rc.setIndicatorString("mode: " + mode);
         if (!attacked) attemptAttack();
     }
 
@@ -330,7 +332,10 @@ public class Sage extends Unit {
     }
 
     public MODE determineMode() throws GameActionException {
-        
+        if (rc.getActionCooldownTurns() > 50) {
+            return MODE.HIGH_COOLDOWN;
+        }
+
         // Priority 1 - Defend.
         threatenedArchons = findThreatenedArchons();
         if (threatenedArchons != null) {
@@ -355,10 +360,6 @@ public class Sage extends Unit {
                 stopFleeingRound = round_num + 6;
             }
             return MODE.FLEE;
-        }
-
-        if (rc.getActionCooldownTurns() > 50) {
-            return MODE.HIGH_COOLDOWN;
         }
         
         // Priority 3 - Hunt enemies.
@@ -545,19 +546,25 @@ public class Sage extends Unit {
     public void fleeFromAttackers() throws GameActionException {
         MapLocation my = rc.getLocation();
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        MapLocation locs = new MapLocation[9];
+        MapLocation[] locs = new MapLocation[9];
         for (int i= 0; i < 8; i++) locs[i] = my.add(directions[i]);
         locs[8] = my;
-        int[] costs = new int[8];
+        int[] costs = new int[9];
         int numBots = 0;
         for (RobotInfo r : nearbyBots){
-           // if (numBots > 10) return; can restrict for bytecode is necessary
-            for (int i = 0; i < 9; i++){
-                if (r.location.distanceSquaredTo(locs[i]) <= 30){
-                    costs[i] +=40;
+            if (r.type == RobotType.SOLDIER || r.type == RobotType.SAGE){
+                // if (numBots > 10) return; can restrict for bytecode is necessary
+                for (int i = 0; i < 9; i++){
+                    if (r.location.distanceSquaredTo(locs[i]) <= 30){
+                        costs[i] +=40;
+                    }
                 }
+                numBots++; 
             }
-            numBots++;
+           
+        }
+        if (numBots == 0){
+            return; //nothing to flee from
         }
         Direction bestDirection = null;
         int minCost = 9999999;
