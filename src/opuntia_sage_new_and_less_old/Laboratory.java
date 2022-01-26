@@ -24,6 +24,9 @@ public class Laboratory extends Unit {
                 if (radio.readCounter(RobotType.MINER) <= 1){
                     return;
                 }
+                if (radio.readCounter(RobotType.SOLDIER) <= 2){
+                    return;
+                }
                 if(rc.canTransmute()) {
                     // System.out.println("transmuted 1");
                     rc.transmute();

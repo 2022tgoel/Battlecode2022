@@ -179,12 +179,16 @@ public class Sage extends Unit {
         int maxHealth = -1;
         RobotInfo maxHealthBot = null;
         int numOtherBots = 0;
+        int numBuildings =0 ;
         int[] soldierHealths  = new int[nearbyBots.length];
         int[] sageHealths  = new int[nearbyBots.length];
         for (RobotInfo bot: nearbyBots) {
             if (bot.location.distanceSquaredTo(my) > RobotType.SAGE.actionRadiusSquared && (bot.type == RobotType.SOLDIER || bot.type == RobotType.SAGE)) {
                 numOtherBots += 1;
                 continue;
+            }
+            if (bot.type == RobotType.LABORATORY || bot.type == RobotType.WATCHTOWER || bot.type == RobotType.ARCHON){
+                numBuildings ++;
             }
             if (bot.type == RobotType.SOLDIER) {
                 enemyHealth += bot.health;
@@ -318,7 +322,6 @@ public class Sage extends Unit {
                 maxAdvantage = advantage;
             }
         }
-
         if (bestAttack == ATTACK.DEFAULT) {
             if (highestSub45 != null) {
                 attackTarget = highestSub45.location;
@@ -327,7 +330,10 @@ public class Sage extends Unit {
                 attackTarget = maxHealthBot.location;
             }
         }
-        System.out.println("");
+        if (bestAttack == ATTACK.CHARGE){
+            if (numBuildings >= (numeSages + numeSoldiers)) bestAttack = ATTACK.FURY;
+        }
+      //  System.out.println("");
         return bestAttack;
     }
 
