@@ -395,50 +395,57 @@ public class Sage extends Unit {
     public int[] fleeDirection() throws GameActionException{
         MapLocation cur = rc.getLocation();
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1);
+
         double cxse = 0;
         double cyse = 0;
-        int numEnemies = 0;
-        int numEnemyHits = 0;
-        int numFriendHits = (rc.getHealth() + 2) / 3;
+        int numeSoldiers = 0;
+        int numeSages = 0;
+
+        int enemyHealth = 0;
         int numFriends = 0;
+        int friendHealth = rc.getHealth();
+
         for (RobotInfo bot: nearbyBots) {
             if (bot.team == rc.getTeam()) {
                 if (bot.type == RobotType.SOLDIER) {
-                    numFriendHits += ((bot.health + 2) / 3);
+                    friendHealth += bot.health;
+                    numFriends++;
+                }
+                else if (bot.type == RobotType.SAGE) {
+                    friendHealth += bot.health;
                     numFriends++;
                 }
             }
-            else if (bot.team == rc.getTeam().opponent())
+            else if (bot.team == rc.getTeam().opponent()) {
                 if (bot.type == RobotType.SOLDIER) {
+                    enemyHealth += bot.health;
+                    numeSoldiers++;
                     cxse += bot.location.x;
                     cyse += bot.location.y;
-                    numEnemyHits += ((bot.health + 2) / 3);
-                    numEnemies++;
                 }
+                else if (bot.type == RobotType.SAGE) {
+                    enemyHealth += bot.health;
+                    numeSages++;
+                    cxse += bot.location.x;
+                    cyse += bot.location.y;
+                }
+            }
         }
-        if (numEnemies == 0) return new int[]{Integer.MAX_VALUE, Integer.MAX_VALUE};
+        if (numeSages + numeSoldiers == 0) return new int[]{Integer.MAX_VALUE, Integer.MAX_VALUE};
 
-        if (numEnemies > 0) {
-            cxse /= numEnemies;
-            cyse /= numEnemies;
-        }
-
-        double unit_difference = (double) (numFriends + 1 - numEnemies);
-        double ratio;
-
-        if (((numFriends + 1) / numEnemies) > 1) {
-            ratio = ((numFriends + 1) / numEnemies);
-        }
-        else {
-            ratio = numEnemies / (numFriends + 1);
+        if (numeSages + numeSoldiers > 0) {
+            cxse /= (numeSages + numeSoldiers);
+            cyse /= (numeSages + numeSoldiers);
         }
 
-        double a = 6 * ratio;
+        double unit_difference = (double) (numFriends + 1 - numeSages - numeSoldiers);
+
+        double a = 3;
         int unit_advantage = (int) (a * Math.pow(unit_difference,2) * Math.signum(unit_difference));
 
         // System.out.println("Unit advantage: " + unit_advantage + " Ratio: " + ratio + " numFriendHits " + numFriendHits + " numEnemyHits " + numEnemyHits + "round_num " + round_num);
 
-        if (numFriendHits + unit_advantage < numEnemyHits) {
+        if (friendHealth + unit_advantage < enemyHealth) {
             double dx = -(cxse - cur.x) * 3;
             double dy = -(cyse - cur.y) * 3;
             // more attracted
