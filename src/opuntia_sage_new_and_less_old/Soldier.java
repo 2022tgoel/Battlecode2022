@@ -500,7 +500,7 @@ public class Soldier extends Unit {
                 if (rc.canAttack(weakestLab.location)) {
                     rc.attack(weakestLab.location);
                     target = weakestLab.location;
-                    broadcastTarget(weakestLab.location, true);
+                    broadcastTarget(weakestLab.location, false);
                     return true;
                 }
             }
@@ -508,7 +508,7 @@ public class Soldier extends Unit {
                 if (rc.canAttack(weakestTower.location)) {
                     rc.attack(weakestTower.location);
                     target = weakestTower.location;
-                    broadcastTarget(weakestTower.location, true);
+                    broadcastTarget(weakestTower.location, false);
                     return true;
                 }
             }
@@ -531,7 +531,7 @@ public class Soldier extends Unit {
             else if (archon != null) {
                 if (rc.canAttack(archon.location)) {
                     rc.attack(archon.location);
-                    broadcastTarget(archon.location, true);
+                    broadcastTarget(archon.location, false);
                     return true;
                 }
             }

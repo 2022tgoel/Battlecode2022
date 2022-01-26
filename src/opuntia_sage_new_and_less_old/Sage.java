@@ -230,6 +230,8 @@ public class Sage extends Unit {
             }
         }
 
+        if (numBuildings >= (numeSages + numeSoldiers)) return ATTACK.FURY; 
+
         // rc.setIndicatorString("numOtherBots " + numOtherBots + " numeSages " + numeSages + " numeSoldiers " + numeSoldiers + " boutaDie " + boutaDie);
         if (((numOtherBots >= 2 || my.distanceSquaredTo(target) > 4) && (numeSages + numeSoldiers) < 7) && !boutaDie) {
             return ATTACK.NONE;
@@ -322,6 +324,8 @@ public class Sage extends Unit {
                 maxAdvantage = advantage;
             }
         }
+        
+
         if (bestAttack == ATTACK.DEFAULT) {
             if (highestSub45 != null) {
                 attackTarget = highestSub45.location;
@@ -330,9 +334,7 @@ public class Sage extends Unit {
                 attackTarget = maxHealthBot.location;
             }
         }
-        if (bestAttack == ATTACK.CHARGE){
-            if (numBuildings >= (numeSages + numeSoldiers)) bestAttack = ATTACK.FURY;
-        }
+        
       //  System.out.println("");
         return bestAttack;
     }
