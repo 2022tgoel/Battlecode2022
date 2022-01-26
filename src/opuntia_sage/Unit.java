@@ -580,6 +580,10 @@ public class Unit {
                     friendHealth += bot.health;
                     numFriends++;
                 }
+                if (bot.type == RobotType.SAGE) {
+                    friendHealth += bot.health;
+                    numFriends++;
+                }
             }
             else if (bot.team == rc.getTeam().opponent()) {
                 if (bot.type == RobotType.SOLDIER) {
