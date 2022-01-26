@@ -87,7 +87,6 @@ public class Sage extends Unit {
                 }*/
             case HUNTING:
                 rc.setIndicatorString("got here1");
-                Clock.yield();
                 huntTarget();
                 rc.setIndicatorString("got here2");
                 target = null;
@@ -143,10 +142,8 @@ public class Sage extends Unit {
         if (rc.getActionCooldownTurns() > 0) return ATTACK.NONE;
         if (rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared, rc.getTeam().opponent()) == null) return ATTACK.NONE;
         
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared);
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared, rc.getTeam().opponent());
 
-        int numfSoldiers = 0;
-        int numfSages = 0;
         int numeSoldiers = 0;
         int numeSages = 0;
 
@@ -164,50 +161,41 @@ public class Sage extends Unit {
         int[] soldierHealths  = new int[nearbyBots.length];
         int[] sageHealths  = new int[nearbyBots.length];
         for (RobotInfo bot: nearbyBots) {
-           // System.out.println("bot: " + bot.team + " " + bot.location + " " + bot.type);
-            if (bot.team == rc.getTeam()) {
-                if (bot.type == RobotType.SOLDIER) {
-                    friendHealth += bot.health;
-                    numFriends++;
+            if (bot.type == RobotType.SOLDIER) {
+                enemyHealth += bot.health;
+                soldierHealths[numeSoldiers] = bot.health;
+                numeSoldiers++;
+
+                if (bot.health <= 45) {
+                    if (highestSub45Health < bot.health) {
+                        highestSub45Health = bot.health;
+                        highestSub45 = bot;
+                    }
+                    canOneShot = true;
+                }
+                else {
+                    if (maxHealth < bot.health) {
+                        maxHealth = bot.health;
+                        maxHealthBot = bot;
+                    }
                 }
             }
-            else if (bot.team == rc.getTeam().opponent()) {
-                if (bot.type == RobotType.SOLDIER) {
-                    enemyHealth += bot.health;
-                    soldierHealths[numeSoldiers] = bot.health;
-                    numeSoldiers++;
+            else if (bot.type == RobotType.SAGE) {
+                enemyHealth += bot.health;
+                sageHealths[numeSages] = bot.health;
+                numeSages++;
 
-                    if (bot.health <= 45) {
-                        if (highestSub45Health < bot.health) {
-                            highestSub45Health = bot.health;
-                            highestSub45 = bot;
-                        }
-                        canOneShot = true;
+                if (bot.health <= 45) {
+                    if (highestSub45Health < bot.health) {
+                        highestSub45Health = bot.health;
+                        highestSub45 = bot;
                     }
-                    else {
-                        if (maxHealth < bot.health) {
-                            maxHealth = bot.health;
-                            maxHealthBot = bot;
-                        }
-                    }
+                    canOneShot = true;
                 }
-                else if (bot.type == RobotType.SAGE) {
-                    enemyHealth += bot.health;
-                    sageHealths[numeSages] = bot.health;
-                    numeSages++;
-
-                    if (bot.health <= 45) {
-                        if (highestSub45Health < bot.health) {
-                            highestSub45Health = bot.health;
-                            highestSub45 = bot;
-                        }
-                        canOneShot = true;
-                    }
-                    else {
-                        if (maxHealth < bot.health) {
-                            maxHealth = bot.health;
-                            maxHealthBot = bot;
-                        }
+                else {
+                    if (maxHealth < bot.health) {
+                        maxHealth = bot.health;
+                        maxHealthBot = bot;
                     }
                 }
             }
@@ -349,19 +337,6 @@ public class Sage extends Unit {
     }
 
     public MODE determineMode() throws GameActionException {
-        if (rc.getActionCooldownTurns() > 50) {
-            return MODE.HIGH_COOLDOWN;
-        }
-
-        // Priority 1 - Defend.
-        threatenedArchons = findThreatenedArchons();
-        if (threatenedArchons != null) {
-            for (MapLocation archon: threatenedArchons) {
-                if (rc.getLocation().distanceSquaredTo(archon) <= DRUSH_RSQR) {
-                    return MODE.DEFENSIVE_RUSH;
-                }
-            }
-        }
 
         // Priority 2 - Don't die.
         int[] potFleeDir = fleeDirection();
@@ -377,6 +352,16 @@ public class Sage extends Unit {
                 stopFleeingRound = round_num + 6;
             }
             return MODE.FLEE;
+        }
+        
+        // Priority 1 - Defend.
+        threatenedArchons = findThreatenedArchons();
+        if (threatenedArchons != null) {
+            for (MapLocation archon: threatenedArchons) {
+                if (rc.getLocation().distanceSquaredTo(archon) <= DRUSH_RSQR) {
+                    return MODE.DEFENSIVE_RUSH;
+                }
+            }
         }
         
         // Priority 3 - Hunt enemies.
@@ -540,7 +525,6 @@ public class Sage extends Unit {
         else {
             moveLowRubble(new int[] {-target.x + cur.x, -target.y + cur.y}, 15);
         }
-        
     }
 
     public Direction findLowRubble() throws GameActionException {
