@@ -88,7 +88,7 @@ public class Soldier extends Unit {
         if (determineSageAttack() == ATTACK.CHARGE) {
             MapLocation avgEnemyLoc = getAvgEnemyPos();
             if (avgEnemyLoc != null) {
-                broadcastSageTarget(rc.getLocation());
+                broadcastSageTarget(avgEnemyLoc);
             }
         }
     }

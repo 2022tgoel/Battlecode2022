@@ -108,7 +108,7 @@ public class Sage extends Unit {
         if (attack == ATTACK.CHARGE) {
             MapLocation avgEnemyLoc = getAvgEnemyPos();
             if (avgEnemyLoc != null) {
-                broadcastSageTarget(rc.getLocation());
+                broadcastSageTarget(avgEnemyLoc);
             }
         }
         if (attack != ATTACK.NONE) {
