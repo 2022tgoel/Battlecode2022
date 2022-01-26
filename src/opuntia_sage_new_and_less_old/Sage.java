@@ -46,6 +46,9 @@ public class Sage extends Unit {
     private MapLocation target = null;
     private int[] lastAttackDir = null;
     private MapLocation attackTarget;
+    private int previousHealth = 100;
+    private int[] healthDepletions = new int[4];
+    private double healthDepletionRate = 0;
 
 	public Sage(RobotController rc) throws GameActionException {
         super(rc);
@@ -57,13 +60,18 @@ public class Sage extends Unit {
         super.run();
         round_num = rc.getRoundNum();
         radio.updateCounter();
-        attacked = attemptAttack();
         findTargets();
+        if (target != null) attacked = attemptAttack();
         senseMiningArea();
         senseFriendlySoldiersArea();
         mode = determineMode();
-        visualize();
-        rc.setIndicatorString("got here");
+        healthDepletions[(round_num - 1) % 4] = previousHealth - rc.getHealth();
+        healthDepletionRate = 0;
+        for (int i = 0; i < 4; i++) {
+            healthDepletionRate += healthDepletions[i];
+        }
+        healthDepletionRate /= 4;
+        rc.setIndicatorString("mode: " + mode);
         switch (mode) {
             case EXPLORATORY:
                 if (soldierBehindMe()) {
@@ -87,10 +95,7 @@ public class Sage extends Unit {
                 }*/
                 break;
             case HUNTING:
-                rc.setIndicatorString("got here1");
                 huntTarget();
-                rc.setIndicatorString("got here2");
-                target = null;
                 break;
             case SEARCHING_ENEMIES:
                 if (adjacentToEdge()) { //TODO: bots occasionally get stuck somehow
@@ -107,8 +112,21 @@ public class Sage extends Unit {
             default:
                 break;
         }
-        rc.setIndicatorString("mode: " + mode);
-        if (!attacked) attemptAttack();
+    
+        if (target != null && !attacked) attacked = attemptAttack();
+        previousHealth = rc.getHealth();
+        // visualize();
+        target = null;
+    }
+
+    public int turnsTillDeath() throws GameActionException {
+        return (int)(rc.getHealth() / (healthDepletionRate + 0.01));
+    }
+
+    public boolean shouldAttack() throws GameActionException {
+        if (rc.getActionCooldownTurns() > 0) return false;
+        if (rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared, rc.getTeam().opponent()).length == 0) return false;
+        return true;
     }
 
     public boolean attemptAttack() throws GameActionException {
@@ -140,10 +158,12 @@ public class Sage extends Unit {
     }
 
     public ATTACK determineAttack() throws GameActionException {
-        if (rc.getActionCooldownTurns() > 0) return ATTACK.NONE;
-        if (rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared, rc.getTeam().opponent()) == null) return ATTACK.NONE;
-        
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared, rc.getTeam().opponent());
+        if (shouldAttack() != true) return ATTACK.NONE;
+        // System.out.println("ATTACKING");
+        boolean boutaDie = turnsTillDeath() < 3;
+    
+        MapLocation my = rc.getLocation();
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
 
         int numeSoldiers = 0;
         int numeSages = 0;
@@ -158,10 +178,14 @@ public class Sage extends Unit {
         RobotInfo highestSub45 = null;
         int maxHealth = -1;
         RobotInfo maxHealthBot = null;
-
+        int numOtherBots = 0;
         int[] soldierHealths  = new int[nearbyBots.length];
         int[] sageHealths  = new int[nearbyBots.length];
         for (RobotInfo bot: nearbyBots) {
+            if (bot.location.distanceSquaredTo(my) > RobotType.SAGE.actionRadiusSquared && (bot.type == RobotType.SOLDIER || bot.type == RobotType.SAGE)) {
+                numOtherBots += 1;
+                continue;
+            }
             if (bot.type == RobotType.SOLDIER) {
                 enemyHealth += bot.health;
                 soldierHealths[numeSoldiers] = bot.health;
@@ -202,9 +226,14 @@ public class Sage extends Unit {
             }
         }
 
+        // rc.setIndicatorString("numOtherBots " + numOtherBots + " numeSages " + numeSages + " numeSoldiers " + numeSoldiers + " boutaDie " + boutaDie);
+        if (((numOtherBots >= 2 || my.distanceSquaredTo(target) > 4) && (numeSages + numeSoldiers) < 7) && !boutaDie) {
+            return ATTACK.NONE;
+        }
+
         if (numeSoldiers == 0 && numeSages == 0) return ATTACK.NONE;
 
-        System.out.println("units: " + numeSoldiers + " " + numeSages);
+        // System.out.println("units: " + numeSoldiers + " " + numeSages);
         // remove zero values from enemyHealth array
       //  soldierHealths = cleanup(soldierHealths, numeSoldiers);
       //  sageHealths = cleanup(sageHealths, numeSages);
@@ -224,7 +253,7 @@ public class Sage extends Unit {
         int maxAdvantage = -100000;
         int advantage;
         int unit_difference = numFriends + 1 - numeSages - numeSoldiers;
-        double a = 6.0; // = 6 * ratio;
+        double a = 1.0; // = 6 * ratio;
         // double ratio;
         int unit_advantage;
 
@@ -334,12 +363,12 @@ public class Sage extends Unit {
             if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: null MODE: " + mode.toString());
             else rc.setIndicatorString("TARGET: null MODE: FLEE " + "FLEEROUND: " + stopFleeingRound);
         }
-        rc.setIndicatorString("Cooldown Turns: " + rc.getActionCooldownTurns());
+        rc.setIndicatorString("Cooldown Turns: " + rc.getActionCooldownTurns() + " Turns till death: " + turnsTillDeath());
     }
 
     public MODE determineMode() throws GameActionException {
 
-        // Priority 2 - Don't die.
+        /* // Priority 2 - Don't die.
         int[] potFleeDir = fleeDirection();
         boolean validFlee = (potFleeDir[0] != Integer.MAX_VALUE && potFleeDir[1] != Integer.MAX_VALUE);
         if (!validFlee && stopFleeingRound == round_num) {
@@ -353,6 +382,11 @@ public class Sage extends Unit {
                 stopFleeingRound = round_num + 6;
             }
             return MODE.FLEE;
+        } */
+
+        // Priority 3 - Hunt enemies.
+        if (rc.getActionCooldownTurns() > 50) {
+            return MODE.HIGH_COOLDOWN;
         }
         
         // Priority 1 - Defend.
@@ -521,7 +555,7 @@ public class Sage extends Unit {
             moveToLocation(target);
         }
         else if (rc.getActionCooldownTurns() <= 30) {
-            moveLowRubble(new int[] {target.x - cur.x, target.y - cur.y}, 15);
+            moveLowRubble(new int[] {2 * (target.x - cur.x), 2 * (target.y - cur.y)}, 15);
         }
         else {
             moveLowRubble(new int[] {-target.x + cur.x, -target.y + cur.y}, 15);
@@ -555,23 +589,35 @@ public class Sage extends Unit {
         int numBots = 0;
         for (RobotInfo r : nearbyBots){
             if (r.type == RobotType.SOLDIER || r.type == RobotType.SAGE){
-                if (numBots > 5) return; //restrict for bytecode 
+               // if (numBots > 5) return; //restrict for bytecode 
                 for (int i = 0; i < 9; i++){
-                    if (r.location.distanceSquaredTo(locs[i]) <= 30){
+                    if (r.type == RobotType.SOLDIER && r.location.distanceSquaredTo(locs[i]) <= 20){
                         costs[i] +=40;
                     }
+                    if (r.type == RobotType.SOLDIER && r.location.distanceSquaredTo(locs[i]) <= 30){
+                        costs[i] +=20;
+                    }
+                    if (r.type == RobotType.SAGE && r.location.distanceSquaredTo(locs[i]) <= RobotType.SAGE.visionRadiusSquared){
+                        costs[i] +=50;
+                    }
+                    if (r.type == RobotType.SAGE && r.location.distanceSquaredTo(locs[i]) <= RobotType.SAGE.visionRadiusSquared+10){
+                        costs[i] +=30;
+                    }
+                    costs[i] -= r.location.distanceSquaredTo(locs[i])/2;
                 }
                 numBots++; 
             }
-           
         }
         if (numBots == 0){
             return; //nothing to flee from
         }
+
         Direction bestDirection = null;
         int minCost = 9999999;
+        boolean[] canMove = new boolean[8];
         for (int i= 0; i < 8; i++){
             if (rc.canMove(directions[i])){
+                canMove[i] = true;
                 costs[i] += rc.senseRubble(locs[i]);
                 if (costs[i] < minCost){
                     bestDirection = directions[i];
@@ -579,11 +625,13 @@ public class Sage extends Unit {
                 }
             }
         }
-        if (costs[8] < minCost){
+        rc.setIndicatorString("" + rc.getMovementCooldownTurns());
+        //rc.setIndicatorString(" canMove: " + canMove[0] + " " + canMove[1] + " " + canMove[2] + " " + canMove[3] + " " + canMove[4] + " " + canMove[5] + " " + canMove[6] + " " + canMove[7] + " bestDirection: " + bestDirection);
+        if (costs[8] + rc.senseRubble(locs[8]) < minCost){
             //should just stay put
             return;
         }
-        rc.move(bestDirection);
+        if (bestDirection!=null) rc.move(bestDirection);
     }
 
     public void moveLowRubble(int[] dir) throws GameActionException {
