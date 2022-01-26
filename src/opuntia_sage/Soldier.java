@@ -53,7 +53,7 @@ public class Soldier extends Unit {
         senseMiningArea();
         senseFriendlySoldiersArea();
         mode = determineMode();
-        visualize();
+        // visualize();
         switch (mode) {
             case EXPLORATORY:
                 if (soldierBehindMe()) {
@@ -85,6 +85,12 @@ public class Soldier extends Unit {
         }
 
         if (!attacked) attemptAttack(true);
+        if (determineSageAttack() == ATTACK.CHARGE) {
+            MapLocation avgEnemyLoc = getAvgEnemyPos();
+            if (avgEnemyLoc != null) {
+                broadcastSageTarget(rc.getLocation());
+            }
+        }
     }
 
     public void visualize() throws GameActionException {

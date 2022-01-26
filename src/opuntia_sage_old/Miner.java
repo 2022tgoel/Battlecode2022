@@ -45,11 +45,11 @@ public class Miner extends Unit {
                         break;
                     case MINE_DISCOVERED:
                         if (miningSpot != null) {
-                            rc.setIndicatorLine(rc.getLocation(), miningSpot, 255, 0, 255);
+                            // rc.setIndicatorLine(rc.getLocation(), miningSpot, 255, 0, 255);
                             moveToLocation(miningSpot);
                         }
                         else {
-                            rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 255);
+                            // rc.setIndicatorLine(rc.getLocation(), target, 0, 0, 255);
                             moveToLocation(target);
                         }
                         break;

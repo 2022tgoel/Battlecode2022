@@ -16,6 +16,7 @@ public class Unit {
     MapLocation homeArchon;
     public MapLocation archon_target;
     public int mapArea;
+    public MapLocation attackTarget;
     /** Array containing all the possible movement directions. */
     static final Direction[] directions = {
             Direction.NORTH,
@@ -545,5 +546,209 @@ public class Unit {
         rc.setIndicatorDot(new MapLocation(x_loc, y_loc), 0, 100, 0);
         rc.writeSharedArray(CHANNEL.TARGET.getValue() + indToPut, value);
         // System.out.println("I broadcasted an enemy at " + enemy.toString());
+    }
+
+    public ATTACK determineSageAttack() throws GameActionException {
+        if (rc.getActionCooldownTurns() > 0) return ATTACK.NONE;
+        if (rc.senseNearbyRobots(-1, rc.getTeam().opponent()) == null) return ATTACK.NONE;
+        
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared);
+
+        int numfSoldiers = 0;
+        int numfSages = 0;
+        int numeSoldiers = 0;
+        int numeSages = 0;
+
+        int enemyHealth = 0;
+        int numFriends = 0;
+        int friendHealth = rc.getHealth();
+
+        boolean canOneShot = false;
+
+        int highestSub45Health = -1;
+        RobotInfo highestSub45 = null;
+        int maxHealth = -1;
+        RobotInfo maxHealthBot = null;
+
+        int[] soldierHealths  = new int[nearbyBots.length];
+        int[] sageHealths  = new int[nearbyBots.length];
+        for (RobotInfo bot: nearbyBots) {
+            if (bot.team == rc.getTeam()) {
+                if (bot.type == RobotType.SOLDIER) {
+                    friendHealth += bot.health;
+                    numFriends++;
+                }
+            }
+            else if (bot.team == rc.getTeam().opponent()) {
+                if (bot.type == RobotType.SOLDIER) {
+                    enemyHealth += bot.health;
+                    soldierHealths[numeSoldiers] = bot.health;
+                    numeSoldiers++;
+
+                    if (bot.health <= 45) {
+                        if (highestSub45Health < bot.health) {
+                            highestSub45Health = bot.health;
+                            highestSub45 = bot;
+                        }
+                        canOneShot = true;
+                    }
+                    else {
+                        if (maxHealth < bot.health) {
+                            maxHealth = bot.health;
+                            maxHealthBot = bot;
+                        }
+                    }
+                }
+                else if (bot.type == RobotType.SAGE) {
+                    enemyHealth += bot.health;
+                    sageHealths[numeSages] = bot.health;
+                    numeSages++;
+
+                    if (bot.health <= 45) {
+                        if (highestSub45Health < bot.health) {
+                            highestSub45Health = bot.health;
+                            highestSub45 = bot;
+                        }
+                        canOneShot = true;
+                    }
+                    else {
+                        if (maxHealth < bot.health) {
+                            maxHealth = bot.health;
+                            maxHealthBot = bot;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (numeSoldiers == 0 && numeSages == 0) return ATTACK.NONE;
+
+        // remove zero values from enemyHealth array
+        soldierHealths = cleanup(soldierHealths, numeSoldiers);
+        sageHealths = cleanup(sageHealths, numeSages);
+
+        ATTACK bestAttack = ATTACK.NONE;
+        int maxAdvantage = -100000;
+        int advantage;
+        int unit_difference = numFriends + 1 - numeSages - numeSoldiers;
+        double a = 6.0; // = 6 * ratio;
+        // double ratio;
+        int unit_advantage;
+
+
+        ATTACK[] attacks = {ATTACK.DEFAULT, ATTACK.CHARGE};
+        for (ATTACK attack: attacks) {
+            switch (attack) {
+                case DEFAULT:
+                    if (canOneShot) {
+                        unit_advantage = (int) (a * Math.pow(unit_difference + 1, 2) * Math.signum(unit_difference + 1));
+                        advantage = friendHealth - enemyHealth + unit_advantage + highestSub45Health;
+                    }
+                    else {
+                        unit_advantage = (int) (a * Math.pow(unit_difference, 2) * Math.signum(unit_difference));
+                        advantage = friendHealth - enemyHealth + unit_advantage + 45;
+                    }
+                    /* System.out.println("ATTACK: " + attack + " friendHealth: " + friendHealth + " enemyHealth: " + enemyHealth + " unit_difference: " + unit_difference + " unit_advantage: " + unit_advantage + " advantage: " + advantage); */
+                    break;
+                case CHARGE:
+                    int numSoldiersKilled = 0;
+                    int numSagesKilled = 0;
+                    int health_reduced = 0;
+                    if (soldierHealths != null) {
+                        for (int i = 0; i < soldierHealths.length; i++) {
+                            if (soldierHealths[i] <= 11) {
+                                numSoldiersKilled++;
+                                health_reduced += soldierHealths[i];
+                            }
+                            else health_reduced += 11;
+                        }
+                    }
+                    if (sageHealths != null) {
+                        for (int i = 0; i < sageHealths.length; i++) {
+                            if (sageHealths[i] <= 22) {
+                                numSagesKilled++;
+                                health_reduced += sageHealths[i];
+                            }
+                            else health_reduced += 22;
+                        }
+                    }
+                    unit_difference = unit_difference + numSoldiersKilled + numSagesKilled;
+                    unit_advantage = (int) (a * Math.pow(unit_difference, 2) * Math.signum(unit_difference));
+                    advantage = friendHealth - enemyHealth + unit_advantage + health_reduced;
+                    /* System.out.println("ATTACK: " + attack + " friendHealth: " + friendHealth + " enemyHealth: " + enemyHealth + " unit_difference: " + unit_difference + " unit_advantage: " + unit_advantage + " health_reduced " + health_reduced + " num_soldiers killed " + numSoldiersKilled + " num_sages killed " + numSagesKilled +  " advantage: " + advantage); */
+                    break;
+                default:
+                    advantage = 0;
+            }
+            if (advantage > maxAdvantage) {
+                bestAttack = attack;
+                maxAdvantage = advantage;
+            }
+        }
+
+        if (bestAttack == ATTACK.DEFAULT) {
+            if (highestSub45 != null) {
+                attackTarget = highestSub45.location;
+            }
+            else {
+                attackTarget = maxHealthBot.location;
+            }
+        }
+        // System.out.println("");
+        return bestAttack;
+    }
+
+    public int[] cleanup(int[] a, int length) {
+        int[] b = new int[length];
+        int j = 0;
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != 0) {
+                b[j] = a[i];
+                j++;
+            }
+        }
+        Arrays.sort(b);
+        return b;
+    }
+
+    public void broadcastSageTarget(MapLocation loc) throws GameActionException {
+        int indToPut = 0; // where to put the archon (if all spots are filled, it will be put at 0)
+        // fuzzy location
+        int x_loc = loc.x;
+        int y_loc = loc.y;
+        for (int i = 0; i < 5; i++) {
+            int data = rc.readSharedArray(CHANNEL.SAGE_TARGET.getValue() + i);
+            // int w = (data >> 12) ;
+            int x = (data >> 6) & 63;
+            int y = data & 63;
+            if (x_loc == x && y_loc == y) {
+                return;
+            }
+            MapLocation new_loc = new MapLocation(x, y);
+            // don't store closeby targets
+            if (new_loc.distanceSquaredTo(loc) < 6) return;
+            if (data == 0) {
+                indToPut = i;
+            }
+        }
+        int value = x_loc * 64 + y_loc;
+        // rc.setIndicatorDot(new MapLocation(x_loc, y_loc), 100, 100, 100);
+        System.out.println("I BROADCASTED A SAGE TARGET");
+        rc.writeSharedArray(CHANNEL.SAGE_TARGET.getValue() + indToPut, value);
+        // System.out.println("I broadcasted an enemy at " + enemy.toString());
+    }
+
+    public MapLocation getAvgEnemyPos() throws GameActionException {
+        int x = 0;
+        int y = 0;
+        int numEnemies = 0;
+        RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        for (RobotInfo enemy: enemies) {
+            x += enemy.location.x;
+            y += enemy.location.y;
+            numEnemies++;
+        }
+        if (numEnemies == 0) return null;
+        return new MapLocation(x / numEnemies, y / numEnemies);
     }
 }

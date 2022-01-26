@@ -12,15 +12,8 @@ public class Sage extends Unit {
         SEARCHING_ENEMIES, //when u have already found enemies
         FLEE,
         DEFENSIVE_RUSH,
-        DYING
-        ;
-    }
-
-    enum ATTACK {
-        NONE,
-        DEFAULT, 
-        CHARGE,
-        FURY
+        DYING,
+        CHARGING,
         ;
     }
 
@@ -45,7 +38,7 @@ public class Sage extends Unit {
     //for attacking and searching enemies modes
     private MapLocation target = null;
     private int[] lastAttackDir = null;
-    private MapLocation attackTarget;
+    private MapLocation chargeTarget;
 
 	public Sage(RobotController rc) throws GameActionException {
         super(rc);
@@ -57,8 +50,9 @@ public class Sage extends Unit {
         super.run();
         round_num = rc.getRoundNum();
         radio.updateCounter();
-        attacked = attemptAttack();
         findTargets();
+        findSageTargets();
+        attacked = attemptAttack();
         senseMiningArea();
         senseFriendlySoldiersArea();
         mode = determineMode();
@@ -72,6 +66,11 @@ public class Sage extends Unit {
                     }
                     moveToLocation(exploreLoc);
                 }
+                break;
+            case CHARGING:
+                huntChargeTarget();
+                if (!attacked) attemptAttack();
+                chargeTarget = null;
                 break;
             case HUNTING:
                 huntTarget();
@@ -94,13 +93,25 @@ public class Sage extends Unit {
         }
 
         if (!attacked) attemptAttack();
+        visualize();
     }
 
     public boolean attemptAttack() throws GameActionException {
-        ATTACK attack = determineAttack();
+        if (target == null && chargeTarget == null) return false;
+        /* if (rc.getLocation().distanceSquaredTo(target) <= 16 || rc.getHealth() < 30) */
+        if (chargeTarget != null) {
+            if (rc.getLocation().distanceSquaredTo(chargeTarget) <= 12 || rc.getHealth() < 30) {}
+            else return false;
+        }
+        ATTACK attack = determineSageAttack();
         executeAttack(attack);
+        if (attack == ATTACK.CHARGE) {
+            MapLocation avgEnemyLoc = getAvgEnemyPos();
+            if (avgEnemyLoc != null) {
+                broadcastSageTarget(rc.getLocation());
+            }
+        }
         if (attack != ATTACK.NONE) {
-            // System.out.println("ATTEMPTED " + attack.toString() + " " + rc.getRoundNum());
             return true;
         }
         return false;
@@ -124,189 +135,40 @@ public class Sage extends Unit {
         }
     }
 
-    public ATTACK determineAttack() throws GameActionException {
-        if (rc.getActionCooldownTurns() > 0) return ATTACK.NONE;
-        if (rc.senseNearbyRobots(-1, rc.getTeam().opponent()) == null) return ATTACK.NONE;
-        
-        RobotInfo[] nearbyBots = rc.senseNearbyRobots(RobotType.SAGE.actionRadiusSquared);
-
-        int numfSoldiers = 0;
-        int numfSages = 0;
-        int numeSoldiers = 0;
-        int numeSages = 0;
-
-        int enemyHealth = 0;
-        int numFriends = 0;
-        int friendHealth = rc.getHealth();
-
-        boolean canOneShot = false;
-
-        int highestSub45Health = -1;
-        RobotInfo highestSub45 = null;
-        int maxHealth = -1;
-        RobotInfo maxHealthBot = null;
-
-        int[] soldierHealths  = new int[nearbyBots.length];
-        int[] sageHealths  = new int[nearbyBots.length];
-        for (RobotInfo bot: nearbyBots) {
-            if (bot.team == rc.getTeam()) {
-                if (bot.type == RobotType.SOLDIER) {
-                    friendHealth += bot.health;
-                    numFriends++;
-                }
-            }
-            else if (bot.team == rc.getTeam().opponent()) {
-                if (bot.type == RobotType.SOLDIER) {
-                    enemyHealth += bot.health;
-                    soldierHealths[numeSoldiers] = bot.health;
-                    numeSoldiers++;
-
-                    if (bot.health <= 45) {
-                        if (highestSub45Health < bot.health) {
-                            highestSub45Health = bot.health;
-                            highestSub45 = bot;
-                        }
-                        canOneShot = true;
-                    }
-                    else {
-                        if (maxHealth < bot.health) {
-                            maxHealth = bot.health;
-                            maxHealthBot = bot;
-                        }
-                    }
-                }
-                else if (bot.type == RobotType.SAGE) {
-                    enemyHealth += bot.health;
-                    sageHealths[numeSages] = bot.health;
-                    numeSages++;
-
-                    if (bot.health <= 45) {
-                        if (highestSub45Health < bot.health) {
-                            highestSub45Health = bot.health;
-                            highestSub45 = bot;
-                        }
-                        canOneShot = true;
-                    }
-                    else {
-                        if (maxHealth < bot.health) {
-                            maxHealth = bot.health;
-                            maxHealthBot = bot;
-                        }
-                    }
+    /* public void findSageTargets() throws GameActionException {
+        int data;
+        int closestDist = 100000;
+        MapLocation cur = rc.getLocation();
+        MapLocation closestTarget = null;
+        for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
+            data = rc.readSharedArray(CHANNEL.SAGE_TARGET.getValue() + i);
+            if (data != 0) {
+                int x = data/64;
+                int y = data%64;
+                // System.out.println("I received an enemy at " + x*4 + " " + y*4 + " on round " + round_num);
+                MapLocation potentialTarget = new MapLocation(x, y);
+                if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
+                    closestDist = cur.distanceSquaredTo(potentialTarget);
+                    closestTarget = potentialTarget;
                 }
             }
         }
 
-        if (numeSoldiers == 0 && numeSages == 0) return ATTACK.NONE;
-
-        // remove zero values from enemyHealth array
-        soldierHealths = cleanup(soldierHealths, numeSoldiers);
-        sageHealths = cleanup(sageHealths, numeSages);
-
-        /* for (int i = 0; i < numeSoldiers; i++) {
-            System.out.println("Soldier " + i + " health: " + soldierHealths[i]);
-        } */
-
-        /* if (((numFriends + 1) / numEnemies) > 1) {
-            ratio = ((numFriends + 1) / numEnemies);
-        }
-        else {
-            ratio = numEnemies / (numFriends + 1);
-        } */
-
-        ATTACK bestAttack = ATTACK.NONE;
-        int maxAdvantage = -100000;
-        int advantage;
-        int unit_difference = numFriends + 1 - numeSages - numeSoldiers;
-        double a = 6.0; // = 6 * ratio;
-        // double ratio;
-        int unit_advantage;
-
-
-        ATTACK[] attacks = {ATTACK.DEFAULT, ATTACK.CHARGE};
-        for (ATTACK attack: attacks) {
-            switch (attack) {
-                case DEFAULT:
-                    if (canOneShot) {
-                        unit_advantage = (int) (a * Math.pow(unit_difference + 1, 2) * Math.signum(unit_difference + 1));
-                        advantage = friendHealth - enemyHealth + unit_advantage + highestSub45Health;
-                    }
-                    else {
-                        unit_advantage = (int) (a * Math.pow(unit_difference, 2) * Math.signum(unit_difference));
-                        advantage = friendHealth - enemyHealth + unit_advantage + 45;
-                    }
-                    /* System.out.println("ATTACK: " + attack + " friendHealth: " + friendHealth + " enemyHealth: " + enemyHealth + " unit_difference: " + unit_difference + " unit_advantage: " + unit_advantage + " advantage: " + advantage); */
-                    break;
-                case CHARGE:
-                    int numSoldiersKilled = 0;
-                    int numSagesKilled = 0;
-                    int health_reduced = 0;
-                    if (soldierHealths != null) {
-                        for (int i = 0; i < soldierHealths.length; i++) {
-                            if (soldierHealths[i] <= 11) {
-                                numSoldiersKilled++;
-                                health_reduced += soldierHealths[i];
-                            }
-                            else health_reduced += 11;
-                        }
-                    }
-                    if (sageHealths != null) {
-                        for (int i = 0; i < sageHealths.length; i++) {
-                            if (sageHealths[i] <= 22) {
-                                numSagesKilled++;
-                                health_reduced += sageHealths[i];
-                            }
-                            else health_reduced += 22;
-                        }
-                    }
-                    unit_difference = unit_difference + numSoldiersKilled + numSagesKilled;
-                    unit_advantage = (int) (a * Math.pow(unit_difference, 2) * Math.signum(unit_difference));
-                    advantage = friendHealth - enemyHealth + unit_advantage + health_reduced;
-                    /* System.out.println("ATTACK: " + attack + " friendHealth: " + friendHealth + " enemyHealth: " + enemyHealth + " unit_difference: " + unit_difference + " unit_advantage: " + unit_advantage + " health_reduced " + health_reduced + " num_soldiers killed " + numSoldiersKilled + " num_sages killed " + numSagesKilled +  " advantage: " + advantage); */
-                    break;
-                default:
-                    advantage = 0;
-            }
-            if (advantage > maxAdvantage) {
-                bestAttack = attack;
-                maxAdvantage = advantage;
+        // finds closest target, and advances towards it.
+        if (closestTarget != null) {
+            if (cur.distanceSquaredTo(closestTarget) <= mapArea / 8) {
+                target = closestTarget;
             }
         }
-
-        if (bestAttack == ATTACK.DEFAULT) {
-            if (highestSub45 != null) {
-                attackTarget = highestSub45.location;
-            }
-            else {
-                attackTarget = maxHealthBot.location;
-            }
-        }
-        System.out.println("");
-        return bestAttack;
-    }
-
-    public int[] cleanup(int[] a, int length) {
-        int[] b = new int[length];
-        int j = 0;
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] != 0) {
-                b[j] = a[i];
-                j++;
-            }
-        }
-        Arrays.sort(b);
-        return b;
-    }
+    } */
 
     public void visualize() throws GameActionException {
         if (mode == MODE.EXPLORATORY){
             rc.setIndicatorDot(exploreLoc, 100, 100, 0);
         }
-        else if (mode == MODE.HUNTING){
-            rc.setIndicatorLine(rc.getLocation(), target, 0, 100, 0);
-        }
-        else if (mode == MODE.SEARCHING_ENEMIES){
-            rc.setIndicatorString("MODE: " + mode.toString() + " DIR: " + lastAttackDir[0] + " " + lastAttackDir[1]);
+        else if (chargeTarget != null) {
+            rc.setIndicatorString("CHARGE TARGET: " + chargeTarget.toString());
+            rc.setIndicatorLine(rc.getLocation(), chargeTarget, 255, 255, 255);
         }
         else if (target != null) {
             if (mode != MODE.FLEE) rc.setIndicatorString("TARGET: " + target.toString() + " MODE: " + mode.toString());
@@ -346,6 +208,10 @@ public class Sage extends Unit {
                 stopFleeingRound = round_num + 6;
             }
             return MODE.FLEE;
+        }
+
+        if (chargeTarget != null) {
+            return MODE.CHARGING;
         }
         
         // Priority 3 - Hunt enemies.
@@ -489,6 +355,37 @@ public class Sage extends Unit {
         }
     }
 
+    public void findSageTargets() throws GameActionException {
+        if (rc.getActionCooldownTurns() > 50) return;
+        int data;
+        int closestDist = 100000;
+        MapLocation cur = rc.getLocation();
+        MapLocation closestTarget = null;
+        for (int i = 0; i < 5; i++) {
+            data = rc.readSharedArray(CHANNEL.SAGE_TARGET.getValue() + i);
+            if (data != 0) {
+                int x = data/64;
+                int y = data%64;
+                // System.out.println("I received an enemy at " + x*4 + " " + y*4 + " on round " + round_num);
+                MapLocation potentialTarget = new MapLocation(x, y);
+                if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
+                    closestDist = cur.distanceSquaredTo(potentialTarget);
+                    closestTarget = potentialTarget;
+                }
+            }
+        }
+
+        // finds closest target, and advances towards it.
+        if (closestTarget != null) {
+            if (cur.distanceSquaredTo(closestTarget) <= mapArea / 8) {
+                chargeTarget = closestTarget;
+            }
+            lastAttackDir = new int[]{closestTarget.x - cur.x, closestTarget.y - cur.y};
+            lastAttackDir = scaleToSize(lastAttackDir);
+            // wanders in direction of target
+        }
+    }
+
     public void huntTarget() throws GameActionException {
         MapLocation cur = rc.getLocation();
         if (rc.getLocation().distanceSquaredTo(target) > RobotType.SAGE.actionRadiusSquared) {
@@ -500,7 +397,16 @@ public class Sage extends Unit {
         else {
             moveLowRubble(new int[] {-target.x + cur.x, -target.y + cur.y}, 15);
         }
-        
+    }
+
+    public void huntChargeTarget() throws GameActionException {
+        MapLocation cur = rc.getLocation();
+        if (rc.getLocation().distanceSquaredTo(chargeTarget) > RobotType.SAGE.actionRadiusSquared) {
+            moveToLocation(chargeTarget);
+        }
+        else if (rc.getActionCooldownTurns() <= 30) {
+            moveLowRubble(new int[] {chargeTarget.x - cur.x, chargeTarget.y - cur.y}, 15);
+        }
     }
 
     public Direction findLowRubble() throws GameActionException {

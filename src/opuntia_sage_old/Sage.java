@@ -281,7 +281,7 @@ public class Sage extends Unit {
                 attackTarget = maxHealthBot.location;
             }
         }
-        System.out.println("");
+        // System.out.println("");
         return bestAttack;
     }
 

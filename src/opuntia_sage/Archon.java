@@ -60,6 +60,7 @@ public class Archon extends Unit {
         radio.clearThreat();
         radio.clearMiningAreas();
         radio.clearTargetAreas();
+        radio.clearSageTargets();
         updateAmountMined();
         radio.clearArchonMovementLocation();
         radio.clearArchonMoving();
@@ -110,7 +111,7 @@ public class Archon extends Unit {
                 }
                 int leadReq = radio.readLeadRequest();
                 if(leadReq > Math.max(rc.getTeamLeadAmount(rc.getTeam())-RobotType.SOLDIER.buildCostLead, 0)) {
-                    System.out.println("holding for lr: " + leadReq);
+                    // System.out.println("holding for lr: " + leadReq);
                     break;
                 }
 
@@ -156,7 +157,7 @@ public class Archon extends Unit {
             case SOLDIER_HUB:
                 leadReq = radio.readLeadRequest();
                 if(leadReq > Math.max(rc.getTeamLeadAmount(rc.getTeam())-RobotType.SOLDIER.buildCostLead, 0)) {
-                    System.out.println("holding for lr: " + leadReq);
+                    // System.out.println("holding for lr: " + leadReq);
                     break;
                 }
 
@@ -195,7 +196,7 @@ public class Archon extends Unit {
 
                 leadReq = radio.readLeadRequest();
                 if(leadReq > Math.max(rc.getTeamLeadAmount(rc.getTeam())-RobotType.MINER.buildCostLead, 0)) {
-                    System.out.println("holding for lr: " + leadReq);
+                    // System.out.println("holding for lr: " + leadReq);
                     break;
                 }
 

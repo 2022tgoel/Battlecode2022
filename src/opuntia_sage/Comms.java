@@ -165,6 +165,14 @@ public class Comms {
         }
     }
 
+    public void clearSageTargets() throws GameActionException {
+        if (round_num % CONSTANTS.SAGE_REFRESH_RATE == 0) {
+            for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
+                rc.writeSharedArray(CHANNEL.SAGE_TARGET.getValue() + i, 0);
+            }
+        }
+    }
+
     public void clearMiningAreas() throws GameActionException {
         if (round_num % CONSTANTS.MINER_REFRESH_RATE == 0) {
             for (int i = 0; i < 5; i++) {

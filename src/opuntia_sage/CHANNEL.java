@@ -34,8 +34,9 @@ public enum CHANNEL {
     //channels 30 - 33
     ARCHON_POSITION(44), //44-47
     ARCHON_MOVING(48), //for whether one is moving
+    SAGE_TARGET(49), // 49 - 53
 
-    LAB_LOC(50),
+    LAB_LOC(54),
 
     ORDERS(61),
     SEND_RANKS1(62),
