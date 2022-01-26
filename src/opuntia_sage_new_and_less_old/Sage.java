@@ -12,7 +12,7 @@ public class Sage extends Unit {
         SEARCHING_ENEMIES, //when u have already found enemies
         FLEE,
         DEFENSIVE_RUSH,
-        DYING
+        HIGH_COOLDOWN,
         ;
     }
 
@@ -73,6 +73,15 @@ public class Sage extends Unit {
                     moveToLocation(exploreLoc);
                 }
                 break;
+            case HIGH_COOLDOWN:
+                if (target != null) {
+                    if (rc.getLocation().distanceSquaredTo(target) <= RobotType.SAGE.visionRadiusSquared + 4) {
+                        moveLowRubble(new int[]{-target.x + rc.getLocation().x, -target.y + rc.getLocation().y});
+                    }
+                    else if ( rc.getLocation().distanceSquaredTo(target) > RobotType.SAGE.visionRadiusSquared + 16) {
+                        moveToLocation(target);
+                    }
+                }
             case HUNTING:
                 huntTarget();
                 target = null;
@@ -346,6 +355,10 @@ public class Sage extends Unit {
                 stopFleeingRound = round_num + 6;
             }
             return MODE.FLEE;
+        }
+
+        if (rc.getActionCooldownTurns() > 50) {
+            return MODE.HIGH_COOLDOWN;
         }
         
         // Priority 3 - Hunt enemies.
