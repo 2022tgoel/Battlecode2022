@@ -541,6 +541,42 @@ public class Sage extends Unit {
         return bestDir;
     }
 
+
+    public void fleeFromAttackers() throws GameActionException {
+        MapLocation my = rc.getLocation();
+        RobotInfo[] nearbyBots = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        MapLocation locs = new MapLocation[9];
+        for (int i= 0; i < 8; i++) locs[i] = my.add(directions[i]);
+        locs[8] = my;
+        int[] costs = new int[8];
+        int numBots = 0;
+        for (RobotInfo r : nearbyBots){
+           // if (numBots > 10) return; can restrict for bytecode is necessary
+            for (int i = 0; i < 9; i++){
+                if (r.location.distanceSquaredTo(locs[i]) <= 30){
+                    costs[i] +=40;
+                }
+            }
+            numBots++;
+        }
+        Direction bestDirection = null;
+        int minCost = 9999999;
+        for (int i= 0; i < 8; i++){
+            if (rc.canMove(directions[i])){
+                costs[i] += rc.senseRubble(locs[i]);
+                if (costs[i] < minCost){
+                    bestDirection = directions[i];
+                    minCost = costs[i];
+                }
+            }
+        }
+        if (costs[8] < minCost){
+            //should just stay put
+            return;
+        }
+        rc.move(bestDirection);
+    }
+
     public void moveLowRubble(int[] dir) throws GameActionException {
         moveLowRubble(dir, 20);
     }
