@@ -1,4 +1,4 @@
-package schlumbergera;
+package opuntia_sage_new_and_less_old;
 import battlecode.common.*;
 public class Navigation{
 	static RobotController rc;
