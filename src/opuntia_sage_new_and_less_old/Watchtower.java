@@ -452,41 +452,41 @@ public class Watchtower extends Unit {
                 if (rc.canAttack(weakestSage.location)) {
                     rc.attack(weakestSage.location);
                     target = weakestSage.location;
-                    broadcastTarget(weakestSage.location);
+                 //   broadcastTarget(weakestSage.location);
                     return true;
                 }
             } else if (weakestSoldier != null) {
                 if (rc.canAttack(weakestSoldier.location)) {
                     rc.attack(weakestSoldier.location);
                     target = weakestSoldier.location;
-                    broadcastTarget(weakestSoldier.location);
+                //    broadcastTarget(weakestSoldier.location);
                     return true;
                 }
             } else if (weakestTower != null) {
                 if (rc.canAttack(weakestTower.location)) {
                     rc.attack(weakestTower.location);
                     target = weakestTower.location;
-                    broadcastTarget(weakestTower.location);
+                //    broadcastTarget(weakestTower.location);
                     return true;
                 }
             } else if (weakestMiner != null && attackMiners) {
                 if (rc.canAttack(weakestMiner.location)) {
                     rc.attack(weakestMiner.location);
                     target = weakestMiner.location;
-                    broadcastTarget(weakestMiner.location);
+                  //  broadcastTarget(weakestMiner.location);
                     return true;
                 }
             } else if (weakestBuilder != null && attackMiners) {
                 if (rc.canAttack(weakestBuilder.location)) {
                     rc.attack(weakestBuilder.location);
                     target = weakestBuilder.location;
-                    broadcastTarget(weakestBuilder.location);
+                  //  broadcastTarget(weakestBuilder.location);
                     return true;
                 }
             } else if (archon != null) {
                 if (rc.canAttack(archon.location)) {
                     rc.attack(archon.location);
-                    broadcastTarget(archon.location);
+                //    broadcastTarget(archon.location);
                     return true;
                 }
             }

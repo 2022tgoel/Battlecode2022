@@ -174,7 +174,7 @@ public class Soldier extends Unit {
     public boolean soldierBehindMe(){
         RobotInfo[] nearbyBots = rc.senseNearbyRobots(15, rc.getTeam());
         for (RobotInfo r : nearbyBots){
-            if (r.type == RobotType.SOLDIER){
+            if (r.type == RobotType.SOLDIER  || r.type == RobotType.SAGE){
                 if (isBehind(r.location)) return true;
             }
         }
@@ -263,8 +263,9 @@ public class Soldier extends Unit {
         for (int i = 0; i < CHANNEL.NUM_TARGETS; i++) {
             data = rc.readSharedArray(CHANNEL.TARGET.getValue() + i);
             if (data != 0) {
-                int x = data/64;
-                int y = data%64;
+                boolean isMiner = ((data >> 12) > 0);
+                int x = (data >> 6) & 63;
+                int y = data & 63;
                 // System.out.println("I received an enemy at " + x*4 + " " + y*4 + " on round " + round_num);
                 MapLocation potentialTarget = new MapLocation(x, y);
                 if (cur.distanceSquaredTo(potentialTarget) < closestDist) {
@@ -483,7 +484,7 @@ public class Soldier extends Unit {
                 if (rc.canAttack(weakestSage.location)) {
                     rc.attack(weakestSage.location);
                     target = weakestSage.location;
-                    broadcastTarget(weakestSage.location);
+                    broadcastTarget(weakestSage.location, false);
                     return true;
                 }
             }
@@ -491,7 +492,7 @@ public class Soldier extends Unit {
                 if (rc.canAttack(weakestSoldier.location)) {
                     rc.attack(weakestSoldier.location);
                     target = weakestSoldier.location;
-                    broadcastTarget(weakestSoldier.location);
+                    broadcastTarget(weakestSoldier.location, false);
                     return true;
                 }
             }
@@ -499,7 +500,7 @@ public class Soldier extends Unit {
                 if (rc.canAttack(weakestLab.location)) {
                     rc.attack(weakestLab.location);
                     target = weakestLab.location;
-                    broadcastTarget(weakestLab.location);
+                    broadcastTarget(weakestLab.location, true);
                     return true;
                 }
             }
@@ -507,7 +508,7 @@ public class Soldier extends Unit {
                 if (rc.canAttack(weakestTower.location)) {
                     rc.attack(weakestTower.location);
                     target = weakestTower.location;
-                    broadcastTarget(weakestTower.location);
+                    broadcastTarget(weakestTower.location, true);
                     return true;
                 }
             }
@@ -515,7 +516,7 @@ public class Soldier extends Unit {
                 if (rc.canAttack(weakestMiner.location)) {
                     rc.attack(weakestMiner.location);
                     target = weakestMiner.location;
-                    broadcastTarget(weakestMiner.location);
+                    broadcastTarget(weakestMiner.location, true);
                     return true;
                 }
             }
@@ -523,14 +524,14 @@ public class Soldier extends Unit {
                 if (rc.canAttack(weakestBuilder.location)) {
                     rc.attack(weakestBuilder.location);
                     target = weakestBuilder.location;
-                    broadcastTarget(weakestBuilder.location);
+                    broadcastTarget(weakestBuilder.location, true);
                     return true;
                 }
             }
             else if (archon != null) {
                 if (rc.canAttack(archon.location)) {
                     rc.attack(archon.location);
-                    broadcastTarget(archon.location);
+                    broadcastTarget(archon.location, true);
                     return true;
                 }
             }
